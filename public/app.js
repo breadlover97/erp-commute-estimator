@@ -1,6 +1,7 @@
 const SINGAPORE_CENTER = [1.3521, 103.8198];
 const GANTRY_MATCH_THRESHOLD_METERS = 115;
 const DIRECTION_TOLERANCE_DEGREES = 75;
+const DATA_VERSION = "2026-06-08-shipping-v2";
 const ROUTE_SEARCH_START_MINUTES = 4 * 60 + 30;
 const ROUTE_SEARCH_END_MINUTES = 22 * 60 + 30;
 const SINGAPORE_PUBLIC_HOLIDAYS_2026 = new Set([
@@ -68,7 +69,7 @@ init().catch((error) => {
 async function init() {
   setDefaultSingaporeDateTime();
   initMap();
-  state.erpData = await fetchJson("./data/erp-data.json");
+  state.erpData = await fetchJson(`./data/erp-data.json?v=${DATA_VERSION}`);
   els.rateSource.textContent = "Official source-backed rates";
   renderSourceMetadata();
   renderAllGantries();

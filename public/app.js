@@ -2,10 +2,15 @@ const SINGAPORE_CENTER = [1.3521, 103.8198];
 const GANTRY_POINT_MATCH_THRESHOLD_METERS = 115;
 const GANTRY_LINE_MATCH_THRESHOLD_METERS = 70;
 const DIRECTION_TOLERANCE_DEGREES = 75;
-const DATA_VERSION = "2026-06-08-feature-v2";
+const DATA_VERSION = "2026-06-08-route-v3";
 const ROUTE_SEARCH_START_MINUTES = 4 * 60 + 30;
 const ROUTE_SEARCH_END_MINUTES = 22 * 60 + 30;
 const MAX_ROUTE_OPTIONS = 3;
+const ROUTING_TIMEOUTS = {
+  valhalla: 2800,
+  fossgisOsrm: 6500,
+  osrmDemo: 6500,
+};
 const SINGAPORE_PUBLIC_HOLIDAYS_2026 = new Set([
   "2026-01-01",
   "2026-02-17",
@@ -348,44 +353,69 @@ async function handleRouteSubmit(event) {
 }
 
 function buildLegOptions({ legKey, legLabel, routes, departureDate, vehicleType }) {
-  return routes.slice(0, MAX_ROUTE_OPTIONS).map((route, index) => {
-    const matchedGantries = matchGantriesToRoute(route);
-    const trip = calculateTrip(route, matchedGantries, departureDate, vehicleType, legLabel);
-    return {
+  const options = routes
+    .slice(0, MAX_ROUTE_OPTIONS)
+    .map((route) => {
+      const matchedGantries = matchGantriesToRoute(route);
+      const trip = calculateTrip(route, matchedGantries, departureDate, vehicleType, legLabel);
+      return {
+        legKey,
+        legLabel,
+        route,
+        matchedGantries,
+        trip,
+      };
+    });
+  return rankLegOptions(legKey, options);
+}
+
+function rankLegOptions(legKey, options) {
+  return [...options]
+    .sort((a, b) => legOptionRecommendationScore(a) - legOptionRecommendationScore(b))
+    .map((option, index) => ({
+      ...option,
       id: `${legKey}-${index}`,
-      legKey,
-      legLabel,
       index,
-      route,
-      matchedGantries,
-      trip,
-    };
-  });
+    }));
+}
+
+function legOptionRecommendationScore(option) {
+  return option.route.efficiencyScore + option.trip.total * 90;
 }
 
 function recalculatePlanForVehicle() {
   const vehicleType = getVehicleType();
   state.currentPlan.vehicleType = vehicleType;
-  state.currentPlan.outbound = state.currentPlan.outbound.map((option) => ({
-    ...option,
-    trip: calculateTrip(
-      option.route,
-      option.matchedGantries,
-      option.trip.departureDate,
-      vehicleType,
-      option.legLabel,
-    ),
-  }));
-  state.currentPlan.return = state.currentPlan.return.map((option) => ({
-    ...option,
-    trip: calculateTrip(
-      option.route,
-      option.matchedGantries,
-      option.trip.departureDate,
-      vehicleType,
-      option.legLabel,
-    ),
-  }));
+  state.currentPlan.outbound = rankLegOptions(
+    "outbound",
+    state.currentPlan.outbound.map((option) => ({
+      ...option,
+      trip: calculateTrip(
+        option.route,
+        option.matchedGantries,
+        option.trip.departureDate,
+        vehicleType,
+        option.legLabel,
+      ),
+    })),
+  );
+  state.currentPlan.return = rankLegOptions(
+    "return",
+    state.currentPlan.return.map((option) => ({
+      ...option,
+      trip: calculateTrip(
+        option.route,
+        option.matchedGantries,
+        option.trip.departureDate,
+        vehicleType,
+        option.legLabel,
+      ),
+    })),
+  );
+  state.selectedRoutes = {
+    outbound: routeIndexOrDefault(state.selectedRoutes.outbound, state.currentPlan.outbound.length),
+    return: routeIndexOrDefault(state.selectedRoutes.return, state.currentPlan.return.length),
+  };
   renderPlan();
   replaceUrlWithShareState();
 }
@@ -442,7 +472,7 @@ function routeOptionsForLeg(legKey, options) {
       return `<button class="route-option tooltip-card ${isSelected ? "selected" : ""}" data-leg="${legKey}" data-index="${
         option.index
       }" data-tooltip="${escapeHtml(tooltip)}" type="button">
-        <span class="route-option-name">${option.index === 0 ? "Fastest route" : `Alternative ${option.index + 1}`}</span>
+        <span class="route-option-name">${routeOptionName(option)}</span>
         <strong>${formatMoney(option.trip.total)}</strong>
         <small>${formatDuration(option.route.durationSeconds)} · ${formatDistance(option.route.totalMeters)} · ${
           option.trip.entries.length
@@ -453,9 +483,16 @@ function routeOptionsForLeg(legKey, options) {
   return `${heading}<div class="route-option-row">${cards}</div>`;
 }
 
+function routeOptionName(option) {
+  if (option.index === 0) {
+    return "Recommended route";
+  }
+  return `Alternative ${option.index + 1}`;
+}
+
 function routeOptionTooltip(option) {
   const charged = option.trip.entries.filter((entry) => entry.amount > 0).length;
-  return `${option.legLabel}: ${formatDistance(option.route.totalMeters)}, ${formatDuration(
+  return `${option.legLabel}: ${option.route.providerLabel}. Ranked by drive time, distance, detour and ERP charge. ${formatDistance(option.route.totalMeters)}, ${formatDuration(
     option.route.durationSeconds,
   )}, ${option.trip.entries.length} matched ERP location${
     option.trip.entries.length === 1 ? "" : "s"
@@ -942,25 +979,239 @@ function shortAddress(label) {
 }
 
 async function fetchDrivingRoutes(startPoint, endPoint) {
+  const providerResults = await Promise.allSettled([
+    fetchFossgisOsrmRoutes(startPoint, endPoint),
+    fetchValhallaRoutes(startPoint, endPoint),
+    fetchOsrmDemoRoutes(startPoint, endPoint),
+  ]);
+  const routes = providerResults.flatMap((result) => (result.status === "fulfilled" ? result.value : []));
+
+  if (!routes.length) {
+    throw new Error("No driving route found between those points.");
+  }
+
+  return rankRouteCandidates(routes, startPoint, endPoint)
+    .slice(0, MAX_ROUTE_OPTIONS)
+    .map((route, index) => ({
+      ...route,
+      index,
+    }));
+}
+
+async function fetchFossgisOsrmRoutes(startPoint, endPoint) {
+  const coordinates = `${startPoint.lng},${startPoint.lat};${endPoint.lng},${endPoint.lat}`;
+  const url = `https://routing.openstreetmap.de/routed-car/route/v1/driving/${coordinates}?overview=full&geometries=geojson&steps=false&alternatives=true`;
+  const payload = await fetchJson(url, { timeoutMs: ROUTING_TIMEOUTS.fossgisOsrm });
+  return parseOsrmRoutes(payload, {
+    provider: "fossgis-osrm",
+    providerLabel: "OpenStreetMap routing",
+    providerRank: 0,
+  });
+}
+
+async function fetchOsrmDemoRoutes(startPoint, endPoint) {
   const coordinates = `${startPoint.lng},${startPoint.lat};${endPoint.lng},${endPoint.lat}`;
   const url = `https://router.project-osrm.org/route/v1/driving/${coordinates}?overview=full&geometries=geojson&steps=false&alternatives=true`;
-  const payload = await fetchJson(url);
+  const payload = await fetchJson(url, { timeoutMs: ROUTING_TIMEOUTS.osrmDemo });
+  return parseOsrmRoutes(payload, {
+    provider: "osrm-demo",
+    providerLabel: "OSRM fallback",
+    providerRank: 2,
+  });
+}
 
+async function fetchValhallaRoutes(startPoint, endPoint) {
+  const request = {
+    locations: [
+      { lat: startPoint.lat, lon: startPoint.lng, type: "break" },
+      { lat: endPoint.lat, lon: endPoint.lng, type: "break" },
+    ],
+    costing: "auto",
+    units: "kilometers",
+    alternates: MAX_ROUTE_OPTIONS - 1,
+    directions_options: {
+      units: "kilometers",
+    },
+  };
+  const payload = await fetchJson("https://valhalla1.openstreetmap.de/route", {
+    method: "POST",
+    timeoutMs: ROUTING_TIMEOUTS.valhalla,
+    headers: {
+      "Content-Type": "application/json",
+      "X-Client-Id": "erp-commute-estimator.pages.dev",
+    },
+    body: JSON.stringify(request),
+  });
+  return parseValhallaRoutes(payload, {
+    provider: "valhalla",
+    providerLabel: "Valhalla enhanced routing",
+    providerRank: -1,
+  });
+}
+
+function parseOsrmRoutes(payload, providerMeta) {
   if (payload.code !== "Ok" || !payload.routes?.length) {
     throw new Error("No driving route found between those points.");
   }
 
-  return payload.routes.slice(0, MAX_ROUTE_OPTIONS).map((route, index) => {
+  return payload.routes.map((route) => {
     const points = route.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
-    const cumulativeMeters = buildCumulativeDistances(points);
-    return {
-      index,
+    return buildRouteCandidate({
       points,
-      cumulativeMeters,
       totalMeters: route.distance,
       durationSeconds: route.duration,
-    };
+      ...providerMeta,
+    });
   });
+}
+
+function parseValhallaRoutes(payload, providerMeta) {
+  const trips = [payload.trip, ...(payload.alternates || []).map((item) => item.trip || item)].filter(Boolean);
+  if (!trips.length) {
+    throw new Error("No Valhalla driving route found.");
+  }
+
+  return trips.flatMap((trip) => {
+    const points = (trip.legs || []).flatMap((leg, legIndex) => {
+      const decoded = decodeValhallaShape(leg.shape || "");
+      return legIndex === 0 ? decoded : decoded.slice(1);
+    });
+    const totalMeters = Number(trip.summary?.length) * 1000;
+    const durationSeconds = Number(trip.summary?.time);
+    if (points.length < 2 || !Number.isFinite(totalMeters) || !Number.isFinite(durationSeconds)) {
+      return [];
+    }
+    return [
+      buildRouteCandidate({
+        points,
+        totalMeters,
+        durationSeconds,
+        ...providerMeta,
+      }),
+    ];
+  });
+}
+
+function buildRouteCandidate(route) {
+  const cumulativeMeters = buildCumulativeDistances(route.points);
+  return {
+    ...route,
+    cumulativeMeters,
+    shapeSignature: routeShapeSignature(route.points),
+  };
+}
+
+function rankRouteCandidates(routes, startPoint, endPoint) {
+  const uniqueRoutes = dedupeRoutes(routes).filter((route) => route.points.length > 1);
+  const fastestSeconds = Math.min(...uniqueRoutes.map((route) => route.durationSeconds));
+  const shortestMeters = Math.min(...uniqueRoutes.map((route) => route.totalMeters));
+  const directMeters = Math.max(haversineMeters(startPoint, endPoint), 1);
+
+  return uniqueRoutes
+    .map((route) => ({
+      ...route,
+      efficiencyScore: routeEfficiencyScore(route, fastestSeconds, shortestMeters, directMeters),
+    }))
+    .sort((a, b) => {
+      if (Math.abs(a.efficiencyScore - b.efficiencyScore) > 1) {
+        return a.efficiencyScore - b.efficiencyScore;
+      }
+      return a.providerRank - b.providerRank || a.durationSeconds - b.durationSeconds || a.totalMeters - b.totalMeters;
+    });
+}
+
+function routeEfficiencyScore(route, fastestSeconds, shortestMeters, directMeters) {
+  const distancePenalty = Math.max(0, route.totalMeters - shortestMeters) * 0.012;
+  const slowPenalty = Math.max(0, route.durationSeconds - fastestSeconds) * 0.35;
+  const detourFactor = route.totalMeters / directMeters;
+  const detourPenalty = Math.max(0, detourFactor - 1.65) * 260;
+  const providerPenalty = route.providerRank * 18;
+  return route.durationSeconds + distancePenalty + slowPenalty + detourPenalty + providerPenalty;
+}
+
+function dedupeRoutes(routes) {
+  const uniqueRoutes = [];
+  for (const route of routes) {
+    const duplicate = uniqueRoutes.find((existing) => routesAreSimilar(existing, route));
+    if (!duplicate) {
+      uniqueRoutes.push(route);
+      continue;
+    }
+    const duplicateScore =
+      duplicate.durationSeconds + duplicate.totalMeters * 0.01 + duplicate.providerRank * 20;
+    const routeScore = route.durationSeconds + route.totalMeters * 0.01 + route.providerRank * 20;
+    if (routeScore < duplicateScore) {
+      uniqueRoutes.splice(uniqueRoutes.indexOf(duplicate), 1, route);
+    }
+  }
+  return uniqueRoutes;
+}
+
+function routesAreSimilar(a, b) {
+  if (a.shapeSignature === b.shapeSignature) {
+    return true;
+  }
+  const distanceClose = Math.abs(a.totalMeters - b.totalMeters) <= 220;
+  const durationClose = Math.abs(a.durationSeconds - b.durationSeconds) <= 75;
+  return distanceClose && durationClose && averageSampleDistance(a.points, b.points) <= 180;
+}
+
+function averageSampleDistance(aPoints, bPoints) {
+  const samples = [0.2, 0.4, 0.6, 0.8];
+  const total = samples.reduce((sum, ratio) => {
+    const aPoint = aPoints[Math.min(aPoints.length - 1, Math.round((aPoints.length - 1) * ratio))];
+    const bPoint = bPoints[Math.min(bPoints.length - 1, Math.round((bPoints.length - 1) * ratio))];
+    return sum + haversineMeters(aPoint, bPoint);
+  }, 0);
+  return total / samples.length;
+}
+
+function routeShapeSignature(points) {
+  const samples = [0, 0.25, 0.5, 0.75, 1];
+  return samples
+    .map((ratio) => {
+      const point = points[Math.min(points.length - 1, Math.round((points.length - 1) * ratio))];
+      return `${point.lat.toFixed(3)},${point.lng.toFixed(3)}`;
+    })
+    .join("|");
+}
+
+function decodeValhallaShape(shape) {
+  const points = [];
+  let index = 0;
+  let lat = 0;
+  let lng = 0;
+
+  while (index < shape.length) {
+    const latResult = decodePolylineValue(shape, index);
+    index = latResult.index;
+    const lngResult = decodePolylineValue(shape, index);
+    index = lngResult.index;
+    lat += latResult.value;
+    lng += lngResult.value;
+    points.push({ lat: lat / 1e6, lng: lng / 1e6 });
+  }
+
+  return points;
+}
+
+function decodePolylineValue(value, startIndex) {
+  let result = 0;
+  let shift = 0;
+  let index = startIndex;
+  let byte = null;
+
+  do {
+    byte = value.charCodeAt(index) - 63;
+    index += 1;
+    result |= (byte & 0x1f) << shift;
+    shift += 5;
+  } while (byte >= 0x20 && index < value.length);
+
+  return {
+    value: result & 1 ? ~(result >> 1) : result >> 1,
+    index,
+  };
 }
 
 function matchGantriesToRoute(route) {
@@ -1654,10 +1905,20 @@ function roundMoney(amount) {
   return Math.round((amount + Number.EPSILON) * 100) / 100;
 }
 
-async function fetchJson(url) {
-  const response = await fetch(url, {
-    headers: { Accept: "application/json" },
-  });
+async function fetchJson(url, options = {}) {
+  const { timeoutMs = 12000, headers = {}, ...fetchOptions } = options;
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+  let response;
+  try {
+    response = await fetch(url, {
+      ...fetchOptions,
+      signal: controller.signal,
+      headers: { Accept: "application/json", ...headers },
+    });
+  } finally {
+    window.clearTimeout(timeout);
+  }
   if (!response.ok) {
     throw new Error(`Request failed: ${response.status}`);
   }

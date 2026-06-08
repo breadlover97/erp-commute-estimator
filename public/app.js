@@ -2,7 +2,7 @@ const SINGAPORE_CENTER = [1.3521, 103.8198];
 const GANTRY_POINT_MATCH_THRESHOLD_METERS = 115;
 const GANTRY_LINE_MATCH_THRESHOLD_METERS = 70;
 const DIRECTION_TOLERANCE_DEGREES = 75;
-const DATA_VERSION = "2026-06-08-copy-v5";
+const DATA_VERSION = "2026-06-08-hover-v6";
 const ROUTE_SEARCH_START_MINUTES = 4 * 60 + 30;
 const ROUTE_SEARCH_END_MINUTES = 22 * 60 + 30;
 const MAX_ROUTE_OPTIONS = 3;
@@ -606,10 +606,9 @@ function drawMatchedGantry(entry) {
       color,
       weight: entry.amount > 0 ? 6 : 4,
       opacity: 0.95,
-    })
-      .bindPopup(popup)
-      .addTo(state.matchedGantriesLayer);
-    bindHoverPopup(line);
+      className: "erp-map-target",
+    }).addTo(state.matchedGantriesLayer);
+    bindGantryInfo(line, popup);
   }
 
   const marker = L.circleMarker(entry.match.gantry.center, {
@@ -618,10 +617,9 @@ function drawMatchedGantry(entry) {
     fillColor: color,
     fillOpacity: 1,
     weight: 2,
-  })
-    .bindPopup(popup)
-    .addTo(state.matchedGantriesLayer);
-  bindHoverPopup(marker);
+    className: "erp-map-target",
+  }).addTo(state.matchedGantriesLayer);
+  bindGantryInfo(marker, popup);
 }
 
 function popupForTripEntry(entry) {
@@ -859,9 +857,9 @@ function renderAllGantries() {
       fillOpacity: gantry.isPriced ? 0.82 : 0.5,
       opacity: 0.75,
       weight: 1,
+      className: "erp-map-target",
     });
-    marker.bindPopup(popupForGantry(gantry));
-    bindHoverPopup(marker);
+    bindGantryInfo(marker, popupForGantry(gantry));
     marker.addTo(state.allGantriesLayer);
   });
 }
@@ -894,6 +892,39 @@ function bindHoverPopup(layer) {
       layer.closePopup();
     }
   });
+}
+
+function bindGantryInfo(layer, content) {
+  layer.bindPopup(content, {
+    className: "map-info-popup",
+    maxWidth: 270,
+  });
+  layer.bindTooltip(content, {
+    className: "map-info-tooltip",
+    direction: "top",
+    offset: [0, -8],
+    opacity: 1,
+    sticky: true,
+  });
+
+  layer.on("mouseover", () => {
+    if (canUseHoverTooltips()) {
+      layer.openTooltip();
+    }
+  });
+  layer.on("mouseout", () => {
+    if (canUseHoverTooltips()) {
+      layer.closeTooltip();
+    }
+  });
+  layer.on("click", () => {
+    layer.closeTooltip();
+    layer.openPopup();
+  });
+}
+
+function canUseHoverTooltips() {
+  return window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 }
 
 async function requireConfirmedAddress(type) {

@@ -2,9 +2,11 @@ const SINGAPORE_CENTER = [1.3521, 103.8198];
 const GANTRY_POINT_MATCH_THRESHOLD_METERS = 115;
 const GANTRY_LINE_MATCH_THRESHOLD_METERS = 70;
 const DIRECTION_TOLERANCE_DEGREES = 75;
-const DATA_VERSION = "2026-06-08-labels-v8";
+const DATA_VERSION = "2026-06-08-rates-v9";
 const ROUTE_SEARCH_START_MINUTES = 4 * 60 + 30;
 const ROUTE_SEARCH_END_MINUTES = 22 * 60 + 30;
+const ERP_RATE_TABLE_START_MINUTES = 7 * 60;
+const ERP_RATE_TABLE_END_MINUTES = 20 * 60;
 const MAX_ROUTE_OPTIONS = 3;
 const ROUTING_TIMEOUTS = {
   valhalla: 2800,
@@ -623,15 +625,13 @@ function drawMatchedGantry(entry) {
 }
 
 function popupForTripEntry(entry) {
-  return `<strong>${escapeHtml(entry.label)}</strong><br>
-    ${escapeHtml(entry.legLabel)} crossing around ${entry.crossingTime}<br>
-    ${escapeHtml(entry.rateLabel)}<br>
-    Base ${formatMoney(entry.baseAmount)} x ${formatMultiplier(entry.multiplier)} ${escapeHtml(entry.vehicleLabel)} = <strong>${formatMoney(
-      entry.amount,
-    )}</strong><br>
-    Matched ${Math.round(entry.match.distanceMeters)} m from official ${
-      entry.match.matchType === "line" ? "gantry line" : "marker"
-    }`;
+  return popupForErpRates({
+    groupId: entry.groupId,
+    title: erpRateTitle(entry.label, entry.gantryNos),
+    vehicleType: state.currentPlan?.vehicleType || getVehicleType(),
+    dateString: entry.crossingDateString || selectedRateDateString(),
+    note: `${entry.legLabel} crosses around ${entry.crossingTime}. Estimated charge: ${formatMoney(entry.amount)}.`,
+  });
 }
 
 function renderTimingComparison(rows, baseDeparture) {
@@ -865,20 +865,136 @@ function renderAllGantries() {
 }
 
 function popupForGantry(gantry) {
-  const number = gantry.gantryNo ? `Gantry ${escapeHtml(gantry.gantryNo)}` : "Unnumbered gantry";
-  const priced = gantry.isPriced ? rateSummaryForGroup(gantry.groupId) : "No active price schedule";
-  const geometry = gantry.line?.length > 1 ? "Official line geometry available" : "Official marker point";
-  return `<strong>${number}</strong><br>${escapeHtml(gantry.label)}<br><span>${escapeHtml(
-    priced,
-  )}</span><br><span>${geometry}</span>`;
+  const group = state.erpData.groups.find((candidate) => candidate.id === gantry.groupId);
+  return popupForErpRates({
+    groupId: gantry.groupId,
+    title: erpRateTitle(group?.label || gantry.label, group?.gantryNos || [gantry.gantryNo].filter(Boolean)),
+    vehicleType: getVehicleType(),
+    dateString: selectedRateDateString(),
+  });
 }
 
-function rateSummaryForGroup(groupId) {
-  const nonZero = state.erpData.baseRates
-    .filter((rate) => rate.groupId === groupId && rate.amount > 0)
-    .slice(0, 3)
-    .map((rate) => `${rate.start}-${rate.end} ${formatMoney(rate.amount)}`);
-  return nonZero.length ? `Base rates include ${nonZero.join(", ")}` : "No active base rate";
+function popupForErpRates({ groupId, title, vehicleType, dateString, note = "" }) {
+  const rows = buildErpRateRows(groupId, dateString, vehicleType);
+  const body = rows
+    .map((row) => {
+      return `<tr>
+        <td>${escapeHtml(row.range)}</td>
+        <td>${formatPopupMoney(row.amount)}</td>
+      </tr>`;
+    })
+    .join("");
+
+  return `<div class="erp-rate-card">
+    <h3>${escapeHtml(title)}</h3>
+    <div class="erp-rate-select" aria-hidden="true">${escapeHtml(vehiclePopupLabel(vehicleType))}</div>
+    <div class="erp-rate-select" aria-hidden="true">${escapeHtml(rateDayLabel(dateString))}</div>
+    <div class="erp-rate-table-wrap">
+      <table class="erp-rate-table">
+        <tbody>${body}</tbody>
+      </table>
+    </div>
+    ${note ? `<p class="erp-rate-note">${escapeHtml(note)}</p>` : ""}
+  </div>`;
+}
+
+function erpRateTitle(label, gantryNos) {
+  const numbers = gantryNos?.filter(Boolean).join(", ");
+  return numbers ? `${label} (${numbers})` : label;
+}
+
+function buildErpRateRows(groupId, dateString, vehicleType) {
+  if (!groupId) {
+    return [{ range: "All day", amount: 0 }];
+  }
+
+  if (isZeroErpDate(dateString) || !isWeekday(dateString)) {
+    return [{ range: "All day", amount: 0 }];
+  }
+
+  const relevantSegments = [
+    ...state.erpData.baseRates.filter((rate) => rate.groupId === groupId),
+    ...state.erpData.adjustments.filter((adjustment) => {
+      return (
+        adjustment.groupId === groupId &&
+        dateString >= adjustment.fromDate &&
+        (!adjustment.toDate || dateString <= adjustment.toDate)
+      );
+    }),
+  ];
+
+  if (!relevantSegments.length) {
+    return [{ range: "All day", amount: 0 }];
+  }
+
+  const boundaries = new Set([ERP_RATE_TABLE_START_MINUTES, ERP_RATE_TABLE_END_MINUTES]);
+  relevantSegments.forEach((segment) => {
+    const start = clamp(minutesFromClock(segment.start), ERP_RATE_TABLE_START_MINUTES, ERP_RATE_TABLE_END_MINUTES);
+    const end = clamp(minutesFromClock(segment.end), ERP_RATE_TABLE_START_MINUTES, ERP_RATE_TABLE_END_MINUTES);
+    if (start < end) {
+      boundaries.add(start);
+      boundaries.add(end);
+    }
+  });
+
+  const sortedBoundaries = [...boundaries].sort((a, b) => a - b);
+  const rows = [];
+  for (let index = 0; index < sortedBoundaries.length - 1; index += 1) {
+    const start = sortedBoundaries[index];
+    const end = sortedBoundaries[index + 1];
+    if (start >= end) {
+      continue;
+    }
+    const rate = getRateForGroup(groupId, dateWithMinutes(dateString, start), vehicleType);
+    const previous = rows.at(-1);
+    if (previous && previous.amount === rate.amount && previous.end === start) {
+      previous.end = end;
+      previous.range = `${clockFromMinutes(previous.start)} - ${clockFromMinutes(end)}`;
+    } else {
+      rows.push({
+        start,
+        end,
+        range: `${clockFromMinutes(start)} - ${clockFromMinutes(end)}`,
+        amount: rate.amount,
+      });
+    }
+  }
+
+  return rows.length ? rows : [{ range: "All day", amount: 0 }];
+}
+
+function selectedRateDateString() {
+  return els.date.value || toDateInputValue(new Date());
+}
+
+function dateWithMinutes(dateString, minutes) {
+  return new Date(`${dateString}T${clockFromMinutes(minutes)}:00`);
+}
+
+function clockFromMinutes(minutes) {
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  return `${String(hours).padStart(2, "0")}:${String(remainder).padStart(2, "0")}`;
+}
+
+function vehiclePopupLabel(vehicleType) {
+  const labels = {
+    motorcycle: "Motorcycles",
+    car: "Passenger Cars/Light Goods Vehicles/Taxis",
+    heavy: "Heavy Goods Vehicles/Small Buses",
+    "very-heavy": "Very Heavy Goods Vehicles/Big Buses",
+  };
+  return labels[vehicleType] || labels.car;
+}
+
+function rateDayLabel(dateString) {
+  if (isZeroErpDate(dateString)) {
+    return "Sundays/Public Holidays";
+  }
+  if (!isWeekday(dateString)) {
+    return "Saturdays";
+  }
+  return "Weekdays";
 }
 
 function bindHoverPopup(layer) {
@@ -897,7 +1013,7 @@ function bindHoverPopup(layer) {
 function bindGantryInfo(layer, content) {
   layer.bindPopup(content, {
     className: "map-info-popup",
-    maxWidth: 310,
+    maxWidth: 340,
   });
   layer.bindTooltip(content, {
     className: "map-info-tooltip",
@@ -2005,6 +2121,10 @@ function formatDistance(meters) {
 
 function formatMoney(amount) {
   return `S$${amount.toFixed(2)}`;
+}
+
+function formatPopupMoney(amount) {
+  return `$${amount.toFixed(2)}`;
 }
 
 function formatMultiplier(multiplier) {

@@ -23,4 +23,15 @@ await writeFile(
   await response.text(),
 );
 
+const erpKmlResponse = await fetch("https://onemotoring.lta.gov.sg/mapapp/kml/erp-kml/erp-kml-0.kml");
+if (!erpKmlResponse.ok) {
+  throw new Error(`Failed to fetch OneMotoring ERP KML: ${erpKmlResponse.status}`);
+}
+
+await writeFile(
+  new URL("../data/onemotoring-erp.kml", import.meta.url),
+  await erpKmlResponse.text(),
+);
+
 console.log("Saved data/lta-gantry.geojson");
+console.log("Saved data/onemotoring-erp.kml");

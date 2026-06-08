@@ -1,15 +1,24 @@
 {
   "meta": {
-    "generatedAt": "2026-06-08T11:22:53.416699+00:00",
+    "generatedAt": "2026-06-08T11:43:53.084403+00:00",
     "vehicleClass": "Passenger cars, taxis and light goods vehicles",
     "baseRateSource": "OneMotoring ERP Rates PDF, with effect from 23 Mar 2026",
     "latestAdjustmentSource": "LTA news release, Revised ERP Rates from 2 June 2026, published 25 May 2026",
-    "gantrySource": "data.gov.sg LTA Gantry (GEOJSON), last updated 06 Jun 2024",
+    "gantrySource": "OneMotoring ERP KML marker layer, with data.gov.sg LTA Gantry GeoJSON line geometry where available",
+    "sourceLinks": {
+      "oneMotoringErpRatesPdf": "https://onemotoring.lta.gov.sg/content/dam/onemotoring/Driving/ERP/ERP%20Rates.pdf",
+      "oneMotoringJune2026RatesPdf": "https://onemotoring.lta.gov.sg/content/dam/onemotoring/Driving/ERP/ERP_rates_tables/2026.05.28-ERP%20Rates%20%28Eff.%202%20Jun%202026%20-%2028%20Jun%202026%29.pdf",
+      "ltaJune2026Revision": "https://www.lta.gov.sg/content/ltagov/en/newsroom/2026/5/news-releases/revised-erp-rates-2-jun-26.html",
+      "oneMotoringErpGuide": "https://onemotoring.lta.gov.sg/content/onemotoring/home/driving/ERP/ERP.html",
+      "oneMotoringErpKml": "https://onemotoring.lta.gov.sg/mapapp/kml/erp-kml/erp-kml-0.kml",
+      "ltaGantryGeoJson": "https://data.gov.sg/collections/lta-gantry/view",
+      "momPublicHolidays2026": "https://www.mom.gov.sg/newsroom/press-releases/2025/0616-public-holidays-for-2026"
+    },
     "notes": [
-      "Weekday rates are modelled. Saturdays and Sundays are treated as zero ERP in this app.",
-      "Public holidays and eve-of-public-holiday early cut-offs are not modelled in this first version.",
+      "Weekday expressway rates are modelled for passenger cars, taxis and light goods vehicles.",
+      "Sundays, 2026 Singapore public holidays, and post-1pm eves of major public holidays are treated as zero ERP.",
       "Where LTA defines a set of gantries, the app charges at most once for the set.",
-      "Route matching uses proximity to the official gantry line geometry and should be treated as an estimate."
+      "Route matching uses proximity plus direction checks against official ERP marker coordinates and should be treated as an estimate."
     ]
   },
   "groups": [
@@ -224,233 +233,15 @@
   "gantries": [
     {
       "id": "g1",
-      "gantryNo": null,
-      "uniqueId": "3847",
-      "groupId": null,
-      "label": "Unnumbered gantry",
-      "center": [
-        1.30707726,
-        103.87444664
-      ],
-      "line": [
-        [
-          1.30712028,
-          103.87444025
-        ],
-        [
-          1.30703423,
-          103.87445304
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g2",
-      "gantryNo": null,
-      "uniqueId": "3850",
-      "groupId": null,
-      "label": "Unnumbered gantry",
-      "center": [
-        1.31000729,
-        103.87580069
-      ],
-      "line": [
-        [
-          1.31001829,
-          103.87584379
-        ],
-        [
-          1.30999629,
-          103.87575759
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g3",
-      "gantryNo": null,
-      "uniqueId": "3851",
-      "groupId": null,
-      "label": "Unnumbered gantry",
-      "center": [
-        1.30991054,
-        103.87582432
-      ],
-      "line": [
-        [
-          1.3099213,
-          103.8758686
-        ],
-        [
-          1.30989977,
-          103.87578004
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g4",
-      "gantryNo": null,
-      "uniqueId": "4926",
-      "groupId": null,
-      "label": "Unnumbered gantry",
-      "center": [
-        1.30271819,
-        103.85349465
-      ],
-      "line": [
-        [
-          1.30277451,
-          103.85342729
-        ],
-        [
-          1.30266187,
-          103.85356201
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g5",
-      "gantryNo": null,
-      "uniqueId": "4925",
-      "groupId": null,
-      "label": "Unnumbered gantry",
-      "center": [
-        1.30263719,
-        103.85342775
-      ],
-      "line": [
-        [
-          1.30269393,
-          103.85336001
-        ],
-        [
-          1.30258044,
-          103.85349549
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g6",
-      "gantryNo": null,
-      "uniqueId": "627",
-      "groupId": null,
-      "label": "Unnumbered gantry",
-      "center": [
-        1.33274299,
-        103.8621805
-      ],
-      "line": [
-        [
-          1.33273528,
-          103.86208039
-        ],
-        [
-          1.3327507,
-          103.86228061
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g7",
-      "gantryNo": "65",
-      "uniqueId": "628",
-      "groupId": "65",
-      "label": "PIE westbound before Eunos Link",
-      "center": [
-        1.32856403,
-        103.91163154
-      ],
-      "line": [
-        [
-          1.32865316,
-          103.91159258
-        ],
-        [
-          1.3284749,
-          103.9116705
-        ]
-      ],
-      "isPriced": true
-    },
-    {
-      "id": "g8",
-      "gantryNo": "62",
-      "uniqueId": "629",
-      "groupId": null,
-      "label": "Gantry 62",
-      "center": [
-        1.28853999,
-        103.84896223
-      ],
-      "line": [
-        [
-          1.28858667,
-          103.84889346
-        ],
-        [
-          1.2884933,
-          103.84903101
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g9",
-      "gantryNo": "56",
-      "uniqueId": "423",
-      "groupId": "56",
-      "label": "Lorong 6 Toa Payoh from Braddell Road",
-      "center": [
-        1.34082547,
-        103.85337451
-      ],
-      "line": [
-        [
-          1.34085422,
-          103.85328648
-        ],
-        [
-          1.34079673,
-          103.85346255
-        ]
-      ],
-      "isPriced": true
-    },
-    {
-      "id": "g10",
-      "gantryNo": "10",
-      "uniqueId": "798",
-      "groupId": null,
-      "label": "Gantry 10",
-      "center": [
-        1.30129118,
-        103.85494803
-      ],
-      "line": [
-        [
-          1.30133032,
-          103.85490772
-        ],
-        [
-          1.30125204,
-          103.85498835
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g11",
       "gantryNo": "1",
-      "uniqueId": "799",
+      "rawGantryNo": "1",
+      "uniqueId": null,
       "groupId": null,
-      "label": "Gantry 1",
+      "label": "Victoria Street",
+      "directionDegrees": null,
       "center": [
-        1.30040354,
-        103.85575215
+        1.30048972,
+        103.85572372
       ],
       "line": [
         [
@@ -465,2038 +256,16 @@
       "isPriced": false
     },
     {
-      "id": "g12",
-      "gantryNo": "16",
-      "uniqueId": "800",
-      "groupId": null,
-      "label": "Gantry 16",
-      "center": [
-        1.29794898,
-        103.85769195
-      ],
-      "line": [
-        [
-          1.2979959,
-          103.85765001
-        ],
-        [
-          1.29790206,
-          103.8577339
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g13",
-      "gantryNo": "11",
-      "uniqueId": "801",
-      "groupId": null,
-      "label": "Gantry 11",
-      "center": [
-        1.29962089,
-        103.85645734
-      ],
-      "line": [
-        [
-          1.29966075,
-          103.85640441
-        ],
-        [
-          1.29958104,
-          103.85651028
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g14",
-      "gantryNo": null,
-      "uniqueId": "802",
-      "groupId": null,
-      "label": "Unnumbered gantry",
-      "center": [
-        1.28433947,
-        103.86151825
-      ],
-      "line": [
-        [
-          1.2843284,
-          103.86160875
-        ],
-        [
-          1.28435054,
-          103.86142776
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g15",
-      "gantryNo": "28",
-      "uniqueId": "803",
-      "groupId": null,
-      "label": "Gantry 28",
-      "center": [
-        1.27442008,
-        103.86056154
-      ],
-      "line": [
-        [
-          1.27450685,
-          103.86061835
-        ],
-        [
-          1.27433331,
-          103.86050474
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g16",
-      "gantryNo": null,
-      "uniqueId": "827",
-      "groupId": null,
-      "label": "Unnumbered gantry",
-      "center": [
-        1.31006087,
-        103.8710006
-      ],
-      "line": [
-        [
-          1.30997487,
-          103.87099794
-        ],
-        [
-          1.31014687,
-          103.87100327
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g17",
-      "gantryNo": "7",
-      "uniqueId": "630",
-      "groupId": null,
-      "label": "Gantry 7",
-      "center": [
-        1.27300249,
-        103.84309861
-      ],
-      "line": [
-        [
-          1.27301913,
-          103.8430276
-        ],
-        [
-          1.27298586,
-          103.84316961
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g18",
-      "gantryNo": "86",
-      "uniqueId": "631",
-      "groupId": null,
-      "label": "Gantry 86",
-      "center": [
-        1.33517765,
-        103.88822981
-      ],
-      "line": [
-        [
-          1.33519326,
-          103.88826505
-        ],
-        [
-          1.33516204,
-          103.88819457
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g19",
-      "gantryNo": "808",
-      "uniqueId": "632",
-      "groupId": null,
-      "label": "Gantry 808",
-      "center": [
-        1.34468215,
-        103.89895604
-      ],
-      "line": [
-        [
-          1.3446785,
-          103.89891496
-        ],
-        [
-          1.3446858,
-          103.89899713
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g20",
-      "gantryNo": "88",
-      "uniqueId": "633",
-      "groupId": null,
-      "label": "Gantry 88",
-      "center": [
-        1.34232677,
-        103.89899898
-      ],
-      "line": [
-        [
-          1.34234718,
-          103.89895334
-        ],
-        [
-          1.34230635,
-          103.89904462
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g21",
-      "gantryNo": "87",
-      "uniqueId": "634",
-      "groupId": null,
-      "label": "Gantry 87",
-      "center": [
-        1.33916351,
-        103.89711667
-      ],
-      "line": [
-        [
-          1.33919543,
-          103.89707687
-        ],
-        [
-          1.3391316,
-          103.89715647
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g22",
-      "gantryNo": "807",
-      "uniqueId": "635",
-      "groupId": null,
-      "label": "Gantry 807",
-      "center": [
-        1.33426734,
-        103.89176904
-      ],
-      "line": [
-        [
-          1.33430276,
-          103.89174985
-        ],
-        [
-          1.33423193,
-          103.89178823
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g23",
-      "gantryNo": "85",
-      "uniqueId": "636",
-      "groupId": null,
-      "label": "Gantry 85",
-      "center": [
-        1.31986477,
-        103.87624404
-      ],
-      "line": [
-        [
-          1.31990713,
-          103.87626049
-        ],
-        [
-          1.31982242,
-          103.87622758
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g24",
-      "gantryNo": "804",
-      "uniqueId": "637",
-      "groupId": null,
-      "label": "Gantry 804",
-      "center": [
-        1.31827277,
-        103.87489092
-      ],
-      "line": [
-        [
-          1.31828903,
-          103.87483739
-        ],
-        [
-          1.31825651,
-          103.87494445
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g25",
-      "gantryNo": "82",
-      "uniqueId": "638",
-      "groupId": null,
-      "label": "Gantry 82",
-      "center": [
-        1.31704829,
-        103.87452341
-      ],
-      "line": [
-        [
-          1.31704175,
-          103.87457316
-        ],
-        [
-          1.31705484,
-          103.87447366
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g26",
-      "gantryNo": "83",
-      "uniqueId": "639",
-      "groupId": null,
-      "label": "Gantry 83",
-      "center": [
-        1.31639071,
-        103.87481799
-      ],
-      "line": [
-        [
-          1.31639913,
-          103.87476781
-        ],
-        [
-          1.31638229,
-          103.87486817
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g27",
-      "gantryNo": "805",
-      "uniqueId": "640",
-      "groupId": null,
-      "label": "Gantry 805",
-      "center": [
-        1.31570139,
-        103.87495089
-      ],
-      "line": [
-        [
-          1.31570446,
-          103.87490524
-        ],
-        [
-          1.31569833,
-          103.87499655
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g28",
-      "gantryNo": null,
-      "uniqueId": "643",
-      "groupId": null,
-      "label": "Unnumbered gantry",
-      "center": [
-        1.29545144,
-        103.8721557
-      ],
-      "line": [
-        [
-          1.29557776,
-          103.87215427
-        ],
-        [
-          1.29532512,
-          103.87215713
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g29",
-      "gantryNo": "802",
-      "uniqueId": "644",
-      "groupId": null,
-      "label": "Gantry 802",
-      "center": [
-        1.29470711,
-        103.87442339
-      ],
-      "line": [
-        [
-          1.29476426,
-          103.87433466
-        ],
-        [
-          1.29464996,
-          103.87451212
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g30",
-      "gantryNo": null,
-      "uniqueId": "645",
-      "groupId": null,
-      "label": "Unnumbered gantry",
-      "center": [
-        1.33315444,
-        103.86185366
-      ],
-      "line": [
-        [
-          1.33312011,
-          103.86192525
-        ],
-        [
-          1.33318876,
-          103.86178207
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g31",
-      "gantryNo": null,
-      "uniqueId": "646",
-      "groupId": null,
-      "label": "Unnumbered gantry",
-      "center": [
-        1.33337239,
-        103.86241903
-      ],
-      "line": [
-        [
-          1.33336651,
-          103.86225991
-        ],
-        [
-          1.33337827,
-          103.86257814
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g32",
-      "gantryNo": "806",
-      "uniqueId": "652",
-      "groupId": null,
-      "label": "Gantry 806",
-      "center": [
-        1.32248906,
-        103.87401198
-      ],
-      "line": [
-        [
-          1.32251636,
-          103.87404219
-        ],
-        [
-          1.32246176,
-          103.87398177
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g33",
-      "gantryNo": null,
-      "uniqueId": "664",
-      "groupId": null,
-      "label": "Unnumbered gantry",
-      "center": [
-        1.39015244,
-        103.86123032
-      ],
-      "line": [
-        [
-          1.39015509,
-          103.86123135
-        ],
-        [
-          1.39014978,
-          103.8612293
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g34",
-      "gantryNo": "69",
-      "uniqueId": "667",
-      "groupId": null,
-      "label": "Gantry 69",
-      "center": [
-        1.28542957,
-        103.8608842
-      ],
-      "line": [
-        [
-          1.28543317,
-          103.860808
-        ],
-        [
-          1.28542597,
-          103.86096041
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g35",
-      "gantryNo": null,
-      "uniqueId": "1822",
-      "groupId": null,
-      "label": "Unnumbered gantry",
-      "center": [
-        1.29292035,
-        103.84401881
-      ],
-      "line": [
-        [
-          1.29295863,
-          103.84404686
-        ],
-        [
-          1.29288207,
-          103.84399076
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g36",
-      "gantryNo": null,
-      "uniqueId": "1823",
-      "groupId": null,
-      "label": "Unnumbered gantry",
-      "center": [
-        1.29299345,
-        103.84393563
-      ],
-      "line": [
-        [
-          1.29295237,
-          103.84390594
-        ],
-        [
-          1.29303452,
-          103.84396532
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g37",
-      "gantryNo": null,
-      "uniqueId": "1821",
-      "groupId": null,
-      "label": "Unnumbered gantry",
-      "center": [
-        1.29295606,
-        103.84397146
-      ],
-      "line": [
-        [
-          1.29291778,
-          103.84394341
-        ],
-        [
-          1.29299434,
-          103.84399951
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g38",
-      "gantryNo": null,
-      "uniqueId": "2464",
-      "groupId": null,
-      "label": "Unnumbered gantry",
-      "center": [
-        1.35313708,
-        103.76968217
-      ],
-      "line": [
-        [
-          1.35312051,
-          103.76961704
-        ],
-        [
-          1.35315364,
-          103.7697473
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g39",
-      "gantryNo": null,
-      "uniqueId": "2463",
-      "groupId": null,
-      "label": "Unnumbered gantry",
-      "center": [
-        1.35304512,
-        103.76970714
-      ],
-      "line": [
-        [
-          1.35302785,
-          103.76963674
-        ],
-        [
-          1.35306239,
-          103.76977754
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g40",
-      "gantryNo": "56",
-      "uniqueId": "680",
-      "groupId": "56",
-      "label": "Lorong 6 Toa Payoh from Braddell Road",
-      "center": [
-        1.34092092,
-        103.85341191
-      ],
-      "line": [
-        [
-          1.34094966,
-          103.85332387
-        ],
-        [
-          1.34089217,
-          103.85349994
-        ]
-      ],
-      "isPriced": true
-    },
-    {
-      "id": "g41",
-      "gantryNo": "49",
-      "uniqueId": "684",
-      "groupId": null,
-      "label": "Gantry 49",
-      "center": [
-        1.29773266,
-        103.84639282
-      ],
-      "line": [
-        [
-          1.29768453,
-          103.84635544
-        ],
-        [
-          1.29778079,
-          103.8464302
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g42",
-      "gantryNo": "801",
-      "uniqueId": "692",
-      "groupId": null,
-      "label": "Gantry 801",
-      "center": [
-        1.29565951,
-        103.87412447
-      ],
-      "line": [
-        [
-          1.29570838,
-          103.87412111
-        ],
-        [
-          1.29561065,
-          103.87412784
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g43",
-      "gantryNo": "OS041",
-      "uniqueId": "695",
-      "groupId": null,
-      "label": "Gantry OS041",
-      "center": [
-        1.30111137,
-        103.77665262
-      ],
-      "line": [
-        [
-          1.30103406,
-          103.77660077
-        ],
-        [
-          1.30118869,
-          103.77670447
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g44",
-      "gantryNo": "29",
-      "uniqueId": "699",
-      "groupId": null,
-      "label": "Gantry 29",
-      "center": [
-        1.27464483,
-        103.85007079
-      ],
-      "line": [
-        [
-          1.27469975,
-          103.85013218
-        ],
-        [
-          1.2745899,
-          103.8500094
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g45",
-      "gantryNo": "OS074",
-      "uniqueId": "703",
-      "groupId": null,
-      "label": "Gantry OS074",
-      "center": [
-        1.31637347,
-        103.7587142
-      ],
-      "line": [
-        [
-          1.31643174,
-          103.75878036
-        ],
-        [
-          1.3163152,
-          103.75864803
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g46",
-      "gantryNo": "91",
-      "uniqueId": "704",
-      "groupId": "90,91",
-      "label": "MCE westbound before exits to Central Boulevard and Maxwell Road",
-      "center": [
-        1.27065366,
-        103.85665705
-      ],
-      "line": [
-        [
-          1.27053638,
-          103.85659146
-        ],
-        [
-          1.27077095,
-          103.85672265
-        ]
-      ],
-      "isPriced": true
-    },
-    {
-      "id": "g47",
-      "gantryNo": null,
-      "uniqueId": "705",
-      "groupId": null,
-      "label": "Unnumbered gantry",
-      "center": [
-        1.29535663,
-        103.87676806
-      ],
-      "line": [
-        [
-          1.29545389,
-          103.8767646
-        ],
-        [
-          1.29525937,
-          103.87677152
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g48",
-      "gantryNo": "48",
-      "uniqueId": "708",
-      "groupId": null,
-      "label": "Gantry 48",
-      "center": [
-        1.29873746,
-        103.84806464
-      ],
-      "line": [
-        [
-          1.29882875,
-          103.84806015
-        ],
-        [
-          1.29864616,
-          103.84806913
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g49",
-      "gantryNo": null,
-      "uniqueId": "834",
-      "groupId": null,
-      "label": "Unnumbered gantry",
-      "center": [
-        1.32608873,
-        103.86052906
-      ],
-      "line": [
-        [
-          1.32616379,
-          103.86045822
-        ],
-        [
-          1.32601366,
-          103.8605999
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g50",
-      "gantryNo": null,
-      "uniqueId": "838",
-      "groupId": null,
-      "label": "Unnumbered gantry",
-      "center": [
-        1.33274299,
-        103.8621805
-      ],
-      "line": [
-        [
-          1.33273528,
-          103.86208039
-        ],
-        [
-          1.3327507,
-          103.86228061
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g51",
-      "gantryNo": null,
-      "uniqueId": "839",
-      "groupId": null,
-      "label": "Unnumbered gantry",
-      "center": [
-        1.33315444,
-        103.86185366
-      ],
-      "line": [
-        [
-          1.33312011,
-          103.86192525
-        ],
-        [
-          1.33318876,
-          103.86178207
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g52",
-      "gantryNo": null,
-      "uniqueId": "840",
-      "groupId": null,
-      "label": "Unnumbered gantry",
-      "center": [
-        1.33337239,
-        103.86241903
-      ],
-      "line": [
-        [
-          1.33336651,
-          103.86225991
-        ],
-        [
-          1.33337827,
-          103.86257814
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g53",
-      "gantryNo": "47",
-      "uniqueId": "711",
-      "groupId": null,
-      "label": "Gantry 47",
-      "center": [
-        1.29802505,
-        103.84799334
-      ],
-      "line": [
-        [
-          1.29795807,
-          103.84793865
-        ],
-        [
-          1.29809204,
-          103.84804804
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g54",
-      "gantryNo": null,
-      "uniqueId": "717",
-      "groupId": null,
-      "label": "Unnumbered gantry",
-      "center": [
-        1.29535663,
-        103.87676806
-      ],
-      "line": [
-        [
-          1.29545389,
-          103.8767646
-        ],
-        [
-          1.29525937,
-          103.87677152
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g55",
-      "gantryNo": "93",
-      "uniqueId": "720",
-      "groupId": "92,93",
-      "label": "MCE eastbound after Maxwell Road / Marina Boulevard",
-      "center": [
-        1.27105162,
-        103.85649558
-      ],
-      "line": [
-        [
-          1.27093829,
-          103.85643049
-        ],
-        [
-          1.27116494,
-          103.85656066
-        ]
-      ],
-      "isPriced": true
-    },
-    {
-      "id": "g56",
-      "gantryNo": "81",
-      "uniqueId": "722",
-      "groupId": null,
-      "label": "Gantry 81",
-      "center": [
-        1.29587098,
-        103.88012893
-      ],
-      "line": [
-        [
-          1.29582619,
-          103.88013027
-        ],
-        [
-          1.29591577,
-          103.8801276
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g57",
-      "gantryNo": "90",
-      "uniqueId": "723",
-      "groupId": "90,91",
-      "label": "MCE westbound before exits to Central Boulevard and Maxwell Road",
-      "center": [
-        1.27499069,
-        103.86703441
-      ],
-      "line": [
-        [
-          1.27501785,
-          103.86701538
-        ],
-        [
-          1.27496353,
-          103.86705345
-        ]
-      ],
-      "isPriced": true
-    },
-    {
-      "id": "g58",
-      "gantryNo": "40",
-      "uniqueId": "738",
-      "groupId": "40,71",
-      "label": "Bendemeer Road southbound after Woodsville Interchange / Woodsville Tunnel",
-      "center": [
-        1.32724732,
-        103.86846707
-      ],
-      "line": [
-        [
-          1.32721368,
-          103.86852972
-        ],
-        [
-          1.32728096,
-          103.86840443
-        ]
-      ],
-      "isPriced": true
-    },
-    {
-      "id": "g59",
-      "gantryNo": "57",
-      "uniqueId": "743",
-      "groupId": "57",
-      "label": "Kallang Bahru from PIE",
-      "center": [
-        1.3219407,
-        103.87283554
-      ],
-      "line": [
-        [
-          1.32189133,
-          103.87286601
-        ],
-        [
-          1.32199006,
-          103.87280508
-        ]
-      ],
-      "isPriced": true
-    },
-    {
-      "id": "g60",
-      "gantryNo": null,
-      "uniqueId": "751",
-      "groupId": null,
-      "label": "Unnumbered gantry",
-      "center": [
-        1.35355246,
-        103.78777857
-      ],
-      "line": [
-        [
-          1.35362456,
-          103.78782478
-        ],
-        [
-          1.35348037,
-          103.78773236
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g61",
-      "gantryNo": null,
-      "uniqueId": "757",
-      "groupId": null,
-      "label": "Unnumbered gantry",
-      "center": [
-        1.34659194,
-        103.85938684
-      ],
-      "line": [
-        [
-          1.34654314,
-          103.85925495
-        ],
-        [
-          1.34664074,
-          103.85951872
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g62",
-      "gantryNo": "OS052",
-      "uniqueId": "769",
-      "groupId": null,
-      "label": "Gantry OS052",
-      "center": [
-        1.31516278,
-        103.76085852
-      ],
-      "line": [
-        [
-          1.31515598,
-          103.76089912
-        ],
-        [
-          1.31516959,
-          103.76081792
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g63",
-      "gantryNo": "3",
-      "uniqueId": "775",
-      "groupId": null,
-      "label": "Gantry 3",
-      "center": [
-        1.28069662,
-        103.84028047
-      ],
-      "line": [
-        [
-          1.28064836,
-          103.84033999
-        ],
-        [
-          1.28074487,
-          103.84022094
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g64",
-      "gantryNo": "36",
-      "uniqueId": "155",
-      "groupId": "36",
-      "label": "AYE before Alexandra Road towards City",
-      "center": [
-        1.28674338,
-        103.79680174
-      ],
-      "line": [
-        [
-          1.28683423,
-          103.79685296
-        ],
-        [
-          1.28665254,
-          103.79675052
-        ]
-      ],
-      "isPriced": true
-    },
-    {
-      "id": "g65",
-      "gantryNo": "6",
-      "uniqueId": "156",
-      "groupId": null,
-      "label": "Gantry 6",
-      "center": [
-        1.27330708,
-        103.8444154
-      ],
-      "line": [
-        [
-          1.2733541,
-          103.84435724
-        ],
-        [
-          1.27326005,
-          103.84447356
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g66",
-      "gantryNo": "58",
-      "uniqueId": "315",
-      "groupId": "58",
-      "label": "Geylang Bahru westbound after Geylang Bahru Terrace",
-      "center": [
-        1.32014842,
-        103.87176264
-      ],
-      "line": [
-        [
-          1.32012501,
-          103.87172082
-        ],
-        [
-          1.32017184,
-          103.87180445
-        ]
-      ],
-      "isPriced": true
-    },
-    {
-      "id": "g67",
-      "gantryNo": "42",
-      "uniqueId": "316",
-      "groupId": "42",
-      "label": "PIE slip road into CTE",
-      "center": [
-        1.32900628,
-        103.86461626
-      ],
-      "line": [
-        [
-          1.32905007,
-          103.86461435
-        ],
-        [
-          1.32896248,
-          103.86461817
-        ]
-      ],
-      "isPriced": true
-    },
-    {
-      "id": "g68",
-      "gantryNo": "33",
-      "uniqueId": "317",
-      "groupId": "31,33,34",
-      "label": "CTE after Braddell Road / Serangoon Road / Balestier slip road",
-      "center": [
-        1.32908422,
-        103.86461181
-      ],
-      "line": [
-        [
-          1.3291173,
-          103.8646103
-        ],
-        [
-          1.32905114,
-          103.86461333
-        ]
-      ],
-      "isPriced": true
-    },
-    {
-      "id": "g69",
-      "gantryNo": "80",
-      "uniqueId": "318",
-      "groupId": "80",
-      "label": "KPE slip road into citybound ECP",
-      "center": [
-        1.29387718,
-        103.87538193
-      ],
-      "line": [
-        [
-          1.29392762,
-          103.87536315
-        ],
-        [
-          1.29382674,
-          103.87540071
-        ]
-      ],
-      "isPriced": true
-    },
-    {
-      "id": "g70",
-      "gantryNo": "4",
-      "uniqueId": "319",
-      "groupId": null,
-      "label": "Gantry 4",
-      "center": [
-        1.30064214,
-        103.83493704
-      ],
-      "line": [
-        [
-          1.30067556,
-          103.83487943
-        ],
-        [
-          1.30060871,
-          103.83499465
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g71",
-      "gantryNo": "61",
-      "uniqueId": "321",
-      "groupId": null,
-      "label": "Gantry 61",
-      "center": [
-        1.28926006,
-        103.84771215
-      ],
-      "line": [
-        [
-          1.28932446,
-          103.84763731
-        ],
-        [
-          1.28919566,
-          103.84778699
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g72",
-      "gantryNo": "66",
-      "uniqueId": "322",
-      "groupId": null,
-      "label": "Gantry 66",
-      "center": [
-        1.28543749,
-        103.86073824
-      ],
-      "line": [
-        [
-          1.28544227,
-          103.86067474
-        ],
-        [
-          1.28543271,
-          103.86080173
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g73",
-      "gantryNo": "89",
-      "uniqueId": "326",
-      "groupId": null,
-      "label": "Gantry 89",
-      "center": [
-        1.35952878,
-        103.90316723
-      ],
-      "line": [
-        [
-          1.35947746,
-          103.90325806
-        ],
-        [
-          1.35958011,
-          103.9030764
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g74",
-      "gantryNo": "809",
-      "uniqueId": "327",
-      "groupId": null,
-      "label": "Gantry 809",
-      "center": [
-        1.35955938,
-        103.90341699
-      ],
-      "line": [
-        [
-          1.3596108,
-          103.90332808
-        ],
-        [
-          1.35950797,
-          103.90350589
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g75",
-      "gantryNo": "64",
-      "uniqueId": "329",
-      "groupId": null,
-      "label": "Gantry 64",
-      "center": [
-        1.28595913,
-        103.85378637
-      ],
-      "line": [
-        [
-          1.28599607,
-          103.85370242
-        ],
-        [
-          1.2859222,
-          103.85387032
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g76",
-      "gantryNo": "63",
-      "uniqueId": "330",
-      "groupId": null,
-      "label": "Gantry 63",
-      "center": [
-        1.28596158,
-        103.85358693
-      ],
-      "line": [
-        [
-          1.28599989,
-          103.85350129
-        ],
-        [
-          1.28592327,
-          103.85367257
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g77",
-      "gantryNo": null,
-      "uniqueId": "331",
-      "groupId": null,
-      "label": "Unnumbered gantry",
-      "center": [
-        1.34659194,
-        103.85938684
-      ],
-      "line": [
-        [
-          1.34654314,
-          103.85925495
-        ],
-        [
-          1.34664074,
-          103.85951872
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g78",
-      "gantryNo": "92",
-      "uniqueId": "333",
-      "groupId": "92,93",
-      "label": "MCE eastbound after Maxwell Road / Marina Boulevard",
-      "center": [
-        1.274653,
-        103.86577331
-      ],
-      "line": [
-        [
-          1.27469222,
-          103.86573993
-        ],
-        [
-          1.27461378,
-          103.86580668
-        ]
-      ],
-      "isPriced": true
-    },
-    {
-      "id": "g79",
-      "gantryNo": "OS053",
-      "uniqueId": "334",
-      "groupId": null,
-      "label": "Gantry OS053",
-      "center": [
-        1.30882455,
-        103.76641106
-      ],
-      "line": [
-        [
-          1.30884224,
-          103.7663703
-        ],
-        [
-          1.30880686,
-          103.76645181
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g80",
-      "gantryNo": "44",
-      "uniqueId": "335",
-      "groupId": "43,44",
-      "label": "Dunearn Road eastbound after Dunkirk Avenue",
-      "center": [
-        1.32113521,
-        103.82530284
-      ],
-      "line": [
-        [
-          1.32117462,
-          103.82531351
-        ],
-        [
-          1.3210958,
-          103.82529217
-        ]
-      ],
-      "isPriced": true
-    },
-    {
-      "id": "g81",
-      "gantryNo": "27",
-      "uniqueId": "336",
-      "groupId": null,
-      "label": "Gantry 27",
-      "center": [
-        1.30569788,
-        103.8376474
-      ],
-      "line": [
-        [
-          1.30574904,
-          103.83762044
-        ],
-        [
-          1.30564672,
-          103.83767436
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g82",
-      "gantryNo": "24",
-      "uniqueId": "157",
-      "groupId": null,
-      "label": "Gantry 24",
-      "center": [
-        1.29004843,
-        103.84239694
-      ],
-      "line": [
-        [
-          1.29001339,
-          103.84237508
-        ],
-        [
-          1.29008347,
-          103.8424188
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g83",
-      "gantryNo": "5",
-      "uniqueId": "230",
-      "groupId": null,
-      "label": "Gantry 5",
-      "center": [
-        1.27346745,
-        103.84186698
-      ],
-      "line": [
-        [
-          1.27341132,
-          103.84187006
-        ],
-        [
-          1.27352357,
-          103.8418639
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g84",
-      "gantryNo": "28",
-      "uniqueId": "231",
-      "groupId": null,
-      "label": "Gantry 28",
-      "center": [
-        1.30425651,
-        103.8663643
-      ],
-      "line": [
-        [
-          1.30421401,
-          103.86631064
-        ],
-        [
-          1.30429901,
-          103.86641797
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g85",
-      "gantryNo": "38",
-      "uniqueId": "232",
-      "groupId": "37,38",
-      "label": "PIE eastbound after Adam Road / Mount Pleasant slip road",
-      "center": [
-        1.32760504,
-        103.82831745
-      ],
-      "line": [
-        [
-          1.32765682,
-          103.82833519
-        ],
-        [
-          1.32755326,
-          103.82829971
-        ]
-      ],
-      "isPriced": true
-    },
-    {
-      "id": "g86",
-      "gantryNo": "13",
-      "uniqueId": "233",
-      "groupId": null,
-      "label": "Gantry 13",
-      "center": [
-        1.30479513,
-        103.83223961
-      ],
-      "line": [
-        [
-          1.30472381,
-          103.83219798
-        ],
-        [
-          1.30486645,
-          103.83228124
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g87",
-      "gantryNo": "15",
-      "uniqueId": "545",
-      "groupId": null,
-      "label": "Gantry 15",
-      "center": [
-        1.29951353,
-        103.83983073
-      ],
-      "line": [
-        [
-          1.29955952,
-          103.83977612
-        ],
-        [
-          1.29946754,
-          103.83988535
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g88",
-      "gantryNo": "12",
-      "uniqueId": "546",
-      "groupId": null,
-      "label": "Gantry 12",
-      "center": [
-        1.29925429,
-        103.84138305
-      ],
-      "line": [
-        [
-          1.29926874,
-          103.84133891
-        ],
-        [
-          1.29923984,
-          103.84142718
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g89",
-      "gantryNo": "20",
-      "uniqueId": "547",
-      "groupId": null,
-      "label": "Gantry 20",
-      "center": [
-        1.28780232,
-        103.84272057
-      ],
-      "line": [
-        [
-          1.28776022,
-          103.8427148
-        ],
-        [
-          1.28784443,
-          103.84272635
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g90",
-      "gantryNo": "60",
-      "uniqueId": "597",
-      "groupId": null,
-      "label": "Gantry 60",
-      "center": [
-        1.28938975,
-        103.84759782
-      ],
-      "line": [
-        [
-          1.2894512,
-          103.84752491
-        ],
-        [
-          1.28932829,
-          103.84767073
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g91",
-      "gantryNo": "14",
-      "uniqueId": "598",
-      "groupId": null,
-      "label": "Gantry 14",
-      "center": [
-        1.30352569,
-        103.83263981
-      ],
-      "line": [
-        [
-          1.30357322,
-          103.83258863
-        ],
-        [
-          1.30347816,
-          103.83269099
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g92",
-      "gantryNo": "19",
-      "uniqueId": "599",
-      "groupId": null,
-      "label": "Gantry 19",
-      "center": [
-        1.28844089,
-        103.84159063
-      ],
-      "line": [
-        [
-          1.28851018,
-          103.84163499
-        ],
-        [
-          1.28837159,
-          103.84154627
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g93",
-      "gantryNo": "21",
-      "uniqueId": "612",
-      "groupId": null,
-      "label": "Gantry 21",
-      "center": [
-        1.30056834,
-        103.84319357
-      ],
-      "line": [
-        [
-          1.30058418,
-          103.84314106
-        ],
-        [
-          1.30055249,
-          103.84324607
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g94",
-      "gantryNo": "26",
-      "uniqueId": "613",
-      "groupId": null,
-      "label": "Gantry 26",
-      "center": [
-        1.29770344,
-        103.84371146
-      ],
-      "line": [
-        [
-          1.29770639,
-          103.84377266
-        ],
-        [
-          1.29770048,
-          103.84365026
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g95",
-      "gantryNo": "39",
-      "uniqueId": "614",
-      "groupId": "39",
-      "label": "Thomson Road southbound after Toa Payoh Rise",
-      "center": [
-        1.3362941,
-        103.83720611
-      ],
-      "line": [
-        [
-          1.33630637,
-          103.83714739
-        ],
-        [
-          1.33628182,
-          103.83726482
-        ]
-      ],
-      "isPriced": true
-    },
-    {
-      "id": "g96",
-      "gantryNo": "22",
-      "uniqueId": "615",
-      "groupId": null,
-      "label": "Gantry 22",
-      "center": [
-        1.30162151,
-        103.84198744
-      ],
-      "line": [
-        [
-          1.30166655,
-          103.8420018
-        ],
-        [
-          1.30157646,
-          103.84197307
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g97",
-      "gantryNo": "34",
-      "uniqueId": "616",
-      "groupId": "31,33,34",
-      "label": "CTE after Braddell Road / Serangoon Road / Balestier slip road",
-      "center": [
-        1.31835646,
-        103.85164163
-      ],
-      "line": [
-        [
-          1.31839072,
-          103.85163159
-        ],
-        [
-          1.3183222,
-          103.85165168
-        ]
-      ],
-      "isPriced": true
-    },
-    {
-      "id": "g98",
-      "gantryNo": "25",
-      "uniqueId": "617",
-      "groupId": null,
-      "label": "Gantry 25",
-      "center": [
-        1.2886991,
-        103.84441655
-      ],
-      "line": [
-        [
-          1.28867461,
-          103.84439734
-        ],
-        [
-          1.28872359,
-          103.84443576
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g99",
-      "gantryNo": "43",
-      "uniqueId": "618",
-      "groupId": "43,44",
-      "label": "Dunearn Road eastbound after Dunkirk Avenue",
-      "center": [
-        1.32157693,
-        103.82363612
-      ],
-      "line": [
-        [
-          1.3216461,
-          103.82365993
-        ],
-        [
-          1.32150776,
-          103.82361232
-        ]
-      ],
-      "isPriced": true
-    },
-    {
-      "id": "g100",
-      "gantryNo": "17",
-      "uniqueId": "619",
-      "groupId": null,
-      "label": "Gantry 17",
-      "center": [
-        1.29599773,
-        103.85968708
-      ],
-      "line": [
-        [
-          1.29603139,
-          103.85963953
-        ],
-        [
-          1.29596408,
-          103.85973464
-        ]
-      ],
-      "isPriced": false
-    },
-    {
-      "id": "g101",
-      "gantryNo": "32",
-      "uniqueId": "621",
-      "groupId": "32,45",
-      "label": "PIE after Kallang Bahru exit / slip road into Bendemeer Road",
-      "center": [
-        1.326321,
-        103.87050593
-      ],
-      "line": [
-        [
-          1.3263922,
-          103.87057496
-        ],
-        [
-          1.32624981,
-          103.87043691
-        ]
-      ],
-      "isPriced": true
-    },
-    {
-      "id": "g102",
-      "gantryNo": "45",
-      "uniqueId": "622",
-      "groupId": "32,45",
-      "label": "PIE after Kallang Bahru exit / slip road into Bendemeer Road",
-      "center": [
-        1.32622184,
-        103.87040621
-      ],
-      "line": [
-        [
-          1.32624805,
-          103.87043368
-        ],
-        [
-          1.32619562,
-          103.87037873
-        ]
-      ],
-      "isPriced": true
-    },
-    {
-      "id": "g103",
-      "gantryNo": "37",
-      "uniqueId": "623",
-      "groupId": "37,38",
-      "label": "PIE eastbound after Adam Road / Mount Pleasant slip road",
-      "center": [
-        1.33068386,
-        103.81990126
-      ],
-      "line": [
-        [
-          1.33077958,
-          103.81993393
-        ],
-        [
-          1.33058814,
-          103.81986858
-        ]
-      ],
-      "isPriced": true
-    },
-    {
-      "id": "g104",
+      "id": "g2",
       "gantryNo": "2",
-      "uniqueId": "624",
+      "rawGantryNo": "2",
+      "uniqueId": null,
       "groupId": null,
-      "label": "Gantry 2",
+      "label": "Nicoll Highway",
+      "directionDegrees": null,
       "center": [
-        1.29963288,
-        103.86194509
+        1.29976191,
+        103.86197962
       ],
       "line": [
         [
@@ -2511,14 +280,343 @@
       "isPriced": false
     },
     {
-      "id": "g105",
-      "gantryNo": "18",
-      "uniqueId": "625",
+      "id": "g3",
+      "gantryNo": "3",
+      "rawGantryNo": "3",
+      "uniqueId": null,
       "groupId": null,
-      "label": "Gantry 18",
+      "label": "Eu Tong Sen Street",
+      "directionDegrees": null,
       "center": [
-        1.29621664,
-        103.86240585
+        1.28096603,
+        103.84049954
+      ],
+      "line": [
+        [
+          1.28064836,
+          103.84033999
+        ],
+        [
+          1.28074487,
+          103.84022094
+        ]
+      ],
+      "isPriced": false
+    },
+    {
+      "id": "g4",
+      "gantryNo": "4",
+      "rawGantryNo": "4",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "Orchard Link",
+      "directionDegrees": null,
+      "center": [
+        1.30053588,
+        103.83491524
+      ],
+      "line": [
+        [
+          1.30067556,
+          103.83487943
+        ],
+        [
+          1.30060871,
+          103.83499465
+        ]
+      ],
+      "isPriced": false
+    },
+    {
+      "id": "g5",
+      "gantryNo": "5",
+      "rawGantryNo": "5",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "Lim Teck Kim Road",
+      "directionDegrees": null,
+      "center": [
+        1.273484,
+        103.84187672
+      ],
+      "line": [
+        [
+          1.27341132,
+          103.84187006
+        ],
+        [
+          1.27352357,
+          103.8418639
+        ]
+      ],
+      "isPriced": false
+    },
+    {
+      "id": "g6",
+      "gantryNo": "6",
+      "rawGantryNo": "6",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "Anson Road",
+      "directionDegrees": null,
+      "center": [
+        1.27317444,
+        103.84431536
+      ],
+      "line": [
+        [
+          1.2733541,
+          103.84435724
+        ],
+        [
+          1.27326005,
+          103.84447356
+        ]
+      ],
+      "isPriced": false
+    },
+    {
+      "id": "g7",
+      "gantryNo": "7",
+      "rawGantryNo": "7",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "Tanjong Pagar Road",
+      "directionDegrees": null,
+      "center": [
+        1.27297681,
+        103.8430888
+      ],
+      "line": [
+        [
+          1.27301913,
+          103.8430276
+        ],
+        [
+          1.27298586,
+          103.84316961
+        ]
+      ],
+      "isPriced": false
+    },
+    {
+      "id": "g8",
+      "gantryNo": "9",
+      "rawGantryNo": "9",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "Bencoolen Street",
+      "directionDegrees": null,
+      "center": [
+        1.30288452,
+        103.85360782
+      ],
+      "line": [],
+      "isPriced": false
+    },
+    {
+      "id": "g9",
+      "gantryNo": "10",
+      "rawGantryNo": "10",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "Queen Street",
+      "directionDegrees": null,
+      "center": [
+        1.30130151,
+        103.85495383
+      ],
+      "line": [
+        [
+          1.30133032,
+          103.85490772
+        ],
+        [
+          1.30125204,
+          103.85498835
+        ]
+      ],
+      "isPriced": false
+    },
+    {
+      "id": "g10",
+      "gantryNo": "11",
+      "rawGantryNo": "11",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "North Bridge Road",
+      "directionDegrees": null,
+      "center": [
+        1.29968661,
+        103.85651302
+      ],
+      "line": [
+        [
+          1.29966075,
+          103.85640441
+        ],
+        [
+          1.29958104,
+          103.85651028
+        ]
+      ],
+      "isPriced": false
+    },
+    {
+      "id": "g11",
+      "gantryNo": "12",
+      "rawGantryNo": "12",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "Oxley Road",
+      "directionDegrees": null,
+      "center": [
+        1.2991705,
+        103.84136058
+      ],
+      "line": [
+        [
+          1.29926874,
+          103.84133891
+        ],
+        [
+          1.29923984,
+          103.84142718
+        ]
+      ],
+      "isPriced": false
+    },
+    {
+      "id": "g12",
+      "gantryNo": "13",
+      "rawGantryNo": "13",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "Orchard Road",
+      "directionDegrees": null,
+      "center": [
+        1.30472626,
+        103.83241037
+      ],
+      "line": [
+        [
+          1.30472381,
+          103.83219798
+        ],
+        [
+          1.30486645,
+          103.83228124
+        ]
+      ],
+      "isPriced": false
+    },
+    {
+      "id": "g13",
+      "gantryNo": "14",
+      "rawGantryNo": "14",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "Orchard Turn",
+      "directionDegrees": null,
+      "center": [
+        1.30335266,
+        103.83249323
+      ],
+      "line": [
+        [
+          1.30357322,
+          103.83258863
+        ],
+        [
+          1.30347816,
+          103.83269099
+        ]
+      ],
+      "isPriced": false
+    },
+    {
+      "id": "g14",
+      "gantryNo": "15",
+      "rawGantryNo": "15",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "Killiney Road",
+      "directionDegrees": null,
+      "center": [
+        1.29937578,
+        103.83971695
+      ],
+      "line": [
+        [
+          1.29955952,
+          103.83977612
+        ],
+        [
+          1.29946754,
+          103.83988535
+        ]
+      ],
+      "isPriced": false
+    },
+    {
+      "id": "g15",
+      "gantryNo": "16",
+      "rawGantryNo": "16",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "Beach Road",
+      "directionDegrees": null,
+      "center": [
+        1.29818878,
+        103.85781411
+      ],
+      "line": [
+        [
+          1.2979959,
+          103.85765001
+        ],
+        [
+          1.29790206,
+          103.8577339
+        ]
+      ],
+      "isPriced": false
+    },
+    {
+      "id": "g16",
+      "gantryNo": "17",
+      "rawGantryNo": "17",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "Temasek Boulevard",
+      "directionDegrees": null,
+      "center": [
+        1.2960691,
+        103.86001489
+      ],
+      "line": [
+        [
+          1.29603139,
+          103.85963953
+        ],
+        [
+          1.29596408,
+          103.85973464
+        ]
+      ],
+      "isPriced": false
+    },
+    {
+      "id": "g17",
+      "gantryNo": "18",
+      "rawGantryNo": "18",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "Republic Boulevard",
+      "directionDegrees": null,
+      "center": [
+        1.29594985,
+        103.8624551
       ],
       "line": [
         [
@@ -2533,14 +631,895 @@
       "isPriced": false
     },
     {
-      "id": "g106",
+      "id": "g18",
+      "gantryNo": "19",
+      "rawGantryNo": "19",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "Havelock Road/Clemenceau Ave",
+      "directionDegrees": null,
+      "center": [
+        1.28845018,
+        103.84160151
+      ],
+      "line": [
+        [
+          1.28851018,
+          103.84163499
+        ],
+        [
+          1.28837159,
+          103.84154627
+        ]
+      ],
+      "isPriced": false
+    },
+    {
+      "id": "g19",
+      "gantryNo": "20",
+      "rawGantryNo": "20",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "Havelock Road/CTE Exit",
+      "directionDegrees": null,
+      "center": [
+        1.28787248,
+        103.84221034
+      ],
+      "line": [
+        [
+          1.28776022,
+          103.8427148
+        ],
+        [
+          1.28784443,
+          103.84272635
+        ]
+      ],
+      "isPriced": false
+    },
+    {
+      "id": "g20",
+      "gantryNo": "21",
+      "rawGantryNo": "21",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "Buyong Road",
+      "directionDegrees": null,
+      "center": [
+        1.30053526,
+        103.84311757
+      ],
+      "line": [
+        [
+          1.30058418,
+          103.84314106
+        ],
+        [
+          1.30055249,
+          103.84324607
+        ]
+      ],
+      "isPriced": false
+    },
+    {
+      "id": "g21",
+      "gantryNo": "22",
+      "rawGantryNo": "22",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "Kramat Road",
+      "directionDegrees": null,
+      "center": [
+        1.30160725,
+        103.84201176
+      ],
+      "line": [
+        [
+          1.30166655,
+          103.8420018
+        ],
+        [
+          1.30157646,
+          103.84197307
+        ]
+      ],
+      "isPriced": false
+    },
+    {
+      "id": "g22",
+      "gantryNo": "23",
+      "rawGantryNo": "23",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "River Valley Road",
+      "directionDegrees": null,
+      "center": [
+        1.29295673,
+        103.84385873
+      ],
+      "line": [],
+      "isPriced": false
+    },
+    {
+      "id": "g23",
+      "gantryNo": "24",
+      "rawGantryNo": "24",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "Merchant Road/Clemenceau Ave",
+      "directionDegrees": null,
+      "center": [
+        1.29004485,
+        103.84240226
+      ],
+      "line": [
+        [
+          1.29001339,
+          103.84237508
+        ],
+        [
+          1.29008347,
+          103.8424188
+        ]
+      ],
+      "isPriced": false
+    },
+    {
+      "id": "g24",
+      "gantryNo": "25",
+      "rawGantryNo": "25",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "Merchant Road/CTE Exit",
+      "directionDegrees": null,
+      "center": [
+        1.28886852,
+        103.84421296
+      ],
+      "line": [
+        [
+          1.28867461,
+          103.84439734
+        ],
+        [
+          1.28872359,
+          103.84443576
+        ]
+      ],
+      "isPriced": false
+    },
+    {
+      "id": "g25",
+      "gantryNo": "26",
+      "rawGantryNo": "26",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "Clemenceau Ave",
+      "directionDegrees": null,
+      "center": [
+        1.29783328,
+        103.84376237
+      ],
+      "line": [
+        [
+          1.29770639,
+          103.84377266
+        ],
+        [
+          1.29770048,
+          103.84365026
+        ]
+      ],
+      "isPriced": false
+    },
+    {
+      "id": "g26",
+      "gantryNo": "27",
+      "rawGantryNo": "27",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "Cairnhill Road",
+      "directionDegrees": null,
+      "center": [
+        1.30566827,
+        103.83747578
+      ],
+      "line": [
+        [
+          1.30574904,
+          103.83762044
+        ],
+        [
+          1.30564672,
+          103.83767436
+        ]
+      ],
+      "isPriced": false
+    },
+    {
+      "id": "g27",
+      "gantryNo": "28",
+      "rawGantryNo": "28",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "Central Boulevard",
+      "directionDegrees": null,
+      "center": [
+        1.27470728,
+        103.86004611
+      ],
+      "line": [
+        [
+          1.27450685,
+          103.86061835
+        ],
+        [
+          1.27433331,
+          103.86050474
+        ]
+      ],
+      "isPriced": false
+    },
+    {
+      "id": "g28",
+      "gantryNo": "29",
+      "rawGantryNo": "29",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "Maxwell Road",
+      "directionDegrees": null,
+      "center": [
+        1.27460394,
+        103.85006999
+      ],
+      "line": [
+        [
+          1.27469975,
+          103.85013218
+        ],
+        [
+          1.2745899,
+          103.8500094
+        ]
+      ],
+      "isPriced": false
+    },
+    {
+      "id": "g29",
+      "gantryNo": "30",
+      "rawGantryNo": "30",
+      "uniqueId": null,
+      "groupId": "30",
+      "label": "ECP towards City",
+      "directionDegrees": 270,
+      "center": [
+        1.29527,
+        103.8767
+      ],
+      "line": [],
+      "isPriced": true
+    },
+    {
+      "id": "g30",
+      "gantryNo": "31",
+      "rawGantryNo": "31",
+      "uniqueId": null,
+      "groupId": "31,33,34",
+      "label": "CTE after Braddell Road / Serangoon Road / Balestier slip road",
+      "directionDegrees": 180,
+      "center": [
+        1.33429776,
+        103.8623199
+      ],
+      "line": [],
+      "isPriced": true
+    },
+    {
+      "id": "g31",
+      "gantryNo": "32",
+      "rawGantryNo": "32",
+      "uniqueId": null,
+      "groupId": "32,45",
+      "label": "PIE after Kallang Bahru exit / slip road into Bendemeer Road",
+      "directionDegrees": 270,
+      "center": [
+        1.32632948,
+        103.87053296
+      ],
+      "line": [
+        [
+          1.3263922,
+          103.87057496
+        ],
+        [
+          1.32624981,
+          103.87043691
+        ]
+      ],
+      "isPriced": true
+    },
+    {
+      "id": "g32",
+      "gantryNo": "33",
+      "rawGantryNo": "33",
+      "uniqueId": null,
+      "groupId": "31,33,34",
+      "label": "CTE after Braddell Road / Serangoon Road / Balestier slip road",
+      "directionDegrees": 180,
+      "center": [
+        1.32910419,
+        103.8645704
+      ],
+      "line": [
+        [
+          1.3291173,
+          103.8646103
+        ],
+        [
+          1.32905114,
+          103.86461333
+        ]
+      ],
+      "isPriced": true
+    },
+    {
+      "id": "g33",
+      "gantryNo": "34",
+      "rawGantryNo": "34",
+      "uniqueId": null,
+      "groupId": "31,33,34",
+      "label": "CTE after Braddell Road / Serangoon Road / Balestier slip road",
+      "directionDegrees": 180,
+      "center": [
+        1.31845461,
+        103.85211101
+      ],
+      "line": [
+        [
+          1.31839072,
+          103.85163159
+        ],
+        [
+          1.3183222,
+          103.85165168
+        ]
+      ],
+      "isPriced": true
+    },
+    {
+      "id": "g34",
+      "gantryNo": "35",
+      "rawGantryNo": "35",
+      "uniqueId": null,
+      "groupId": "35",
+      "label": "CTE between Ang Mo Kio Avenue 1 and Braddell Road",
+      "directionDegrees": null,
+      "center": [
+        1.34630899,
+        103.8595446
+      ],
+      "line": [],
+      "isPriced": true
+    },
+    {
+      "id": "g35",
+      "gantryNo": "36",
+      "rawGantryNo": "36",
+      "uniqueId": null,
+      "groupId": "36",
+      "label": "AYE before Alexandra Road towards City",
+      "directionDegrees": 90,
+      "center": [
+        1.28740122,
+        103.79572555
+      ],
+      "line": [
+        [
+          1.28683423,
+          103.79685296
+        ],
+        [
+          1.28665254,
+          103.79675052
+        ]
+      ],
+      "isPriced": true
+    },
+    {
+      "id": "g36",
+      "gantryNo": "37",
+      "rawGantryNo": "37",
+      "uniqueId": null,
+      "groupId": "37,38",
+      "label": "PIE eastbound after Adam Road / Mount Pleasant slip road",
+      "directionDegrees": 90,
+      "center": [
+        1.33059598,
+        103.82006968
+      ],
+      "line": [
+        [
+          1.33077958,
+          103.81993393
+        ],
+        [
+          1.33058814,
+          103.81986858
+        ]
+      ],
+      "isPriced": true
+    },
+    {
+      "id": "g37",
+      "gantryNo": "38",
+      "rawGantryNo": "38",
+      "uniqueId": null,
+      "groupId": "37,38",
+      "label": "PIE eastbound after Adam Road / Mount Pleasant slip road",
+      "directionDegrees": 90,
+      "center": [
+        1.32729265,
+        103.82917688
+      ],
+      "line": [
+        [
+          1.32765682,
+          103.82833519
+        ],
+        [
+          1.32755326,
+          103.82829971
+        ]
+      ],
+      "isPriced": true
+    },
+    {
+      "id": "g38",
+      "gantryNo": "39",
+      "rawGantryNo": "39",
+      "uniqueId": null,
+      "groupId": "39",
+      "label": "Thomson Road southbound after Toa Payoh Rise",
+      "directionDegrees": 180,
+      "center": [
+        1.33727678,
+        103.83729764
+      ],
+      "line": [
+        [
+          1.33630637,
+          103.83714739
+        ],
+        [
+          1.33628182,
+          103.83726482
+        ]
+      ],
+      "isPriced": true
+    },
+    {
+      "id": "g39",
+      "gantryNo": "40",
+      "rawGantryNo": "40",
+      "uniqueId": null,
+      "groupId": "40,71",
+      "label": "Bendemeer Road southbound after Woodsville Interchange / Woodsville Tunnel",
+      "directionDegrees": 180,
+      "center": [
+        1.32735,
+        103.86842
+      ],
+      "line": [
+        [
+          1.32721368,
+          103.86852972
+        ],
+        [
+          1.32728096,
+          103.86840443
+        ]
+      ],
+      "isPriced": true
+    },
+    {
+      "id": "g40",
+      "gantryNo": "41",
+      "rawGantryNo": "41",
+      "uniqueId": null,
+      "groupId": "41",
+      "label": "AYE after North Buona Vista towards Tuas",
+      "directionDegrees": 270,
+      "center": [
+        1.30122,
+        103.77648
+      ],
+      "line": [
+        [
+          1.30103406,
+          103.77660077
+        ],
+        [
+          1.30118869,
+          103.77670447
+        ]
+      ],
+      "isPriced": true
+    },
+    {
+      "id": "g41",
+      "gantryNo": "42",
+      "rawGantryNo": "42",
+      "uniqueId": null,
+      "groupId": "42",
+      "label": "PIE slip road into CTE",
+      "directionDegrees": null,
+      "center": [
+        1.32897426,
+        103.86457345
+      ],
+      "line": [
+        [
+          1.32905007,
+          103.86461435
+        ],
+        [
+          1.32896248,
+          103.86461817
+        ]
+      ],
+      "isPriced": true
+    },
+    {
+      "id": "g42",
+      "gantryNo": "43",
+      "rawGantryNo": "43",
+      "uniqueId": null,
+      "groupId": "43,44",
+      "label": "Dunearn Road eastbound after Dunkirk Avenue",
+      "directionDegrees": 90,
+      "center": [
+        1.32167523,
+        103.8233556
+      ],
+      "line": [
+        [
+          1.3216461,
+          103.82365993
+        ],
+        [
+          1.32150776,
+          103.82361232
+        ]
+      ],
+      "isPriced": true
+    },
+    {
+      "id": "g43",
+      "gantryNo": "44",
+      "rawGantryNo": "44",
+      "uniqueId": null,
+      "groupId": "43,44",
+      "label": "Dunearn Road eastbound after Dunkirk Avenue",
+      "directionDegrees": 90,
+      "center": [
+        1.3211347,
+        103.82532376
+      ],
+      "line": [
+        [
+          1.32117462,
+          103.82531351
+        ],
+        [
+          1.3210958,
+          103.82529217
+        ]
+      ],
+      "isPriced": true
+    },
+    {
+      "id": "g44",
+      "gantryNo": "45",
+      "rawGantryNo": "45",
+      "uniqueId": null,
+      "groupId": "32,45",
+      "label": "PIE after Kallang Bahru exit / slip road into Bendemeer Road",
+      "directionDegrees": 270,
+      "center": [
+        1.32622,
+        103.87041
+      ],
+      "line": [
+        [
+          1.32624805,
+          103.87043368
+        ],
+        [
+          1.32619562,
+          103.87037873
+        ]
+      ],
+      "isPriced": true
+    },
+    {
+      "id": "g45",
+      "gantryNo": "46",
+      "rawGantryNo": "46",
+      "uniqueId": null,
+      "groupId": "46,67",
+      "label": "Northbound CTE after PIE / before Braddell Road",
+      "directionDegrees": 0,
+      "center": [
+        1.33403732,
+        103.86215863
+      ],
+      "line": [],
+      "isPriced": true
+    },
+    {
+      "id": "g46",
+      "gantryNo": "47",
+      "rawGantryNo": "47",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "Orchard Road after YMCA",
+      "directionDegrees": null,
+      "center": [
+        1.29815705,
+        103.84785447
+      ],
+      "line": [
+        [
+          1.29795807,
+          103.84793865
+        ],
+        [
+          1.29809204,
+          103.84804804
+        ]
+      ],
+      "isPriced": false
+    },
+    {
+      "id": "g47",
+      "gantryNo": "48",
+      "rawGantryNo": "48",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "Orchard Road after Handy Road",
+      "directionDegrees": null,
+      "center": [
+        1.29872031,
+        103.84781443
+      ],
+      "line": [
+        [
+          1.29882875,
+          103.84806015
+        ],
+        [
+          1.29864616,
+          103.84806913
+        ]
+      ],
+      "isPriced": false
+    },
+    {
+      "id": "g48",
+      "gantryNo": "49",
+      "rawGantryNo": "49",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "Fort Canning Tunnel",
+      "directionDegrees": null,
+      "center": [
+        1.29776732,
+        103.84637308
+      ],
+      "line": [
+        [
+          1.29768453,
+          103.84635544
+        ],
+        [
+          1.29778079,
+          103.8464302
+        ]
+      ],
+      "isPriced": false
+    },
+    {
+      "id": "g49",
+      "gantryNo": "50",
+      "rawGantryNo": "50",
+      "uniqueId": null,
+      "groupId": "50",
+      "label": "KPE southbound after Defu Flyover",
+      "directionDegrees": 180,
+      "center": [
+        1.35954493,
+        103.90342026
+      ],
+      "line": [],
+      "isPriced": true
+    },
+    {
+      "id": "g50",
+      "gantryNo": "51",
+      "rawGantryNo": "51",
+      "uniqueId": null,
+      "groupId": "51",
+      "label": "CTE northbound between Jalan Bahagia and PIE",
+      "directionDegrees": 0,
+      "center": [
+        1.32616032,
+        103.86059505
+      ],
+      "line": [],
+      "isPriced": true
+    },
+    {
+      "id": "g51",
+      "gantryNo": "52",
+      "rawGantryNo": "52",
+      "uniqueId": null,
+      "groupId": "52,53,74",
+      "label": "Citybound AYE after Jurong Town Hall / Clementi Avenue 6 / Clementi Avenue 2",
+      "directionDegrees": 90,
+      "center": [
+        1.31514,
+        103.76085
+      ],
+      "line": [
+        [
+          1.31515598,
+          103.76089912
+        ],
+        [
+          1.31516959,
+          103.76081792
+        ]
+      ],
+      "isPriced": true
+    },
+    {
+      "id": "g52",
+      "gantryNo": "53",
+      "rawGantryNo": "53",
+      "uniqueId": null,
+      "groupId": "52,53,74",
+      "label": "Citybound AYE after Jurong Town Hall / Clementi Avenue 6 / Clementi Avenue 2",
+      "directionDegrees": 90,
+      "center": [
+        1.30882,
+        103.76641
+      ],
+      "line": [
+        [
+          1.30884224,
+          103.7663703
+        ],
+        [
+          1.30880686,
+          103.76645181
+        ]
+      ],
+      "isPriced": true
+    },
+    {
+      "id": "g53",
+      "gantryNo": "54",
+      "rawGantryNo": "54",
+      "uniqueId": null,
+      "groupId": "54",
+      "label": "BKE between Dairy Farm Road and PIE",
+      "directionDegrees": null,
+      "center": [
+        1.35497619,
+        103.78558407
+      ],
+      "line": [],
+      "isPriced": true
+    },
+    {
+      "id": "g54",
+      "gantryNo": "55",
+      "rawGantryNo": "55",
+      "uniqueId": null,
+      "groupId": "55",
+      "label": "Upper Bukit Timah Road southbound after Hume Avenue",
+      "directionDegrees": 180,
+      "center": [
+        1.35326083,
+        103.76967829
+      ],
+      "line": [],
+      "isPriced": true
+    },
+    {
+      "id": "g55",
+      "gantryNo": "56",
+      "rawGantryNo": "56",
+      "uniqueId": null,
+      "groupId": "56",
+      "label": "Lorong 6 Toa Payoh from Braddell Road",
+      "directionDegrees": null,
+      "center": [
+        1.34062172,
+        103.85325609
+      ],
+      "line": [
+        [
+          1.34085422,
+          103.85328648
+        ],
+        [
+          1.34079673,
+          103.85346255
+        ]
+      ],
+      "isPriced": true
+    },
+    {
+      "id": "g56",
+      "gantryNo": "57",
+      "rawGantryNo": "57",
+      "uniqueId": null,
+      "groupId": "57",
+      "label": "Kallang Bahru from PIE",
+      "directionDegrees": null,
+      "center": [
+        1.3219749,
+        103.8729051
+      ],
+      "line": [
+        [
+          1.32189133,
+          103.87286601
+        ],
+        [
+          1.32199006,
+          103.87280508
+        ]
+      ],
+      "isPriced": true
+    },
+    {
+      "id": "g57",
+      "gantryNo": "58",
+      "rawGantryNo": "58",
+      "uniqueId": null,
+      "groupId": "58",
+      "label": "Geylang Bahru westbound after Geylang Bahru Terrace",
+      "directionDegrees": 270,
+      "center": [
+        1.32036043,
+        103.87163779
+      ],
+      "line": [
+        [
+          1.32012501,
+          103.87172082
+        ],
+        [
+          1.32017184,
+          103.87180445
+        ]
+      ],
+      "isPriced": true
+    },
+    {
+      "id": "g58",
       "gantryNo": "59",
-      "uniqueId": "626",
+      "rawGantryNo": "59",
+      "uniqueId": null,
       "groupId": "59",
       "label": "Upper Boon Keng Road near Lorong 1 Geylang",
+      "directionDegrees": null,
       "center": [
-        1.31366489,
-        103.87061187
+        1.31351569,
+        103.87002007
       ],
       "line": [
         [
@@ -2550,6 +1529,432 @@
         [
           1.31360534,
           103.8706295
+        ]
+      ],
+      "isPriced": true
+    },
+    {
+      "id": "g59",
+      "gantryNo": "60",
+      "rawGantryNo": "60",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "Eu Tong Seng Street at Central",
+      "directionDegrees": null,
+      "center": [
+        1.28923743,
+        103.84747011
+      ],
+      "line": [
+        [
+          1.2894512,
+          103.84752491
+        ],
+        [
+          1.28932829,
+          103.84767073
+        ]
+      ],
+      "isPriced": false
+    },
+    {
+      "id": "g60",
+      "gantryNo": "61",
+      "rawGantryNo": "61",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "New Bridge Road before Upper Circular Road",
+      "directionDegrees": null,
+      "center": [
+        1.28930308,
+        103.84774256
+      ],
+      "line": [
+        [
+          1.28932446,
+          103.84763731
+        ],
+        [
+          1.28919566,
+          103.84778699
+        ]
+      ],
+      "isPriced": false
+    },
+    {
+      "id": "g61",
+      "gantryNo": "62",
+      "rawGantryNo": "62",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "South Bridge Road before Upper Circular Road",
+      "directionDegrees": null,
+      "center": [
+        1.2883723,
+        103.84887071
+      ],
+      "line": [
+        [
+          1.28858667,
+          103.84889346
+        ],
+        [
+          1.2884933,
+          103.84903101
+        ]
+      ],
+      "isPriced": false
+    },
+    {
+      "id": "g62",
+      "gantryNo": "63",
+      "rawGantryNo": "63",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "Fullerton Road eastbound at Fullerton Hotel",
+      "directionDegrees": null,
+      "center": [
+        1.28613926,
+        103.85361819
+      ],
+      "line": [
+        [
+          1.28599989,
+          103.85350129
+        ],
+        [
+          1.28592327,
+          103.85367257
+        ]
+      ],
+      "isPriced": false
+    },
+    {
+      "id": "g63",
+      "gantryNo": "64",
+      "rawGantryNo": "64",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "Fullerton Road westbound at One Fullerton",
+      "directionDegrees": null,
+      "center": [
+        1.28600752,
+        103.85371636
+      ],
+      "line": [
+        [
+          1.28599607,
+          103.85370242
+        ],
+        [
+          1.2859222,
+          103.85387032
+        ]
+      ],
+      "isPriced": false
+    },
+    {
+      "id": "g64",
+      "gantryNo": "65",
+      "rawGantryNo": "65",
+      "uniqueId": null,
+      "groupId": "65",
+      "label": "PIE westbound before Eunos Link",
+      "directionDegrees": 270,
+      "center": [
+        1.32898762,
+        103.91244204
+      ],
+      "line": [
+        [
+          1.32865316,
+          103.91159258
+        ],
+        [
+          1.3284749,
+          103.9116705
+        ]
+      ],
+      "isPriced": true
+    },
+    {
+      "id": "g65",
+      "gantryNo": "66",
+      "rawGantryNo": "66",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "Bayfront Ave towards Raffles Ave",
+      "directionDegrees": null,
+      "center": [
+        1.28548763,
+        103.86069875
+      ],
+      "line": [
+        [
+          1.28544227,
+          103.86067474
+        ],
+        [
+          1.28543271,
+          103.86080173
+        ]
+      ],
+      "isPriced": false
+    },
+    {
+      "id": "g66",
+      "gantryNo": "67",
+      "rawGantryNo": "67",
+      "uniqueId": null,
+      "groupId": "46,67",
+      "label": "Northbound CTE after PIE / before Braddell Road",
+      "directionDegrees": 0,
+      "center": [
+        1.33379255,
+        103.8620113
+      ],
+      "line": [],
+      "isPriced": true
+    },
+    {
+      "id": "g67",
+      "gantryNo": "68",
+      "rawGantryNo": "68",
+      "uniqueId": null,
+      "groupId": "68",
+      "label": "CTE slip road to PIE (Changi) / Serangoon Road",
+      "directionDegrees": null,
+      "center": [
+        1.33429942,
+        103.86241022
+      ],
+      "line": [],
+      "isPriced": true
+    },
+    {
+      "id": "g68",
+      "gantryNo": "69",
+      "rawGantryNo": "69",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "Bayfront Avenue towards Marina Boulevard",
+      "directionDegrees": null,
+      "center": [
+        1.28548223,
+        103.86088379
+      ],
+      "line": [
+        [
+          1.28543317,
+          103.860808
+        ],
+        [
+          1.28542597,
+          103.86096041
+        ]
+      ],
+      "isPriced": false
+    },
+    {
+      "id": "g69",
+      "gantryNo": "70",
+      "rawGantryNo": "70",
+      "uniqueId": null,
+      "groupId": "70",
+      "label": "Geylang Road westbound before Kallang River",
+      "directionDegrees": 270,
+      "center": [
+        1.31007644,
+        103.87074881
+      ],
+      "line": [],
+      "isPriced": true
+    },
+    {
+      "id": "g70",
+      "gantryNo": "71",
+      "rawGantryNo": "71",
+      "uniqueId": null,
+      "groupId": "40,71",
+      "label": "Bendemeer Road southbound after Woodsville Interchange / Woodsville Tunnel",
+      "directionDegrees": 180,
+      "center": [
+        1.32567,
+        103.86804
+      ],
+      "line": [],
+      "isPriced": true
+    },
+    {
+      "id": "g71",
+      "gantryNo": "72",
+      "rawGantryNo": "72",
+      "uniqueId": null,
+      "groupId": null,
+      "label": "Sheares Avenue towards Sheares Link",
+      "directionDegrees": null,
+      "center": [
+        1.2842371,
+        103.8615171
+      ],
+      "line": [],
+      "isPriced": false
+    },
+    {
+      "id": "g72",
+      "gantryNo": "73",
+      "rawGantryNo": "73",
+      "uniqueId": null,
+      "groupId": "73",
+      "label": "ECP eastbound before KPE",
+      "directionDegrees": 90,
+      "center": [
+        1.29551,
+        103.87229
+      ],
+      "line": [],
+      "isPriced": true
+    },
+    {
+      "id": "g73",
+      "gantryNo": "74",
+      "rawGantryNo": "74",
+      "uniqueId": null,
+      "groupId": "52,53,74",
+      "label": "Citybound AYE after Jurong Town Hall / Clementi Avenue 6 / Clementi Avenue 2",
+      "directionDegrees": 90,
+      "center": [
+        1.31633,
+        103.75874
+      ],
+      "line": [
+        [
+          1.31643174,
+          103.75878036
+        ],
+        [
+          1.3163152,
+          103.75864803
+        ]
+      ],
+      "isPriced": true
+    },
+    {
+      "id": "g74",
+      "gantryNo": "80",
+      "rawGantryNo": "80",
+      "uniqueId": null,
+      "groupId": "80",
+      "label": "KPE slip road into citybound ECP",
+      "directionDegrees": null,
+      "center": [
+        1.29379824,
+        103.87522177
+      ],
+      "line": [
+        [
+          1.29392762,
+          103.87536315
+        ],
+        [
+          1.29382674,
+          103.87540071
+        ]
+      ],
+      "isPriced": true
+    },
+    {
+      "id": "g75",
+      "gantryNo": "90",
+      "rawGantryNo": "90",
+      "uniqueId": null,
+      "groupId": "90,91",
+      "label": "MCE westbound before exits to Central Boulevard and Maxwell Road",
+      "directionDegrees": 270,
+      "center": [
+        1.27504001,
+        103.86738655
+      ],
+      "line": [
+        [
+          1.27501785,
+          103.86701538
+        ],
+        [
+          1.27496353,
+          103.86705345
+        ]
+      ],
+      "isPriced": true
+    },
+    {
+      "id": "g76",
+      "gantryNo": "91",
+      "rawGantryNo": "91",
+      "uniqueId": null,
+      "groupId": "90,91",
+      "label": "MCE westbound before exits to Central Boulevard and Maxwell Road",
+      "directionDegrees": 270,
+      "center": [
+        1.2713491,
+        103.8555584
+      ],
+      "line": [
+        [
+          1.27053638,
+          103.85659146
+        ],
+        [
+          1.27077095,
+          103.85672265
+        ]
+      ],
+      "isPriced": true
+    },
+    {
+      "id": "g77",
+      "gantryNo": "92",
+      "rawGantryNo": "92",
+      "uniqueId": null,
+      "groupId": "92,93",
+      "label": "MCE eastbound after Maxwell Road / Marina Boulevard",
+      "directionDegrees": 90,
+      "center": [
+        1.27496985,
+        103.86588749
+      ],
+      "line": [
+        [
+          1.27469222,
+          103.86573993
+        ],
+        [
+          1.27461378,
+          103.86580668
+        ]
+      ],
+      "isPriced": true
+    },
+    {
+      "id": "g78",
+      "gantryNo": "93",
+      "rawGantryNo": "93",
+      "uniqueId": null,
+      "groupId": "92,93",
+      "label": "MCE eastbound after Maxwell Road / Marina Boulevard",
+      "directionDegrees": 90,
+      "center": [
+        1.27154613,
+        103.85559594
+      ],
+      "line": [
+        [
+          1.27093829,
+          103.85643049
+        ],
+        [
+          1.27116494,
+          103.85656066
         ]
       ],
       "isPriced": true
@@ -3738,7 +3143,7 @@
       "reason": "June 2026 school holiday reduction"
     },
     {
-      "groupId": "31,33,34",
+      "groupId": "35",
       "start": "07:00",
       "end": "07:30",
       "amount": 1,
@@ -3747,7 +3152,7 @@
       "reason": "June 2026 school holiday reduction"
     },
     {
-      "groupId": "31,33,34",
+      "groupId": "35",
       "start": "08:00",
       "end": "09:00",
       "amount": 2,

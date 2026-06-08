@@ -1,7 +1,9 @@
 import json
 import re
+from html import unescape
 from datetime import datetime, timezone
 from pathlib import Path
+from xml.etree import ElementTree as ET
 
 from pypdf import PdfReader
 
@@ -41,6 +43,29 @@ GROUP_LABELS = {
     "65": "PIE westbound before Eunos Link",
 }
 
+GROUP_DIRECTIONS = {
+    "43,44": 90,
+    "58": 270,
+    "70": 270,
+    "40,71": 180,
+    "39": 180,
+    "55": 180,
+    "36": 90,
+    "52,53,74": 90,
+    "41": 270,
+    "31,33,34": 180,
+    "46,67": 0,
+    "51": 0,
+    "30": 270,
+    "73": 90,
+    "50": 180,
+    "90,91": 270,
+    "92,93": 90,
+    "32,45": 270,
+    "37,38": 90,
+    "65": 270,
+}
+
 JUNE_2026_ADJUSTMENTS = [
     {
         "groupId": "36",
@@ -70,7 +95,7 @@ JUNE_2026_ADJUSTMENTS = [
         "reason": "June 2026 school holiday reduction",
     },
     {
-        "groupId": "31,33,34",
+        "groupId": "35",
         "start": "07:00",
         "end": "07:30",
         "amount": 1,
@@ -79,7 +104,7 @@ JUNE_2026_ADJUSTMENTS = [
         "reason": "June 2026 school holiday reduction",
     },
     {
-        "groupId": "31,33,34",
+        "groupId": "35",
         "start": "08:00",
         "end": "09:00",
         "amount": 2,
@@ -295,38 +320,81 @@ def extract_field(description, field_name):
     return value or None
 
 
+def normalize_gantry_no(value):
+    if not value:
+        return None
+    match = re.fullmatch(r"OS0*(\d+)", value)
+    if match:
+        return match.group(1)
+    return value
+
+
+def strip_markup(value):
+    return re.sub(r"\s+", " ", re.sub(r"<.*?>", " ", unescape(value))).strip()
+
+
 def midpoint(coordinates):
     lon = sum(point[0] for point in coordinates) / len(coordinates)
     lat = sum(point[1] for point in coordinates) / len(coordinates)
     return [round(lat, 8), round(lon, 8)]
 
 
-def build_gantries():
+def build_geojson_lines_by_gantry():
     source = json.loads((DATA_DIR / "lta-gantry.geojson").read_text())
+    lines_by_gantry = {}
+    for feature in source["features"]:
+        description = feature["properties"].get("Description", "")
+        raw_gantry_no = extract_field(description, "GNTRY_NUM")
+        if raw_gantry_no in {"UNK", ""}:
+            raw_gantry_no = None
+        gantry_no = normalize_gantry_no(raw_gantry_no)
+        if not gantry_no:
+            continue
+        coordinates = feature["geometry"]["coordinates"]
+        lines_by_gantry.setdefault(
+            gantry_no,
+            [[round(point[1], 8), round(point[0], 8)] for point in coordinates],
+        )
+    return lines_by_gantry
+
+
+def child_text(element, local_name):
+    for child in element.iter():
+        if child.tag == local_name or child.tag.endswith(f"}}{local_name}"):
+            return child.text or ""
+    return ""
+
+
+def build_gantries():
     gantry_to_group = {}
     for group_id in GROUP_LABELS:
         for number in group_id.split(","):
             gantry_to_group[number] = group_id
 
+    lines_by_gantry = build_geojson_lines_by_gantry()
     gantries = []
-    for index, feature in enumerate(source["features"], start=1):
-        description = feature["properties"].get("Description", "")
-        gantry_no = extract_field(description, "GNTRY_NUM")
-        if gantry_no in {"UNK", ""}:
-            gantry_no = None
-        unique_id = extract_field(description, "UNIQUE_ID")
-        coordinates = feature["geometry"]["coordinates"]
-        lat_lng_line = [[round(point[1], 8), round(point[0], 8)] for point in coordinates]
+    kml_root = ET.parse(DATA_DIR / "onemotoring-erp.kml").getroot()
+    for index, placemark in enumerate(kml_root.findall(".//{*}Placemark"), start=1):
+        name_text = strip_markup(child_text(placemark, "name"))
+        number_match = re.search(r"\((\d+)\)\s*$", name_text)
+        if not number_match:
+            continue
+        gantry_no = number_match.group(1)
+        location_label = re.sub(r"\s*\(\d+\)\s*$", "", name_text).strip()
+        coordinate_text = child_text(placemark, "coordinates").strip()
+        lon, lat, *_ = [float(part) for part in coordinate_text.split(",")]
         group_id = gantry_to_group.get(gantry_no)
         gantries.append(
             {
                 "id": f"g{index}",
                 "gantryNo": gantry_no,
-                "uniqueId": unique_id,
+                "rawGantryNo": gantry_no,
+                "uniqueId": None,
                 "groupId": group_id,
-                "label": GROUP_LABELS.get(group_id, f"Gantry {gantry_no}" if gantry_no else "Unnumbered gantry"),
-                "center": midpoint(coordinates),
-                "line": lat_lng_line,
+                "label": GROUP_LABELS.get(group_id, location_label),
+                "directionDegrees": GROUP_DIRECTIONS.get(group_id),
+                "center": [round(lat, 8), round(lon, 8)],
+                "line": lines_by_gantry.get(gantry_no, []),
                 "isPriced": group_id is not None,
             }
         )
@@ -344,12 +412,21 @@ def main():
             "vehicleClass": "Passenger cars, taxis and light goods vehicles",
             "baseRateSource": "OneMotoring ERP Rates PDF, with effect from 23 Mar 2026",
             "latestAdjustmentSource": "LTA news release, Revised ERP Rates from 2 June 2026, published 25 May 2026",
-            "gantrySource": "data.gov.sg LTA Gantry (GEOJSON), last updated 06 Jun 2024",
+            "gantrySource": "OneMotoring ERP KML marker layer, with data.gov.sg LTA Gantry GeoJSON line geometry where available",
+            "sourceLinks": {
+                "oneMotoringErpRatesPdf": "https://onemotoring.lta.gov.sg/content/dam/onemotoring/Driving/ERP/ERP%20Rates.pdf",
+                "oneMotoringJune2026RatesPdf": "https://onemotoring.lta.gov.sg/content/dam/onemotoring/Driving/ERP/ERP_rates_tables/2026.05.28-ERP%20Rates%20%28Eff.%202%20Jun%202026%20-%2028%20Jun%202026%29.pdf",
+                "ltaJune2026Revision": "https://www.lta.gov.sg/content/ltagov/en/newsroom/2026/5/news-releases/revised-erp-rates-2-jun-26.html",
+                "oneMotoringErpGuide": "https://onemotoring.lta.gov.sg/content/onemotoring/home/driving/ERP/ERP.html",
+                "oneMotoringErpKml": "https://onemotoring.lta.gov.sg/mapapp/kml/erp-kml/erp-kml-0.kml",
+                "ltaGantryGeoJson": "https://data.gov.sg/collections/lta-gantry/view",
+                "momPublicHolidays2026": "https://www.mom.gov.sg/newsroom/press-releases/2025/0616-public-holidays-for-2026",
+            },
             "notes": [
-                "Weekday rates are modelled. Saturdays and Sundays are treated as zero ERP in this app.",
-                "Public holidays and eve-of-public-holiday early cut-offs are not modelled in this first version.",
+                "Weekday expressway rates are modelled for passenger cars, taxis and light goods vehicles.",
+                "Sundays, 2026 Singapore public holidays, and post-1pm eves of major public holidays are treated as zero ERP.",
                 "Where LTA defines a set of gantries, the app charges at most once for the set.",
-                "Route matching uses proximity to the official gantry line geometry and should be treated as an estimate.",
+                "Route matching uses proximity plus direction checks against official ERP marker coordinates and should be treated as an estimate.",
             ],
         },
         "groups": groups,

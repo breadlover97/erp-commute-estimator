@@ -91,7 +91,7 @@
         <section class="summary-grid" aria-label="Route summary">
           <article class="metric-card highlight">
             <span>Total ERP</span>
-            <strong id="total-cost">$0.00</strong>
+            <strong id="total-cost">S$0.00</strong>
           </article>
           <article class="metric-card">
             <span>Drive time</span>
@@ -142,11 +142,41 @@
         <section class="results-section">
           <div class="section-heading">
             <h2>ERP gantries on route</h2>
-            <span id="gantry-note">Official LTA gantry geometry, matched by route proximity.</span>
+            <span id="gantry-note">Official LTA gantry geometry, matched by route and direction.</span>
           </div>
           <div class="gantry-list" id="gantry-list">
             <div class="empty-state">No route calculated yet.</div>
           </div>
+        </section>
+
+        <section class="source-section" aria-label="Data sources and assumptions">
+          <div class="section-heading">
+            <h2>Data sources</h2>
+            <span id="source-generated">Loading source metadata.</span>
+          </div>
+          <div class="source-list">
+            <a href="https://onemotoring.lta.gov.sg/content/dam/onemotoring/Driving/ERP/ERP%20Rates.pdf" target="_blank" rel="noreferrer">
+              OneMotoring base rate table
+            </a>
+            <a href="https://onemotoring.lta.gov.sg/content/dam/onemotoring/Driving/ERP/ERP_rates_tables/2026.05.28-ERP%20Rates%20(Eff.%202%20Jun%202026%20-%2028%20Jun%202026).pdf" target="_blank" rel="noreferrer">
+              June 2026 ERP table
+            </a>
+            <a href="https://www.lta.gov.sg/content/ltagov/en/newsroom/2026/5/news-releases/revised-erp-rates-2-jun-26.html" target="_blank" rel="noreferrer">
+              LTA June 2026 revisions
+            </a>
+            <a href="https://onemotoring.lta.gov.sg/mapapp/kml/erp-kml/erp-kml-0.kml" target="_blank" rel="noreferrer">
+              OneMotoring ERP map KML
+            </a>
+            <a href="https://data.gov.sg/collections/lta-gantry/view" target="_blank" rel="noreferrer">
+              LTA Gantry GeoJSON
+            </a>
+            <a href="https://www.mom.gov.sg/newsroom/press-releases/2025/0616-public-holidays-for-2026" target="_blank" rel="noreferrer">
+              MOM public holidays 2026
+            </a>
+          </div>
+          <p class="source-copy" id="source-copy">
+            Estimates are for passenger cars, taxis and light goods vehicles. The route match is based on public route geometry, official ERP marker coordinates and direction checks.
+          </p>
         </section>
       </section>
 

@@ -1,7 +1,30 @@
 const SINGAPORE_CENTER = [1.3521, 103.8198];
 const GANTRY_MATCH_THRESHOLD_METERS = 115;
+const DIRECTION_TOLERANCE_DEGREES = 75;
 const ROUTE_SEARCH_START_MINUTES = 4 * 60 + 30;
 const ROUTE_SEARCH_END_MINUTES = 22 * 60 + 30;
+const SINGAPORE_PUBLIC_HOLIDAYS_2026 = new Set([
+  "2026-01-01",
+  "2026-02-17",
+  "2026-02-18",
+  "2026-03-21",
+  "2026-04-03",
+  "2026-05-01",
+  "2026-05-27",
+  "2026-05-31",
+  "2026-06-01",
+  "2026-08-09",
+  "2026-08-10",
+  "2026-11-08",
+  "2026-11-09",
+  "2026-12-25",
+]);
+const ERP_EVE_CUTOFF_DATES_2026 = new Set([
+  "2026-02-16",
+  "2026-03-20",
+  "2026-11-07",
+  "2026-12-24",
+]);
 
 const state = {
   erpData: null,
@@ -32,6 +55,8 @@ const els = {
   recommendation: document.querySelector("#recommendation"),
   recommendationTitle: document.querySelector("#recommendation-title"),
   recommendationCopy: document.querySelector("#recommendation-copy"),
+  sourceGenerated: document.querySelector("#source-generated"),
+  sourceCopy: document.querySelector("#source-copy"),
   primaryButton: document.querySelector(".primary-button"),
 };
 
@@ -44,7 +69,8 @@ async function init() {
   setDefaultSingaporeDateTime();
   initMap();
   state.erpData = await fetchJson("./data/erp-data.json");
-  els.rateSource.textContent = "Rates updated Jun 2026";
+  els.rateSource.textContent = "Official source-backed rates";
+  renderSourceMetadata();
   renderAllGantries();
   bindEvents();
   window.lucide?.createIcons();
@@ -101,7 +127,6 @@ async function handleRouteSubmit(event) {
       }. ERP shown for ${state.erpData.meta.vehicleClass.toLowerCase()}.`,
     );
   } catch (error) {
-    console.error(error);
     setStatus(error.message || "Unable to calculate this route.");
     renderErrorState(error.message || "Unable to calculate this route.");
   } finally {
@@ -175,13 +200,15 @@ function renderRoute(startPoint, endPoint, route, matchedGantries) {
     .addTo(state.pointLayer);
 
   matchedGantries.forEach((match) => {
-    L.polyline(match.gantry.line, {
-      color: match.gantry.isPriced ? "#d94b3d" : "#465159",
-      weight: match.gantry.isPriced ? 5 : 3,
-      opacity: 0.95,
-    })
-      .bindPopup(popupForGantry(match.gantry, match.distanceMeters))
-      .addTo(state.matchedGantriesLayer);
+    if (match.gantry.line?.length > 1) {
+      L.polyline(match.gantry.line, {
+        color: match.gantry.isPriced ? "#d94b3d" : "#465159",
+        weight: match.gantry.isPriced ? 5 : 3,
+        opacity: 0.95,
+      })
+        .bindPopup(popupForGantry(match.gantry, match.distanceMeters))
+        .addTo(state.matchedGantriesLayer);
+    }
 
     L.circleMarker(match.gantry.center, {
       radius: match.gantry.isPriced ? 7 : 5,
@@ -275,10 +302,14 @@ function matchGantriesToRoute(route) {
       route.points,
       route.cumulativeMeters,
     );
-    if (closest.distanceMeters <= GANTRY_MATCH_THRESHOLD_METERS) {
+    if (
+      closest.distanceMeters <= GANTRY_MATCH_THRESHOLD_METERS &&
+      routeDirectionMatchesGantry(closest.routeBearingDegrees, gantry.directionDegrees)
+    ) {
       matches.push({
         gantry,
         distanceMeters: closest.distanceMeters,
+        directionDelta: directionDelta(closest.routeBearingDegrees, gantry.directionDegrees),
         progressMeters: closest.progressMeters,
         progressRatio: route.totalMeters > 0 ? closest.progressMeters / route.totalMeters : 0,
       });
@@ -347,11 +378,17 @@ function calculateTrip(route, matchedGantries, departureDate) {
 
 function getRateForGroup(groupId, crossingDate) {
   const dateString = toDateInputValue(crossingDate);
+  const minutes = crossingDate.getHours() * 60 + crossingDate.getMinutes();
+  if (isZeroErpDate(dateString)) {
+    return { amount: 0, label: "Sunday or Singapore public holiday" };
+  }
+  if (isMajorHolidayEveCutoff(dateString, minutes)) {
+    return { amount: 0, label: "Eve of major public holiday after 13:00" };
+  }
   if (!isWeekday(dateString)) {
-    return { amount: 0, label: "Weekend" };
+    return { amount: 0, label: "No modelled Saturday ERP rate" };
   }
 
-  const minutes = crossingDate.getHours() * 60 + crossingDate.getMinutes();
   const adjustment = state.erpData.adjustments.find((item) => {
     return (
       item.groupId === groupId &&
@@ -499,13 +536,29 @@ function renderRecommendation(currentTrip, suggestion, timeMode) {
 }
 
 function renderErrorState(message) {
-  els.totalCost.textContent = "$0.00";
+  els.totalCost.textContent = formatMoney(0);
   els.driveTime.textContent = "--";
   els.driveDistance.textContent = "--";
   els.matchedCount.textContent = "--";
   els.timingBody.innerHTML = `<tr><td colspan="4" class="empty-row">${escapeHtml(message)}</td></tr>`;
   els.gantryList.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
   els.recommendation.hidden = true;
+  els.recommendationTitle.textContent = "";
+  els.recommendationCopy.textContent = "";
+}
+
+function renderSourceMetadata() {
+  const generatedDate = state.erpData.meta.generatedAt
+    ? new Date(state.erpData.meta.generatedAt).toLocaleDateString("en-SG", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        timeZone: "Asia/Singapore",
+      })
+    : "unknown date";
+  const pricedCount = state.erpData.gantries.filter((gantry) => gantry.isPriced).length;
+  els.sourceGenerated.textContent = `Generated ${generatedDate}; ${pricedCount} priced gantry geometries indexed.`;
+  els.sourceCopy.textContent = state.erpData.meta.notes.join(" ");
 }
 
 function buildCumulativeDistances(points) {
@@ -517,7 +570,11 @@ function buildCumulativeDistances(points) {
 }
 
 function closestProgressOnRoute(point, routePoints, cumulativeMeters) {
-  let best = { distanceMeters: Number.POSITIVE_INFINITY, progressMeters: 0 };
+  let best = {
+    distanceMeters: Number.POSITIVE_INFINITY,
+    progressMeters: 0,
+    routeBearingDegrees: null,
+  };
   const originLat = point.lat;
   const pointXY = toMeters(point, originLat);
 
@@ -549,11 +606,38 @@ function closestProgressOnRoute(point, routePoints, cumulativeMeters) {
       best = {
         distanceMeters,
         progressMeters: cumulativeMeters[index] + segmentMeters * t,
+        routeBearingDegrees: bearingDegrees(routePoints[index], routePoints[index + 1]),
       };
     }
   }
 
   return best;
+}
+
+function routeDirectionMatchesGantry(routeBearingDegrees, gantryDirectionDegrees) {
+  if (!Number.isFinite(gantryDirectionDegrees) || !Number.isFinite(routeBearingDegrees)) {
+    return true;
+  }
+  return directionDelta(routeBearingDegrees, gantryDirectionDegrees) <= DIRECTION_TOLERANCE_DEGREES;
+}
+
+function directionDelta(a, b) {
+  if (!Number.isFinite(a) || !Number.isFinite(b)) {
+    return null;
+  }
+  const delta = Math.abs((((a - b) % 360) + 540) % 360 - 180);
+  return Math.round(delta);
+}
+
+function bearingDegrees(a, b) {
+  const lat1 = toRadians(a.lat);
+  const lat2 = toRadians(b.lat);
+  const deltaLng = toRadians(b.lng - a.lng);
+  const y = Math.sin(deltaLng) * Math.cos(lat2);
+  const x =
+    Math.cos(lat1) * Math.sin(lat2) -
+    Math.sin(lat1) * Math.cos(lat2) * Math.cos(deltaLng);
+  return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
 }
 
 function haversineMeters(a, b) {
@@ -606,6 +690,16 @@ function isWeekday(dateString) {
   const [year, month, day] = dateString.split("-").map(Number);
   const dayOfWeek = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
   return dayOfWeek >= 1 && dayOfWeek <= 5;
+}
+
+function isZeroErpDate(dateString) {
+  const [year, month, day] = dateString.split("-").map(Number);
+  const dayOfWeek = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+  return dayOfWeek === 0 || SINGAPORE_PUBLIC_HOLIDAYS_2026.has(dateString);
+}
+
+function isMajorHolidayEveCutoff(dateString, minutes) {
+  return ERP_EVE_CUTOFF_DATES_2026.has(dateString) && minutes >= 13 * 60;
 }
 
 function addSeconds(date, seconds) {

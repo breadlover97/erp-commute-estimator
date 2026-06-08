@@ -12,7 +12,7 @@
       integrity="sha256-p4NxAoJBhIINfQKJvI5v3XYPS0obTRR9BMYgqNJFlIk="
       crossorigin=""
     />
-    <link rel="stylesheet" href="./styles.css?v=2026-06-09-tooltip-v10" />
+    <link rel="stylesheet" href="./styles.css?v=2026-06-09-shortcuts-v11" />
   </head>
   <body>
     <main class="app-shell">
@@ -112,17 +112,23 @@
             </div>
 
             <div class="quick-picker" aria-label="Quick departure date and time">
-              <button type="button" class="chip-button date-chip" data-date-offset="0">Today</button>
-              <button type="button" class="chip-button date-chip" data-date-offset="1">Tomorrow</button>
-              <button type="button" class="chip-button time-chip" data-time="07:30">7:30</button>
-              <button type="button" class="chip-button time-chip" data-time="08:30">8:30</button>
-              <button type="button" class="chip-button time-chip" data-time="18:00">18:00</button>
-              <button type="button" class="chip-button time-step" data-target="time-input" data-minutes="-15">
-                <i data-lucide="minus"></i>15m
-              </button>
-              <button type="button" class="chip-button time-step" data-target="time-input" data-minutes="15">
-                <i data-lucide="plus"></i>15m
-              </button>
+              <div class="quick-picker-group date-shortcuts" aria-label="Date shortcuts">
+                <button type="button" class="chip-button date-chip" data-date-offset="0">Today</button>
+                <button type="button" class="chip-button date-chip" data-date-offset="1">Tomorrow</button>
+              </div>
+              <div class="quick-picker-group time-shortcuts" aria-label="Time shortcuts">
+                <button type="button" class="chip-button time-chip" data-time="07:30">7:30</button>
+                <button type="button" class="chip-button time-chip" data-time="08:30">8:30</button>
+                <button type="button" class="chip-button time-chip" data-time="18:00">18:00</button>
+              </div>
+              <div class="quick-picker-group stepper-group" aria-label="Adjust time">
+                <button type="button" class="chip-button time-step" data-target="time-input" data-minutes="-15">
+                  <i data-lucide="minus"></i>15m
+                </button>
+                <button type="button" class="chip-button time-step" data-target="time-input" data-minutes="15">
+                  <i data-lucide="plus"></i>15m
+                </button>
+              </div>
             </div>
           </div>
 
@@ -142,47 +148,20 @@
               </label>
             </div>
             <div class="quick-picker" aria-label="Quick return date and time">
-              <button type="button" class="chip-button return-chip" data-hours="4">+4h</button>
-              <button type="button" class="chip-button return-chip" data-hours="8">+8h</button>
-              <button type="button" class="chip-button return-chip" data-hours="10">+10h</button>
-              <button type="button" class="chip-button time-step" data-target="return-time-input" data-minutes="-15">
-                <i data-lucide="minus"></i>15m
-              </button>
-              <button type="button" class="chip-button time-step" data-target="return-time-input" data-minutes="15">
-                <i data-lucide="plus"></i>15m
-              </button>
+              <div class="quick-picker-group return-shortcuts" aria-label="Return time offsets">
+                <button type="button" class="chip-button return-chip" data-hours="4">+4h</button>
+                <button type="button" class="chip-button return-chip" data-hours="8">+8h</button>
+                <button type="button" class="chip-button return-chip" data-hours="10">+10h</button>
+              </div>
+              <div class="quick-picker-group stepper-group" aria-label="Adjust return time">
+                <button type="button" class="chip-button time-step" data-target="return-time-input" data-minutes="-15">
+                  <i data-lucide="minus"></i>15m
+                </button>
+                <button type="button" class="chip-button time-step" data-target="return-time-input" data-minutes="15">
+                  <i data-lucide="plus"></i>15m
+                </button>
+              </div>
             </div>
-          </div>
-
-          <div class="sample-row" aria-label="Sample routes">
-            <button
-              type="button"
-              class="sample-button"
-              data-start="Tampines Mall"
-              data-start-label="Tampines Mall, Tampines Central 5, Singapore"
-              data-start-lat="1.3529"
-              data-start-lng="103.9447"
-              data-destination="Raffles Place"
-              data-destination-label="Raffles Place, Downtown Core, Singapore"
-              data-destination-lat="1.2844"
-              data-destination-lng="103.8510"
-            >
-              Tampines to CBD
-            </button>
-            <button
-              type="button"
-              class="sample-button"
-              data-start="Ang Mo Kio Hub"
-              data-start-label="AMK Hub, Ang Mo Kio Avenue 3, Singapore"
-              data-start-lat="1.3697"
-              data-start-lng="103.8485"
-              data-destination="Marina Bay Financial Centre"
-              data-destination-label="Marina Bay Financial Centre, Marina Boulevard, Singapore"
-              data-destination-lat="1.2795"
-              data-destination-lng="103.8543"
-            >
-              AMK to Marina Bay
-            </button>
           </div>
 
           <div class="form-actions">
@@ -348,6 +327,6 @@
       crossorigin=""
     ></script>
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
-    <script src="./app.js?v=2026-06-09-tooltip-v10" type="module"></script>
+    <script src="./app.js?v=2026-06-09-shortcuts-v11" type="module"></script>
   </body>
 </html>

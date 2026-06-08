@@ -236,8 +236,7 @@ select:focus {
   align-self: center;
 }
 
-.icon-button:hover,
-.sample-button:hover {
+.icon-button:hover {
   border-color: var(--accent);
   color: var(--accent-deep);
 }
@@ -316,9 +315,20 @@ select:focus {
 }
 
 .quick-picker {
+  display: grid;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid rgba(79, 111, 105, 0.18);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(240, 165, 52, 0.1), rgba(55, 132, 116, 0.08)),
+    #f8fbfa;
+}
+
+.quick-picker-group {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 .chip-button {
@@ -326,41 +336,63 @@ select:focus {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  min-height: 34px;
-  border: 1px solid #c6d0cb;
-  border-radius: 999px;
-  padding: 6px 10px;
-  background: #f8fbfa;
-  color: #465159;
-  font-size: 0.78rem;
-  font-weight: 820;
+  min-height: 36px;
+  border: 1px solid rgba(79, 111, 105, 0.26);
+  border-radius: 7px;
+  padding: 7px 11px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #3e4a4d;
+  box-shadow: 0 1px 2px rgba(20, 37, 44, 0.05);
+  font-size: 0.79rem;
+  font-weight: 840;
+  transition:
+    border-color 0.16s ease,
+    background 0.16s ease,
+    box-shadow 0.16s ease,
+    color 0.16s ease,
+    transform 0.16s ease;
 }
 
 .chip-button:hover {
-  border-color: var(--accent);
+  border-color: rgba(55, 132, 116, 0.56);
+  background: #ffffff;
   color: var(--accent-deep);
+  box-shadow: 0 5px 14px rgba(20, 37, 44, 0.1);
+  transform: translateY(-1px);
+}
+
+.date-chip,
+.return-chip {
+  border-color: rgba(21, 50, 56, 0.28);
+  background: #153238;
+  color: #ffffff;
+}
+
+.date-chip:hover,
+.return-chip:hover {
+  border-color: #153238;
+  background: #1d484f;
+  color: #ffffff;
+}
+
+.time-chip {
+  min-width: 58px;
+}
+
+.time-step {
+  min-width: 66px;
+  background: #fff7e7;
+  color: #6a3c00;
+}
+
+.time-step:hover {
+  border-color: rgba(240, 165, 52, 0.72);
+  color: #6a3c00;
 }
 
 .chip-button svg {
   width: 14px;
   height: 14px;
-}
-
-.sample-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.sample-button {
-  min-height: 34px;
-  border: 1px solid #c6d0cb;
-  border-radius: 999px;
-  padding: 6px 10px;
-  background: #f8fbfa;
-  color: #465159;
-  font-size: 0.78rem;
-  font-weight: 820;
 }
 
 .address-confirmation {
@@ -1452,9 +1484,23 @@ tbody tr.current-row {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 
-  .quick-picker,
-  .sample-row {
+  .quick-picker {
     gap: 7px;
+  }
+
+  .quick-picker-group {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .time-shortcuts {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .chip-button {
+    min-width: 0;
+    padding-right: 8px;
+    padding-left: 8px;
   }
 
   .form-actions {

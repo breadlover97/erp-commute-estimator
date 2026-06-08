@@ -2,7 +2,7 @@ const SINGAPORE_CENTER = [1.3521, 103.8198];
 const GANTRY_POINT_MATCH_THRESHOLD_METERS = 115;
 const GANTRY_LINE_MATCH_THRESHOLD_METERS = 70;
 const DIRECTION_TOLERANCE_DEGREES = 75;
-const DATA_VERSION = "2026-06-09-tooltip-v10";
+const DATA_VERSION = "2026-06-09-shortcuts-v11";
 const ROUTE_SEARCH_START_MINUTES = 4 * 60 + 30;
 const ROUTE_SEARCH_END_MINUTES = 22 * 60 + 30;
 const ERP_RATE_TABLE_START_MINUTES = 7 * 60;
@@ -211,22 +211,6 @@ function bindEvents() {
 
   bindAddressField("start");
   bindAddressField("destination");
-
-  document.querySelectorAll(".sample-button").forEach((button) => {
-    button.addEventListener("click", () => {
-      setConfirmedAddress("start", {
-        lat: Number(button.dataset.startLat),
-        lng: Number(button.dataset.startLng),
-        label: button.dataset.startLabel,
-      }, button.dataset.start);
-      setConfirmedAddress("destination", {
-        lat: Number(button.dataset.destinationLat),
-        lng: Number(button.dataset.destinationLng),
-        label: button.dataset.destinationLabel,
-      }, button.dataset.destination);
-      setStatus("Sample route loaded with confirmed addresses.");
-    });
-  });
 
   document.querySelectorAll(".date-chip").forEach((button) => {
     button.addEventListener("click", () => {

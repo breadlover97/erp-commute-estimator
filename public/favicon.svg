@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">ERP Commute Estimator</title>
+  <rect width="64" height="64" rx="14" fill="#153238" />
+  <path d="M18 56L29 27h6l11 29H36l-2-11h-4l-2 11H18Z" fill="#f5f8f7" opacity="0.96" />
+  <path d="M31 29h2l1 11h-4l1-11Z" fill="#153238" />
+  <path d="M16 18h32v7H16z" fill="#f0a534" />
+  <path d="M20 25h5v12h-5zM39 25h5v12h-5z" fill="#f0a534" />
+  <text
+    x="32"
+    y="16"
+    fill="#ffffff"
+    font-family="Inter, Arial, sans-serif"
+    font-size="12"
+    font-weight="800"
+    text-anchor="middle"
+    letter-spacing="0"
+  >
+    ERP
+  </text>
+</svg>

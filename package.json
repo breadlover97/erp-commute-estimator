@@ -1,0 +1,11 @@
+{
+  "name": "erp-commute-estimator",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "serve": "python3 -m http.server 4173 --directory public",
+    "validate": "node scripts/validate-data.mjs",
+    "fetch:gantries": "node scripts/fetch-gantries.mjs"
+  }
+}

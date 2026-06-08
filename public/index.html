@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ERP Commute Estimator</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIINfQKJvI5v3XYPS0obTRR9BMYgqNJFlIk="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="planner-panel" aria-label="ERP commute planner">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Singapore weekday ERP</p>
+            <h1>ERP Commute Estimator</h1>
+          </div>
+          <span class="source-pill" id="rate-source">Loading rates</span>
+        </header>
+
+        <form id="route-form" class="route-form">
+          <label class="field">
+            <span>Start point</span>
+            <input
+              id="start-input"
+              name="start"
+              autocomplete="street-address"
+              placeholder="e.g. Tampines Mall"
+              required
+            />
+          </label>
+
+          <div class="swap-row">
+            <label class="field">
+              <span>Destination</span>
+              <input
+                id="destination-input"
+                name="destination"
+                autocomplete="street-address"
+                placeholder="e.g. Raffles Place"
+                required
+              />
+            </label>
+            <button id="swap-button" class="icon-button" type="button" aria-label="Swap start and destination">
+              <i data-lucide="arrow-up-down"></i>
+            </button>
+          </div>
+
+          <div class="mode-control" aria-label="Time mode">
+            <label>
+              <input type="radio" name="timeMode" value="depart" checked />
+              <span>Leave at</span>
+            </label>
+            <label>
+              <input type="radio" name="timeMode" value="arrive" />
+              <span>Arrive by</span>
+            </label>
+          </div>
+
+          <div class="time-grid">
+            <label class="field">
+              <span>Date</span>
+              <input id="date-input" type="date" required />
+            </label>
+            <label class="field">
+              <span>Time</span>
+              <input id="time-input" type="time" step="300" required />
+            </label>
+          </div>
+
+          <div class="sample-row" aria-label="Sample routes">
+            <button type="button" class="sample-button" data-start="Tampines Mall" data-destination="Raffles Place">
+              Tampines to CBD
+            </button>
+            <button type="button" class="sample-button" data-start="Ang Mo Kio Hub" data-destination="Marina Bay Financial Centre">
+              AMK to Marina Bay
+            </button>
+          </div>
+
+          <button class="primary-button" type="submit">
+            <i data-lucide="route"></i>
+            Estimate ERP
+          </button>
+        </form>
+
+        <section class="summary-grid" aria-label="Route summary">
+          <article class="metric-card highlight">
+            <span>Total ERP</span>
+            <strong id="total-cost">$0.00</strong>
+          </article>
+          <article class="metric-card">
+            <span>Drive time</span>
+            <strong id="drive-time">--</strong>
+          </article>
+          <article class="metric-card">
+            <span>Distance</span>
+            <strong id="drive-distance">--</strong>
+          </article>
+          <article class="metric-card">
+            <span>ERP on route</span>
+            <strong id="matched-count">--</strong>
+          </article>
+        </section>
+
+        <section class="recommendation" id="recommendation" hidden>
+          <div>
+            <span>Suggested timing</span>
+            <strong id="recommendation-title"></strong>
+          </div>
+          <p id="recommendation-copy"></p>
+        </section>
+
+        <section class="results-section">
+          <div class="section-heading">
+            <h2>Timing comparison</h2>
+            <span id="comparison-note">Run an estimate to compare costs.</span>
+          </div>
+          <div class="table-shell">
+            <table>
+              <thead>
+                <tr>
+                  <th>Leave</th>
+                  <th>Arrive</th>
+                  <th>ERP</th>
+                  <th>Route ERP</th>
+                </tr>
+              </thead>
+              <tbody id="timing-body">
+                <tr>
+                  <td colspan="4" class="empty-row">No route calculated yet.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="results-section">
+          <div class="section-heading">
+            <h2>ERP gantries on route</h2>
+            <span id="gantry-note">Official LTA gantry geometry, matched by route proximity.</span>
+          </div>
+          <div class="gantry-list" id="gantry-list">
+            <div class="empty-state">No route calculated yet.</div>
+          </div>
+        </section>
+      </section>
+
+      <section class="map-panel" aria-label="Map and route">
+        <div id="map"></div>
+        <div class="map-legend">
+          <span><i class="legend-line route"></i> Route</span>
+          <span><i class="legend-dot priced"></i> Priced ERP</span>
+          <span><i class="legend-dot matched"></i> On route</span>
+          <span><i class="legend-dot all"></i> Other gantries</span>
+        </div>
+        <div class="status-bar" id="status-bar" role="status">Enter a start point, destination and timing.</div>
+      </section>
+    </main>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+    <script src="./app.js" type="module"></script>
+  </body>
+</html>

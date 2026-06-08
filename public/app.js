@@ -2,7 +2,7 @@ const SINGAPORE_CENTER = [1.3521, 103.8198];
 const GANTRY_POINT_MATCH_THRESHOLD_METERS = 115;
 const GANTRY_LINE_MATCH_THRESHOLD_METERS = 70;
 const DIRECTION_TOLERANCE_DEGREES = 75;
-const DATA_VERSION = "2026-06-08-rates-v9";
+const DATA_VERSION = "2026-06-09-tooltip-v10";
 const ROUTE_SEARCH_START_MINUTES = 4 * 60 + 30;
 const ROUTE_SEARCH_END_MINUTES = 22 * 60 + 30;
 const ERP_RATE_TABLE_START_MINUTES = 7 * 60;
@@ -183,6 +183,7 @@ function bindEvents() {
   els.form.addEventListener("submit", handleRouteSubmit);
   els.swap.addEventListener("click", handleSwap);
   els.vehicleType.addEventListener("change", () => {
+    renderAllGantries();
     if (state.currentPlan) {
       recalculatePlanForVehicle();
     }
@@ -195,8 +196,14 @@ function bindEvents() {
   els.fitRoute.addEventListener("click", fitCurrentRoute);
   els.share.addEventListener("click", copyShareUrl);
   els.reset.addEventListener("click", resetEstimator);
-  els.date.addEventListener("change", syncReturnDateIfBeforeDeparture);
-  els.time.addEventListener("change", syncReturnDateIfBeforeDeparture);
+  els.date.addEventListener("change", () => {
+    syncReturnDateIfBeforeDeparture();
+    renderAllGantries();
+  });
+  els.time.addEventListener("change", () => {
+    syncReturnDateIfBeforeDeparture();
+    renderAllGantries();
+  });
 
   document.querySelectorAll("input[name='tripMode']").forEach((input) => {
     input.addEventListener("change", renderTripMode);
@@ -601,7 +608,7 @@ function drawRouteOption(option, color, isSelected) {
 
 function drawMatchedGantry(entry) {
   const color = entry.amount > 0 ? "#d94b3d" : "#465159";
-  const popup = popupForTripEntry(entry);
+  const info = infoForTripEntry(entry);
 
   if (entry.match.gantry.line?.length > 1) {
     const line = L.polyline(entry.match.gantry.line, {
@@ -610,7 +617,7 @@ function drawMatchedGantry(entry) {
       opacity: 0.95,
       className: "erp-map-target",
     }).addTo(state.matchedGantriesLayer);
-    bindGantryInfo(line, popup);
+    bindGantryInfo(line, info.popup, info.tooltip);
   }
 
   const marker = L.circleMarker(entry.match.gantry.center, {
@@ -621,15 +628,16 @@ function drawMatchedGantry(entry) {
     weight: 2,
     className: "erp-map-target",
   }).addTo(state.matchedGantriesLayer);
-  bindGantryInfo(marker, popup);
+  bindGantryInfo(marker, info.popup, info.tooltip);
 }
 
-function popupForTripEntry(entry) {
-  return popupForErpRates({
+function infoForTripEntry(entry) {
+  return infoForErpRates({
     groupId: entry.groupId,
     title: erpRateTitle(entry.label, entry.gantryNos),
     vehicleType: state.currentPlan?.vehicleType || getVehicleType(),
     dateString: entry.crossingDateString || selectedRateDateString(),
+    highlightMinutes: entry.crossingDate.getHours() * 60 + entry.crossingDate.getMinutes(),
     note: `${entry.legLabel} crosses around ${entry.crossingTime}. Estimated charge: ${formatMoney(entry.amount)}.`,
   });
 }
@@ -824,6 +832,7 @@ function initMap() {
 
   setMapSource(els.mapSource.value || "osm");
   L.control.scale({ imperial: false, position: "bottomleft" }).addTo(state.map);
+  state.map.on("popupopen", keepPopupInViewport);
 
   state.allGantriesLayer = L.layerGroup().addTo(state.map);
   state.matchedGantriesLayer = L.layerGroup().addTo(state.map);
@@ -851,27 +860,36 @@ function renderAllGantries() {
   }
   state.erpData.gantries.forEach((gantry) => {
     const marker = L.circleMarker(gantry.center, {
-      radius: gantry.isPriced ? 4 : 3,
+      radius: gantry.isPriced ? 5 : 4,
       color: gantry.isPriced ? "#b76e00" : "#6f7a80",
       fillColor: gantry.isPriced ? "#f0a534" : "#8b969d",
       fillOpacity: gantry.isPriced ? 0.82 : 0.5,
       opacity: 0.75,
-      weight: 1,
+      weight: gantry.isPriced ? 1.5 : 1,
       className: "erp-map-target",
     });
-    bindGantryInfo(marker, popupForGantry(gantry));
+    const info = infoForGantry(gantry);
+    bindGantryInfo(marker, info.popup, info.tooltip);
     marker.addTo(state.allGantriesLayer);
   });
 }
 
-function popupForGantry(gantry) {
+function infoForGantry(gantry) {
   const group = state.erpData.groups.find((candidate) => candidate.id === gantry.groupId);
-  return popupForErpRates({
+  return infoForErpRates({
     groupId: gantry.groupId,
     title: erpRateTitle(group?.label || gantry.label, group?.gantryNos || [gantry.gantryNo].filter(Boolean)),
     vehicleType: getVehicleType(),
     dateString: selectedRateDateString(),
+    highlightMinutes: selectedRateMinutes(),
   });
+}
+
+function infoForErpRates(options) {
+  return {
+    popup: popupForErpRates(options),
+    tooltip: tooltipForErpRates(options),
+  };
 }
 
 function popupForErpRates({ groupId, title, vehicleType, dateString, note = "" }) {
@@ -887,14 +905,44 @@ function popupForErpRates({ groupId, title, vehicleType, dateString, note = "" }
 
   return `<div class="erp-rate-card">
     <h3>${escapeHtml(title)}</h3>
-    <div class="erp-rate-select" aria-hidden="true">${escapeHtml(vehiclePopupLabel(vehicleType))}</div>
-    <div class="erp-rate-select" aria-hidden="true">${escapeHtml(rateDayLabel(dateString))}</div>
+    <div class="erp-rate-controls">
+      <div class="erp-rate-select" aria-hidden="true">${escapeHtml(vehiclePopupLabel(vehicleType))}</div>
+      <div class="erp-rate-select" aria-hidden="true">${escapeHtml(rateDayLabel(dateString))}</div>
+    </div>
     <div class="erp-rate-table-wrap">
       <table class="erp-rate-table">
         <tbody>${body}</tbody>
       </table>
     </div>
     ${note ? `<p class="erp-rate-note">${escapeHtml(note)}</p>` : ""}
+  </div>`;
+}
+
+function tooltipForErpRates({ groupId, title, vehicleType, dateString, highlightMinutes }) {
+  const rows = buildErpRateRows(groupId, dateString, vehicleType);
+  const activeMinutes = Number.isFinite(highlightMinutes) ? highlightMinutes : selectedRateMinutes();
+  const activeRow = rowForMinutes(rows, activeMinutes);
+  const maxAmount = Math.max(...rows.map((row) => row.amount));
+  const chargedWindow = chargedWindowSummary(rows);
+
+  return `<div class="erp-hover-card">
+    <span class="erp-hover-kicker">ERP rates</span>
+    <h3>${escapeHtml(title)}</h3>
+    <div class="erp-hover-meta">
+      <span>${escapeHtml(vehiclePopupLabel(vehicleType))}</span>
+      <span>${escapeHtml(rateDayLabel(dateString))}</span>
+    </div>
+    <div class="erp-hover-stats">
+      <div>
+        <span>${escapeHtml(clockFromMinutes(activeMinutes))}</span>
+        <strong>${formatPopupMoney(activeRow.amount)}</strong>
+      </div>
+      <div>
+        <span>Peak</span>
+        <strong>${formatPopupMoney(maxAmount)}</strong>
+      </div>
+    </div>
+    <p><span>Charged window</span><strong>${escapeHtml(chargedWindow)}</strong></p>
   </div>`;
 }
 
@@ -967,6 +1015,26 @@ function selectedRateDateString() {
   return els.date.value || toDateInputValue(new Date());
 }
 
+function selectedRateMinutes() {
+  return els.time.value ? minutesFromClock(els.time.value) : 8 * 60 + 30;
+}
+
+function rowForMinutes(rows, minutes) {
+  return (
+    rows.find((row) => Number.isFinite(row.start) && minutes >= row.start && minutes < row.end) ||
+    rows.find((row) => row.amount > 0) ||
+    rows[0] || { amount: 0, range: "All day" }
+  );
+}
+
+function chargedWindowSummary(rows) {
+  const chargedRows = rows.filter((row) => row.amount > 0 && Number.isFinite(row.start) && Number.isFinite(row.end));
+  if (!chargedRows.length) {
+    return "No charge";
+  }
+  return `${clockFromMinutes(chargedRows[0].start)} - ${clockFromMinutes(chargedRows.at(-1).end)}`;
+}
+
 function dateWithMinutes(dateString, minutes) {
   return new Date(`${dateString}T${clockFromMinutes(minutes)}:00`);
 }
@@ -1010,15 +1078,18 @@ function bindHoverPopup(layer) {
   });
 }
 
-function bindGantryInfo(layer, content) {
-  layer.bindPopup(content, {
+function bindGantryInfo(layer, popupContent, tooltipContent) {
+  layer.bindPopup(popupContent, {
     className: "map-info-popup",
-    maxWidth: 340,
+    maxWidth: 320,
+    autoPan: true,
+    autoPanPadding: [44, 44],
+    keepInView: true,
   });
-  layer.bindTooltip(content, {
+  layer.bindTooltip(tooltipContent, {
     className: "map-info-tooltip",
     direction: "top",
-    offset: [0, -8],
+    offset: [0, -10],
     opacity: 1,
     sticky: true,
   });
@@ -1036,6 +1107,39 @@ function bindGantryInfo(layer, content) {
   layer.on("click", () => {
     layer.closeTooltip();
     layer.openPopup();
+  });
+}
+
+function keepPopupInViewport(event) {
+  const clampPopup = () => {
+    const container = event.popup?._container;
+    if (!container) {
+      return;
+    }
+
+    const rect = container.getBoundingClientRect();
+    const margin = 8;
+    let shiftX = 0;
+    if (rect.left < margin) {
+      shiftX = margin - rect.left;
+    } else if (rect.right > window.innerWidth - margin) {
+      shiftX = window.innerWidth - margin - rect.right;
+    }
+    if (!shiftX) {
+      return;
+    }
+
+    const match = container.style.transform.match(/translate3d\(([-\d.]+)px,\s*([-\d.]+)px,\s*0px\)/);
+    if (!match) {
+      return;
+    }
+    const nextX = Number(match[1]) + shiftX;
+    container.style.transform = `translate3d(${nextX}px, ${match[2]}px, 0px)`;
+  };
+
+  requestAnimationFrame(() => {
+    clampPopup();
+    requestAnimationFrame(clampPopup);
   });
 }
 

@@ -1161,13 +1161,13 @@ tbody tr.current-row {
 }
 
 .leaflet-tooltip.map-info-tooltip {
-  max-width: min(340px, calc(100vw - 48px));
+  max-width: min(320px, calc(100vw - 48px));
   padding: 0;
   border: 0;
-  border-radius: 3px;
+  border-radius: 8px;
   background: #ffffff;
   background-color: #ffffff;
-  box-shadow: 0 16px 36px rgba(28, 41, 49, 0.24);
+  box-shadow: 0 18px 44px rgba(20, 37, 44, 0.28);
   color: #253039;
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -1183,37 +1183,64 @@ tbody tr.current-row {
 }
 
 .map-info-popup .leaflet-popup-content-wrapper {
-  border-radius: 3px;
-  box-shadow: 0 16px 36px rgba(28, 41, 49, 0.22);
+  overflow: hidden;
+  border: 1px solid rgba(21, 50, 56, 0.14);
+  border-radius: 10px;
+  box-shadow: 0 20px 48px rgba(20, 37, 44, 0.26);
 }
 
 .map-info-popup .leaflet-popup-content {
-  width: min(320px, calc(100vw - 58px)) !important;
+  width: min(316px, calc(100vw - 72px)) !important;
+}
+
+.map-info-popup .leaflet-popup-close-button {
+  top: 7px;
+  right: 7px;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  color: #ffffff;
+  font-size: 1.1rem;
+  line-height: 26px;
+}
+
+.map-info-popup .leaflet-popup-close-button:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
 }
 
 .erp-rate-card {
-  padding: 9px;
+  overflow: hidden;
+  background: #ffffff;
   color: #111b20;
   font-family: Arial, Helvetica, sans-serif;
 }
 
 .erp-rate-card h3 {
-  margin: 0 22px 8px 0;
-  font-size: 1rem;
+  margin: 0;
+  padding: 12px 40px 12px 13px;
+  background: #153238;
+  color: #ffffff;
+  font-size: 1.02rem;
   font-weight: 800;
-  line-height: 1.25;
+  line-height: 1.28;
+}
+
+.erp-rate-controls {
+  display: grid;
+  gap: 6px;
+  padding: 10px 10px 0;
 }
 
 .erp-rate-select {
   position: relative;
   min-height: 22px;
-  margin-top: 5px;
-  padding: 3px 24px 3px 7px;
-  border: 1px solid #6d7779;
-  border-radius: 2px;
-  background: #ffffff;
+  padding: 5px 26px 5px 8px;
+  border: 1px solid #a7b7b5;
+  border-radius: 6px;
+  background: #f7fbfa;
   color: #111b20;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   line-height: 1.25;
 }
 
@@ -1232,7 +1259,9 @@ tbody tr.current-row {
 
 .erp-rate-table-wrap {
   max-height: min(360px, 56vh);
-  margin-top: 7px;
+  margin: 10px;
+  border: 1px solid #8fb0af;
+  border-radius: 7px;
   overflow: auto;
 }
 
@@ -1245,9 +1274,17 @@ tbody tr.current-row {
 }
 
 .erp-rate-table td {
-  padding: 2px 5px;
-  border: 1px solid #7b9696;
+  padding: 5px 7px;
+  border-bottom: 1px solid #9bbdbc;
   background: #e0f8f7;
+}
+
+.erp-rate-table tr:nth-child(even) td {
+  background: #edfdfc;
+}
+
+.erp-rate-table tr:last-child td {
+  border-bottom: 0;
 }
 
 .erp-rate-table td:last-child {
@@ -1257,13 +1294,133 @@ tbody tr.current-row {
 }
 
 .erp-rate-note {
-  margin: 7px 0 0;
+  margin: 0;
+  padding: 0 10px 10px;
   color: #405057;
   font-size: 0.76rem;
   line-height: 1.3;
 }
 
+.erp-hover-card {
+  width: min(300px, calc(100vw - 56px));
+  padding: 12px;
+  border: 1px solid rgba(21, 50, 56, 0.18);
+  border-left: 5px solid #f0a534;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #16272d;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.erp-hover-kicker {
+  display: block;
+  margin-bottom: 4px;
+  color: #6a3c00;
+  font-size: 0.7rem;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.erp-hover-card h3 {
+  margin: 0 0 8px;
+  font-size: 0.96rem;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+.erp-hover-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 9px;
+}
+
+.erp-hover-meta span {
+  padding: 3px 6px;
+  border-radius: 999px;
+  background: #eef5f3;
+  color: #405057;
+  font-size: 0.72rem;
+  font-weight: 760;
+}
+
+.erp-hover-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.erp-hover-stats div {
+  padding: 8px;
+  border: 1px solid #d4e2df;
+  border-radius: 7px;
+  background: #f8fbfa;
+}
+
+.erp-hover-stats span,
+.erp-hover-card p span {
+  display: block;
+  color: #69787d;
+  font-size: 0.72rem;
+  font-weight: 760;
+}
+
+.erp-hover-stats strong {
+  display: block;
+  margin-top: 2px;
+  color: #111b20;
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.erp-hover-card p {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 9px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid #e4eeeb;
+}
+
+.erp-hover-card p strong {
+  color: #111b20;
+  font-size: 0.82rem;
+  font-weight: 850;
+  text-align: right;
+}
+
 @media (max-width: 760px) {
+  .map-info-popup .leaflet-popup-content {
+    width: min(284px, calc(100vw - 88px)) !important;
+  }
+
+  .erp-rate-card h3 {
+    padding: 11px 38px 11px 12px;
+    font-size: 0.94rem;
+  }
+
+  .erp-rate-select {
+    font-size: 0.76rem;
+  }
+
+  .erp-rate-table-wrap {
+    max-height: min(300px, 42vh);
+  }
+
+  .erp-rate-table {
+    font-size: 0.8rem;
+  }
+
+  .erp-rate-table td:last-child {
+    width: 72px;
+  }
+
+  .erp-hover-card {
+    width: min(276px, calc(100vw - 70px));
+  }
+
   .primary-button {
     position: sticky;
     bottom: 12px;

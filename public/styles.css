@@ -1164,6 +1164,8 @@ tbody tr.current-row {
   padding: 9px 10px;
   border: 1px solid rgba(31, 46, 54, 0.14);
   border-radius: 8px;
+  background: #ffffff;
+  background-color: #ffffff;
   box-shadow: 0 14px 32px rgba(28, 41, 49, 0.18);
   color: #253039;
   font-family:
@@ -1171,6 +1173,7 @@ tbody tr.current-row {
   font-size: 0.82rem;
   font-weight: 650;
   line-height: 1.4;
+  opacity: 1 !important;
   white-space: normal;
 }
 

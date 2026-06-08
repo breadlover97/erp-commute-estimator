@@ -420,7 +420,7 @@ select:focus {
 
 .form-actions {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 8px;
 }
 
@@ -455,6 +455,15 @@ select:focus {
 .secondary-button:hover {
   border-color: var(--accent);
   color: var(--accent-deep);
+}
+
+.reset-button {
+  color: #5d5550;
+}
+
+.reset-button:hover {
+  border-color: #b98565;
+  color: #8b4a28;
 }
 
 .primary-button:hover {

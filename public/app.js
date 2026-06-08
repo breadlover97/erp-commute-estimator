@@ -2,7 +2,7 @@ const SINGAPORE_CENTER = [1.3521, 103.8198];
 const GANTRY_POINT_MATCH_THRESHOLD_METERS = 115;
 const GANTRY_LINE_MATCH_THRESHOLD_METERS = 70;
 const DIRECTION_TOLERANCE_DEGREES = 75;
-const DATA_VERSION = "2026-06-08-route-v3";
+const DATA_VERSION = "2026-06-08-reset-v4";
 const ROUTE_SEARCH_START_MINUTES = 4 * 60 + 30;
 const ROUTE_SEARCH_END_MINUTES = 22 * 60 + 30;
 const MAX_ROUTE_OPTIONS = 3;
@@ -112,6 +112,7 @@ const state = {
   showAllGantries: true,
   suggestionTimers: {},
   autoEstimateOnReady: false,
+  routeRequestId: 0,
 };
 
 const els = {
@@ -133,6 +134,7 @@ const els = {
   showAllGantries: document.querySelector("#show-all-gantries"),
   fitRoute: document.querySelector("#fit-route-button"),
   share: document.querySelector("#share-button"),
+  reset: document.querySelector("#reset-button"),
   totalCost: document.querySelector("#total-cost"),
   driveTime: document.querySelector("#drive-time"),
   driveDistance: document.querySelector("#drive-distance"),
@@ -192,6 +194,7 @@ function bindEvents() {
   });
   els.fitRoute.addEventListener("click", fitCurrentRoute);
   els.share.addEventListener("click", copyShareUrl);
+  els.reset.addEventListener("click", resetEstimator);
   els.date.addEventListener("change", syncReturnDateIfBeforeDeparture);
   els.time.addEventListener("change", syncReturnDateIfBeforeDeparture);
 
@@ -287,6 +290,7 @@ function bindAddressField(type) {
 
 async function handleRouteSubmit(event) {
   event.preventDefault();
+  const requestId = ++state.routeRequestId;
   setLoading(true);
   clearRouteLayers();
   setStatus("Confirming addresses and finding route options...");
@@ -326,6 +330,10 @@ async function handleRouteSubmit(event) {
           })
         : [];
 
+    if (requestId !== state.routeRequestId) {
+      return;
+    }
+
     const routeSelectionToRestore = state.routeSelectionToRestore;
     state.routeSelectionToRestore = null;
     state.selectedRoutes = {
@@ -345,10 +353,15 @@ async function handleRouteSubmit(event) {
     focusMapAfterEstimate();
     replaceUrlWithShareState();
   } catch (error) {
+    if (requestId !== state.routeRequestId) {
+      return;
+    }
     setStatus(error.message || "Unable to calculate this route.");
     renderErrorState(error.message || "Unable to calculate this route.");
   } finally {
-    setLoading(false);
+    if (requestId === state.routeRequestId) {
+      setLoading(false);
+    }
   }
 }
 
@@ -781,6 +794,27 @@ function renderErrorState(message) {
   els.matchedCount.textContent = "--";
   els.timingBody.innerHTML = `<tr><td colspan="4" class="empty-row">${escapeHtml(message)}</td></tr>`;
   els.gantryList.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
+  els.routeOptionsSection.hidden = true;
+  els.routeOptions.innerHTML = "";
+  els.tripBreakdown.hidden = true;
+  els.tripBreakdown.innerHTML = "";
+  els.recommendation.hidden = true;
+  els.recommendationTitle.textContent = "";
+  els.recommendationCopy.textContent = "";
+}
+
+function renderInitialResults() {
+  els.totalCost.textContent = formatMoney(0);
+  els.driveTime.textContent = "--";
+  els.driveDistance.textContent = "--";
+  els.matchedCount.textContent = "--";
+  els.comparisonNote.textContent = "Run an estimate to compare costs.";
+  els.timingBody.innerHTML = `<tr><td colspan="4" class="empty-row">No route calculated yet.</td></tr>`;
+  els.gantryList.innerHTML = `<div class="empty-state">No route calculated yet.</div>`;
+  els.routeOptionsSection.hidden = true;
+  els.routeOptions.innerHTML = "";
+  els.tripBreakdown.hidden = true;
+  els.tripBreakdown.innerHTML = "";
   els.recommendation.hidden = true;
   els.recommendationTitle.textContent = "";
   els.recommendationCopy.textContent = "";
@@ -1484,6 +1518,53 @@ function clearRouteLayers() {
   state.routeLayerGroup?.clearLayers();
   state.matchedGantriesLayer?.clearLayers();
   state.pointLayer?.clearLayers();
+}
+
+function resetEstimator() {
+  state.routeRequestId += 1;
+  state.address = {
+    start: null,
+    destination: null,
+  };
+  state.currentPlan = null;
+  state.selectedRoutes = {
+    outbound: 0,
+    return: 0,
+  };
+  state.routeSelectionToRestore = null;
+  state.autoEstimateOnReady = false;
+  state.showAllGantries = true;
+
+  for (const timer of Object.values(state.suggestionTimers)) {
+    window.clearTimeout(timer);
+  }
+  state.suggestionTimers = {};
+
+  els.start.value = "";
+  els.destination.value = "";
+  els.startSuggestions.innerHTML = "";
+  els.destinationSuggestions.innerHTML = "";
+  renderAddressConfirmation("start");
+  renderAddressConfirmation("destination");
+
+  setRadioValue("tripMode", "one-way");
+  setRadioValue("timeMode", "depart");
+  els.vehicleType.value = "car";
+  setDefaultSingaporeDateTime();
+  setReturnOffset(8);
+  renderTripMode();
+
+  els.showAllGantries.checked = true;
+  setMapSource("osm");
+  renderAllGantries();
+  clearRouteLayers();
+  fitCurrentRoute();
+  renderInitialResults();
+  setLoading(false);
+  setStatus("Enter a start point, destination and timing.");
+
+  window.history.replaceState(null, "", `${window.location.origin}${window.location.pathname}`);
+  els.start.focus();
 }
 
 function fitCurrentRoute() {

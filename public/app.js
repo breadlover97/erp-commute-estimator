@@ -1,7 +1,7 @@
 const SINGAPORE_CENTER = [1.3521, 103.8198];
 const GANTRY_MATCH_THRESHOLD_METERS = 115;
 const DIRECTION_TOLERANCE_DEGREES = 75;
-const DATA_VERSION = "2026-06-08-shipping-v2";
+const DATA_VERSION = "2026-06-08-ux-v5";
 const ROUTE_SEARCH_START_MINUTES = 4 * 60 + 30;
 const ROUTE_SEARCH_END_MINUTES = 22 * 60 + 30;
 const SINGAPORE_PUBLIC_HOLIDAYS_2026 = new Set([
@@ -59,6 +59,7 @@ const els = {
   sourceGenerated: document.querySelector("#source-generated"),
   sourceCopy: document.querySelector("#source-copy"),
   primaryButton: document.querySelector(".primary-button"),
+  mapPanel: document.querySelector("#map-panel"),
 };
 
 init().catch((error) => {
@@ -121,6 +122,7 @@ async function handleRouteSubmit(event) {
     renderTimingComparison(comparison, baseDeparture);
     renderGantryList(currentTrip.entries);
     renderRecommendation(currentTrip, suggestion, timeMode);
+    focusMapAfterEstimate();
 
     setStatus(
       `Route matched ${matchedGantries.length} gantry location${
@@ -224,6 +226,7 @@ function renderRoute(startPoint, endPoint, route, matchedGantries) {
 
   const bounds = state.routeLayer.getBounds();
   state.map.fitBounds(bounds.pad(0.16));
+  refreshMapLayout();
 }
 
 function clearRouteLayers() {
@@ -479,10 +482,10 @@ function renderTimingComparison(rows, baseDeparture) {
         .join(" ");
       const routeErp = trip.entries.filter((entry) => entry.match.gantry.isPriced).length;
       return `<tr class="${rowClasses}">
-        <td>${formatClock(trip.departureDate)}</td>
-        <td>${formatClock(trip.arrivalDate)}</td>
-        <td class="money">${formatMoney(trip.total)}</td>
-        <td>${routeErp}</td>
+        <td data-label="Leave">${formatClock(trip.departureDate)}</td>
+        <td data-label="Arrive">${formatClock(trip.arrivalDate)}</td>
+        <td data-label="ERP" class="money">${formatMoney(trip.total)}</td>
+        <td data-label="Route ERP">${routeErp}</td>
       </tr>`;
     })
     .join("");
@@ -546,6 +549,30 @@ function renderErrorState(message) {
   els.recommendation.hidden = true;
   els.recommendationTitle.textContent = "";
   els.recommendationCopy.textContent = "";
+}
+
+function focusMapAfterEstimate() {
+  if (!els.mapPanel || !window.matchMedia("(max-width: 760px)").matches) {
+    refreshMapLayout();
+    return;
+  }
+
+  const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+  requestAnimationFrame(() => {
+    els.mapPanel.scrollIntoView({ behavior, block: "start" });
+    refreshMapLayout();
+    window.setTimeout(refreshMapLayout, 450);
+  });
+}
+
+function refreshMapLayout() {
+  if (!state.map) {
+    return;
+  }
+
+  requestAnimationFrame(() => {
+    state.map.invalidateSize({ pan: false });
+  });
 }
 
 function renderSourceMetadata() {

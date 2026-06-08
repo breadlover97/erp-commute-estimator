@@ -10,67 +10,75 @@
       integrity="sha256-p4NxAoJBhIINfQKJvI5v3XYPS0obTRR9BMYgqNJFlIk="
       crossorigin=""
     />
-    <link rel="stylesheet" href="./styles.css?v=2026-06-08-shipping-v2" />
+    <link rel="stylesheet" href="./styles.css?v=2026-06-08-ux-v5" />
   </head>
   <body>
     <main class="app-shell">
       <section class="planner-panel" aria-label="ERP commute planner">
         <header class="topbar">
           <div>
-            <p class="eyebrow">Singapore weekday ERP</p>
-            <h1>ERP Commute Estimator</h1>
+            <p class="eyebrow">Singapore ERP planning</p>
+            <h1>Estimate ERP before you drive</h1>
           </div>
           <span class="source-pill" id="rate-source">Loading rates</span>
         </header>
 
         <form id="route-form" class="route-form">
-          <label class="field">
-            <span>Start point</span>
-            <input
-              id="start-input"
-              name="start"
-              autocomplete="street-address"
-              placeholder="e.g. Tampines Mall"
-              required
-            />
-          </label>
+          <div class="route-card" aria-label="Route endpoints">
+            <label class="field route-field">
+              <span>Start</span>
+              <input
+                id="start-input"
+                name="start"
+                autocomplete="street-address"
+                placeholder="Tampines Mall"
+                required
+              />
+            </label>
 
-          <div class="swap-row">
-            <label class="field">
+            <button
+              id="swap-button"
+              class="icon-button route-swap"
+              type="button"
+              aria-label="Swap start and destination"
+            >
+              <i data-lucide="arrow-up-down"></i>
+            </button>
+
+            <label class="field route-field">
               <span>Destination</span>
               <input
                 id="destination-input"
                 name="destination"
                 autocomplete="street-address"
-                placeholder="e.g. Raffles Place"
+                placeholder="Raffles Place"
                 required
               />
             </label>
-            <button id="swap-button" class="icon-button" type="button" aria-label="Swap start and destination">
-              <i data-lucide="arrow-up-down"></i>
-            </button>
           </div>
 
-          <div class="mode-control" aria-label="Time mode">
-            <label>
-              <input type="radio" name="timeMode" value="depart" checked />
-              <span>Leave at</span>
-            </label>
-            <label>
-              <input type="radio" name="timeMode" value="arrive" />
-              <span>Arrive by</span>
-            </label>
-          </div>
+          <div class="trip-controls">
+            <div class="mode-control" aria-label="Time mode">
+              <label>
+                <input type="radio" name="timeMode" value="depart" checked />
+                <span>Leave at</span>
+              </label>
+              <label>
+                <input type="radio" name="timeMode" value="arrive" />
+                <span>Arrive by</span>
+              </label>
+            </div>
 
-          <div class="time-grid">
-            <label class="field">
-              <span>Date</span>
-              <input id="date-input" type="date" required />
-            </label>
-            <label class="field">
-              <span>Time</span>
-              <input id="time-input" type="time" step="300" required />
-            </label>
+            <div class="time-grid">
+              <label class="field">
+                <span>Date</span>
+                <input id="date-input" type="date" required />
+              </label>
+              <label class="field">
+                <span>Time</span>
+                <input id="time-input" type="time" step="300" required />
+              </label>
+            </div>
           </div>
 
           <div class="sample-row" aria-label="Sample routes">
@@ -87,7 +95,20 @@
             Estimate ERP
           </button>
         </form>
+      </section>
 
+      <section class="map-panel" id="map-panel" aria-label="Map and route">
+        <div id="map"></div>
+        <div class="map-legend">
+          <span><i class="legend-line route"></i> Route</span>
+          <span><i class="legend-dot priced"></i> Priced ERP</span>
+          <span><i class="legend-dot matched"></i> On route</span>
+          <span><i class="legend-dot all"></i> Other gantries</span>
+        </div>
+        <div class="status-bar" id="status-bar" role="status">Enter a start point, destination and timing.</div>
+      </section>
+
+      <section class="insights-panel" aria-label="ERP estimate results">
         <section class="summary-grid" aria-label="Route summary">
           <article class="metric-card highlight">
             <span>Total ERP</span>
@@ -108,11 +129,14 @@
         </section>
 
         <section class="recommendation" id="recommendation" hidden>
+          <div class="recommendation-icon" aria-hidden="true">
+            <i data-lucide="clock-3"></i>
+          </div>
           <div>
             <span>Suggested timing</span>
             <strong id="recommendation-title"></strong>
+            <p id="recommendation-copy"></p>
           </div>
-          <p id="recommendation-copy"></p>
         </section>
 
         <section class="results-section">
@@ -142,18 +166,21 @@
         <section class="results-section">
           <div class="section-heading">
             <h2>ERP gantries on route</h2>
-            <span id="gantry-note">Official LTA gantry geometry, matched by route and direction.</span>
+            <span id="gantry-note">Official ERP markers, matched by route and direction.</span>
           </div>
           <div class="gantry-list" id="gantry-list">
             <div class="empty-state">No route calculated yet.</div>
           </div>
         </section>
 
-        <section class="source-section" aria-label="Data sources and assumptions">
-          <div class="section-heading">
-            <h2>Data sources</h2>
-            <span id="source-generated">Loading source metadata.</span>
-          </div>
+        <details class="source-section" aria-label="Data sources and assumptions">
+          <summary>
+            <span>
+              <strong>Data sources</strong>
+              <small id="source-generated">Loading source metadata.</small>
+            </span>
+            <i data-lucide="chevron-down"></i>
+          </summary>
           <div class="source-list">
             <a href="https://onemotoring.lta.gov.sg/content/dam/onemotoring/Driving/ERP/ERP%20Rates.pdf" target="_blank" rel="noreferrer">
               OneMotoring base rate table
@@ -177,18 +204,7 @@
           <p class="source-copy" id="source-copy">
             Estimates are for passenger cars, taxis and light goods vehicles. The route match is based on public route geometry, official ERP marker coordinates and direction checks.
           </p>
-        </section>
-      </section>
-
-      <section class="map-panel" aria-label="Map and route">
-        <div id="map"></div>
-        <div class="map-legend">
-          <span><i class="legend-line route"></i> Route</span>
-          <span><i class="legend-dot priced"></i> Priced ERP</span>
-          <span><i class="legend-dot matched"></i> On route</span>
-          <span><i class="legend-dot all"></i> Other gantries</span>
-        </div>
-        <div class="status-bar" id="status-bar" role="status">Enter a start point, destination and timing.</div>
+        </details>
       </section>
     </main>
 
@@ -198,6 +214,6 @@
       crossorigin=""
     ></script>
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
-    <script src="./app.js?v=2026-06-08-shipping-v2" type="module"></script>
+    <script src="./app.js?v=2026-06-08-ux-v5" type="module"></script>
   </body>
 </html>

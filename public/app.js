@@ -2,7 +2,7 @@ const SINGAPORE_CENTER = [1.3521, 103.8198];
 const GANTRY_POINT_MATCH_THRESHOLD_METERS = 115;
 const GANTRY_LINE_MATCH_THRESHOLD_METERS = 70;
 const DIRECTION_TOLERANCE_DEGREES = 75;
-const DATA_VERSION = "2026-06-08-tooltip-v7";
+const DATA_VERSION = "2026-06-08-labels-v8";
 const ROUTE_SEARCH_START_MINUTES = 4 * 60 + 30;
 const ROUTE_SEARCH_END_MINUTES = 22 * 60 + 30;
 const MAX_ROUTE_OPTIONS = 3;
@@ -897,7 +897,7 @@ function bindHoverPopup(layer) {
 function bindGantryInfo(layer, content) {
   layer.bindPopup(content, {
     className: "map-info-popup",
-    maxWidth: 270,
+    maxWidth: 310,
   });
   layer.bindTooltip(content, {
     className: "map-info-tooltip",

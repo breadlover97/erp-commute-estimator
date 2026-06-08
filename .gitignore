@@ -1,3 +1,5 @@
 .DS_Store
 node_modules/
 data/gantry-download.json
+.dev.vars
+.wrangler/

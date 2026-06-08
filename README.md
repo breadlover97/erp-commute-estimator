@@ -22,6 +22,7 @@ A static web app for estimating Singapore ERP charges for a driving commute.
 - Base rates: OneMotoring `ERP Rates.pdf`, with effect from 23 Mar 2026.
 - Latest adjustments: LTA news release, `Revised ERP Rates from 2 June 2026`, published 25 May 2026.
 - Public holidays: MOM 2026 Singapore public holidays.
+- Route geometry: OneMap drive routing when configured, with OpenStreetMap/FOSSGIS OSRM, Valhalla and OSRM demo fallback providers.
 
 The checked-in app data is in `public/data/erp-data.json`.
 
@@ -29,8 +30,8 @@ The checked-in app data is in `public/data/erp-data.json`.
 
 - This is an estimate. Route-to-gantry matching is based on proximity to official ERP marker coordinates or gantry line geometry plus a directional check.
 - 2026 public holidays and major public-holiday eve cut-offs are modelled; later years need a public-holiday data refresh.
-- The app uses public Nominatim for geocoding and a multi-engine routing stack for route geometry: OpenStreetMap/FOSSGIS OSRM first, Valhalla opportunistically with a short timeout, and the OSRM project demo as fallback.
-- Public demo routing services are rate-limited and do not include live traffic. A production version should eventually use a dedicated Singapore-capable routing provider or a server-side proxy with proper credentials and quotas.
+- The app uses public Nominatim for geocoding and a multi-engine routing stack for route geometry. OneMap drive routing is tried first when the `ONEMAP_API_TOKEN` Cloudflare Pages secret is configured. OpenStreetMap/FOSSGIS OSRM, Valhalla, and the OSRM project demo remain as fallbacks.
+- Public demo routing services are rate-limited and do not include live traffic. OneMap is Singapore-specific, but still depends on OneMap service availability, token access and quota limits.
 - ERP directionality is estimated from the route geometry and gantry position, not from an authoritative lane-level routing engine.
 - The validation script includes regression cases for common opposite-direction false positives, but live route geometry still depends on the public routing provider.
 
@@ -42,6 +43,12 @@ npm run serve
 ```
 
 Open `http://localhost:4173`.
+
+## OneMap Routing
+
+The OneMap routing proxy lives at `functions/api/routes/onemap.js`, which Cloudflare Pages deploys as `/api/routes/onemap`.
+
+Set the OneMap token as a Cloudflare Pages secret named `ONEMAP_API_TOKEN`. For local Wrangler testing, copy `.dev.vars.example` to `.dev.vars` and fill in the token. The checked-in `.dev.vars.example` is only a template; do not commit real tokens.
 
 ## Refreshing Source Data
 

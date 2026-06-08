@@ -2,13 +2,14 @@ const SINGAPORE_CENTER = [1.3521, 103.8198];
 const GANTRY_POINT_MATCH_THRESHOLD_METERS = 115;
 const GANTRY_LINE_MATCH_THRESHOLD_METERS = 70;
 const DIRECTION_TOLERANCE_DEGREES = 75;
-const DATA_VERSION = "2026-06-09-shortcuts-v11";
+const DATA_VERSION = "2026-06-09-onemap-v12";
 const ROUTE_SEARCH_START_MINUTES = 4 * 60 + 30;
 const ROUTE_SEARCH_END_MINUTES = 22 * 60 + 30;
 const ERP_RATE_TABLE_START_MINUTES = 7 * 60;
 const ERP_RATE_TABLE_END_MINUTES = 20 * 60;
 const MAX_ROUTE_OPTIONS = 3;
 const ROUTING_TIMEOUTS = {
+  onemap: 5200,
   valhalla: 2800,
   fossgisOsrm: 6500,
   osrmDemo: 6500,
@@ -1247,6 +1248,7 @@ function shortAddress(label) {
 
 async function fetchDrivingRoutes(startPoint, endPoint) {
   const providerResults = await Promise.allSettled([
+    fetchOneMapRoutes(startPoint, endPoint),
     fetchFossgisOsrmRoutes(startPoint, endPoint),
     fetchValhallaRoutes(startPoint, endPoint),
     fetchOsrmDemoRoutes(startPoint, endPoint),
@@ -1263,6 +1265,19 @@ async function fetchDrivingRoutes(startPoint, endPoint) {
       ...route,
       index,
     }));
+}
+
+async function fetchOneMapRoutes(startPoint, endPoint) {
+  const params = new URLSearchParams({
+    start: `${startPoint.lat},${startPoint.lng}`,
+    end: `${endPoint.lat},${endPoint.lng}`,
+  });
+  const payload = await fetchJson(`./api/routes/onemap?${params}`, { timeoutMs: ROUTING_TIMEOUTS.onemap });
+  return parseOneMapRoutes(payload, {
+    provider: "onemap",
+    providerLabel: "OneMap routing",
+    providerRank: -3,
+  });
 }
 
 async function fetchFossgisOsrmRoutes(startPoint, endPoint) {
@@ -1314,6 +1329,46 @@ async function fetchValhallaRoutes(startPoint, endPoint) {
     providerLabel: "Valhalla enhanced routing",
     providerRank: -1,
   });
+}
+
+function parseOneMapRoutes(payload, providerMeta) {
+  const routePayload = payload || {};
+  const points = parseOneMapRouteGeometry(
+    routePayload.route_geometry ||
+      routePayload.routeGeometry ||
+      routePayload.geometry ||
+      routePayload.route?.route_geometry,
+  );
+  const summary =
+    routePayload.route_summary || routePayload.routeSummary || routePayload.summary || routePayload.route?.route_summary || {};
+  const totalMeters = Number(
+    summary.total_distance ??
+      summary.totalDistance ??
+      routePayload.total_distance ??
+      routePayload.totalDistance ??
+      routePayload.distance,
+  );
+  const durationSeconds = Number(
+    summary.total_time ??
+      summary.totalTime ??
+      routePayload.total_time ??
+      routePayload.totalTime ??
+      routePayload.duration ??
+      routePayload.time,
+  );
+
+  if (points.length < 2 || !Number.isFinite(totalMeters) || !Number.isFinite(durationSeconds)) {
+    throw new Error("No usable OneMap driving route found.");
+  }
+
+  return [
+    buildRouteCandidate({
+      points,
+      totalMeters,
+      durationSeconds,
+      ...providerMeta,
+    }),
+  ];
 }
 
 function parseOsrmRoutes(payload, providerMeta) {
@@ -1444,6 +1499,70 @@ function routeShapeSignature(points) {
 }
 
 function decodeValhallaShape(shape) {
+  return decodeEncodedPolyline(shape, 1e6);
+}
+
+function parseOneMapRouteGeometry(geometry) {
+  if (!geometry) {
+    return [];
+  }
+  if (typeof geometry === "string") {
+    const trimmed = geometry.trim();
+    if (!trimmed) {
+      return [];
+    }
+    if (trimmed.startsWith("[") || trimmed.startsWith("{")) {
+      try {
+        return parseOneMapRouteGeometry(JSON.parse(trimmed));
+      } catch {
+        return [];
+      }
+    }
+    return decodeEncodedPolyline(trimmed, 1e5);
+  }
+  if (Array.isArray(geometry)) {
+    return geometry.flatMap((point) => normalizeRouteCoordinate(point));
+  }
+  if (geometry.type === "LineString" && Array.isArray(geometry.coordinates)) {
+    return geometry.coordinates.flatMap((point) => normalizeRouteCoordinate(point));
+  }
+  if (Array.isArray(geometry.coordinates)) {
+    return geometry.coordinates.flatMap((point) => normalizeRouteCoordinate(point));
+  }
+  return [];
+}
+
+function normalizeRouteCoordinate(point) {
+  if (Array.isArray(point) && Array.isArray(point[0])) {
+    return point.flatMap((child) => normalizeRouteCoordinate(child));
+  }
+  if (Array.isArray(point) && point.length >= 2) {
+    const first = Number(point[0]);
+    const second = Number(point[1]);
+    if (!Number.isFinite(first) || !Number.isFinite(second)) {
+      return [];
+    }
+    if (isSingaporeLatLng(first, second)) {
+      return [{ lat: first, lng: second }];
+    }
+    if (isSingaporeLatLng(second, first)) {
+      return [{ lat: second, lng: first }];
+    }
+    return [{ lat: first, lng: second }];
+  }
+  if (point && typeof point === "object") {
+    const lat = Number(point.lat ?? point.latitude);
+    const lng = Number(point.lng ?? point.lon ?? point.longitude);
+    return Number.isFinite(lat) && Number.isFinite(lng) ? [{ lat, lng }] : [];
+  }
+  return [];
+}
+
+function isSingaporeLatLng(lat, lng) {
+  return lat >= 1.13 && lat <= 1.49 && lng >= 103.58 && lng <= 104.12;
+}
+
+function decodeEncodedPolyline(shape, precision) {
   const points = [];
   let index = 0;
   let lat = 0;
@@ -1456,7 +1575,7 @@ function decodeValhallaShape(shape) {
     index = lngResult.index;
     lat += latResult.value;
     lng += lngResult.value;
-    points.push({ lat: lat / 1e6, lng: lng / 1e6 });
+    points.push({ lat: lat / precision, lng: lng / precision });
   }
 
   return points;
@@ -2013,7 +2132,9 @@ function renderSourceMetadata() {
     : "unknown date";
   const pricedCount = state.erpData.gantries.filter((gantry) => gantry.isPriced).length;
   els.sourceGenerated.textContent = `Generated ${generatedDate}; ${pricedCount} priced gantry geometries indexed.`;
-  els.sourceCopy.textContent = `${state.erpData.meta.notes.join(" ")} Vehicle types use the official base-rate multipliers.`;
+  els.sourceCopy.textContent = `${state.erpData.meta.notes.join(
+    " ",
+  )} Vehicle types use the official base-rate multipliers. Route geometry uses OneMap drive routing when configured, with OpenStreetMap-based fallback providers.`;
 }
 
 function focusMapAfterEstimate() {

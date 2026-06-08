@@ -1,9 +1,11 @@
 const SINGAPORE_CENTER = [1.3521, 103.8198];
-const GANTRY_MATCH_THRESHOLD_METERS = 115;
+const GANTRY_POINT_MATCH_THRESHOLD_METERS = 115;
+const GANTRY_LINE_MATCH_THRESHOLD_METERS = 70;
 const DIRECTION_TOLERANCE_DEGREES = 75;
-const DATA_VERSION = "2026-06-08-ux-v5";
+const DATA_VERSION = "2026-06-08-feature-v2";
 const ROUTE_SEARCH_START_MINUTES = 4 * 60 + 30;
 const ROUTE_SEARCH_END_MINUTES = 22 * 60 + 30;
+const MAX_ROUTE_OPTIONS = 3;
 const SINGAPORE_PUBLIC_HOLIDAYS_2026 = new Set([
   "2026-01-01",
   "2026-02-17",
@@ -27,23 +29,105 @@ const ERP_EVE_CUTOFF_DATES_2026 = new Set([
   "2026-12-24",
 ]);
 
+const VEHICLE_TYPES = {
+  motorcycle: {
+    label: "Motorcycle",
+    multiplier: 0.5,
+  },
+  car: {
+    label: "Passenger car / taxi / light goods",
+    multiplier: 1,
+  },
+  heavy: {
+    label: "Heavy goods / small bus",
+    multiplier: 1.5,
+  },
+  "very-heavy": {
+    label: "Very heavy goods / big bus",
+    multiplier: 2,
+  },
+};
+
+const MAP_SOURCES = {
+  osm: {
+    label: "OpenStreetMap",
+    url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    options: {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    },
+  },
+  "osm-hot": {
+    label: "OSM Humanitarian",
+    url: "https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
+    options: {
+      maxZoom: 19,
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, tiles &copy; HOT',
+    },
+  },
+  "carto-light": {
+    label: "Carto Light",
+    url: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+    options: {
+      maxZoom: 20,
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    },
+  },
+  "esri-imagery": {
+    label: "Esri Imagery",
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    options: {
+      maxZoom: 19,
+      attribution:
+        "Tiles &copy; Esri, Earthstar Geographics, and the GIS user community",
+    },
+  },
+};
+
 const state = {
   erpData: null,
   map: null,
+  baseLayer: null,
   allGantriesLayer: null,
   matchedGantriesLayer: null,
-  routeLayer: null,
+  routeLayerGroup: null,
   pointLayer: null,
-  lastRoute: null,
+  address: {
+    start: null,
+    destination: null,
+  },
+  currentPlan: null,
+  selectedRoutes: {
+    outbound: 0,
+    return: 0,
+  },
+  routeSelectionToRestore: null,
+  showAllGantries: true,
+  suggestionTimers: {},
+  autoEstimateOnReady: false,
 };
 
 const els = {
   form: document.querySelector("#route-form"),
   start: document.querySelector("#start-input"),
   destination: document.querySelector("#destination-input"),
+  startSuggestions: document.querySelector("#start-suggestions"),
+  destinationSuggestions: document.querySelector("#destination-suggestions"),
+  startConfirmation: document.querySelector("#start-confirmation"),
+  destinationConfirmation: document.querySelector("#destination-confirmation"),
   swap: document.querySelector("#swap-button"),
   date: document.querySelector("#date-input"),
   time: document.querySelector("#time-input"),
+  returnControls: document.querySelector("#return-controls"),
+  returnDate: document.querySelector("#return-date-input"),
+  returnTime: document.querySelector("#return-time-input"),
+  vehicleType: document.querySelector("#vehicle-type"),
+  mapSource: document.querySelector("#map-source"),
+  showAllGantries: document.querySelector("#show-all-gantries"),
+  fitRoute: document.querySelector("#fit-route-button"),
+  share: document.querySelector("#share-button"),
   totalCost: document.querySelector("#total-cost"),
   driveTime: document.querySelector("#drive-time"),
   driveDistance: document.querySelector("#drive-distance"),
@@ -60,6 +144,9 @@ const els = {
   sourceCopy: document.querySelector("#source-copy"),
   primaryButton: document.querySelector(".primary-button"),
   mapPanel: document.querySelector("#map-panel"),
+  routeOptionsSection: document.querySelector("#route-options-section"),
+  routeOptions: document.querySelector("#route-options"),
+  tripBreakdown: document.querySelector("#trip-breakdown"),
 };
 
 init().catch((error) => {
@@ -69,29 +156,127 @@ init().catch((error) => {
 
 async function init() {
   setDefaultSingaporeDateTime();
+  setReturnOffset(8);
   initMap();
+  hydrateFromUrl();
   state.erpData = await fetchJson(`./data/erp-data.json?v=${DATA_VERSION}`);
   els.rateSource.textContent = "Official source-backed rates";
   renderSourceMetadata();
   renderAllGantries();
   bindEvents();
+  renderTripMode();
   window.lucide?.createIcons();
+
+  if (state.autoEstimateOnReady) {
+    window.setTimeout(() => els.form.requestSubmit(), 250);
+  }
 }
 
 function bindEvents() {
   els.form.addEventListener("submit", handleRouteSubmit);
-  els.swap.addEventListener("click", () => {
-    const oldStart = els.start.value;
-    els.start.value = els.destination.value;
-    els.destination.value = oldStart;
-    els.start.focus();
+  els.swap.addEventListener("click", handleSwap);
+  els.vehicleType.addEventListener("change", () => {
+    if (state.currentPlan) {
+      recalculatePlanForVehicle();
+    }
   });
+  els.mapSource.addEventListener("change", () => setMapSource(els.mapSource.value));
+  els.showAllGantries.addEventListener("change", () => {
+    state.showAllGantries = els.showAllGantries.checked;
+    renderAllGantries();
+  });
+  els.fitRoute.addEventListener("click", fitCurrentRoute);
+  els.share.addEventListener("click", copyShareUrl);
+  els.date.addEventListener("change", syncReturnDateIfBeforeDeparture);
+  els.time.addEventListener("change", syncReturnDateIfBeforeDeparture);
+
+  document.querySelectorAll("input[name='tripMode']").forEach((input) => {
+    input.addEventListener("change", renderTripMode);
+  });
+
+  bindAddressField("start");
+  bindAddressField("destination");
 
   document.querySelectorAll(".sample-button").forEach((button) => {
     button.addEventListener("click", () => {
-      els.start.value = button.dataset.start;
-      els.destination.value = button.dataset.destination;
+      setConfirmedAddress("start", {
+        lat: Number(button.dataset.startLat),
+        lng: Number(button.dataset.startLng),
+        label: button.dataset.startLabel,
+      }, button.dataset.start);
+      setConfirmedAddress("destination", {
+        lat: Number(button.dataset.destinationLat),
+        lng: Number(button.dataset.destinationLng),
+        label: button.dataset.destinationLabel,
+      }, button.dataset.destination);
+      setStatus("Sample route loaded with confirmed addresses.");
     });
+  });
+
+  document.querySelectorAll(".date-chip").forEach((button) => {
+    button.addEventListener("click", () => {
+      const date = addDays(new Date(), Number(button.dataset.dateOffset));
+      els.date.value = toDateInputValue(date);
+      syncReturnDateIfBeforeDeparture();
+    });
+  });
+
+  document.querySelectorAll(".time-chip").forEach((button) => {
+    button.addEventListener("click", () => {
+      els.time.value = button.dataset.time;
+      syncReturnDateIfBeforeDeparture();
+    });
+  });
+
+  document.querySelectorAll(".return-chip").forEach((button) => {
+    button.addEventListener("click", () => setReturnOffset(Number(button.dataset.hours)));
+  });
+
+  document.querySelectorAll(".time-step").forEach((button) => {
+    button.addEventListener("click", () => {
+      const target = document.querySelector(`#${button.dataset.target}`);
+      stepTimeInput(target, Number(button.dataset.minutes));
+      syncReturnDateIfBeforeDeparture();
+    });
+  });
+
+  document.addEventListener("click", (event) => {
+    const tooltipCard = event.target.closest(".tooltip-card");
+    document.querySelectorAll(".tooltip-card.show-tooltip").forEach((card) => {
+      if (card !== tooltipCard) {
+        card.classList.remove("show-tooltip");
+      }
+    });
+    if (tooltipCard && window.matchMedia("(hover: none)").matches) {
+      tooltipCard.classList.toggle("show-tooltip");
+    }
+  });
+}
+
+function bindAddressField(type) {
+  const input = els[type];
+  input.addEventListener("input", () => {
+    const confirmed = state.address[type];
+    if (confirmed && confirmed.inputValue !== input.value.trim()) {
+      state.address[type] = null;
+      renderAddressConfirmation(type);
+    }
+
+    window.clearTimeout(state.suggestionTimers[type]);
+    state.suggestionTimers[type] = window.setTimeout(async () => {
+      const query = input.value.trim();
+      if (query.length < 3) {
+        renderAddressSuggestions(type, []);
+        return;
+      }
+      try {
+        renderAddressSuggestions(type, null);
+        const suggestions = await fetchAddressSuggestions(query, 5);
+        renderAddressSuggestions(type, suggestions);
+      } catch {
+        renderAddressSuggestions(type, []);
+      }
+    }, 350);
   });
 }
 
@@ -99,36 +284,61 @@ async function handleRouteSubmit(event) {
   event.preventDefault();
   setLoading(true);
   clearRouteLayers();
-  setStatus("Finding addresses and driving route...");
+  setStatus("Confirming addresses and finding route options...");
 
   try {
-    const selected = getSelectedDateTime();
-    const timeMode = new FormData(els.form).get("timeMode");
-    const [startPoint, endPoint] = await Promise.all([
-      geocodeAddress(els.start.value),
-      geocodeAddress(els.destination.value),
+    const startPoint = await requireConfirmedAddress("start");
+    const endPoint = await requireConfirmedAddress("destination");
+    const vehicleType = getVehicleType();
+    const tripMode = getTripMode();
+    const outboundDeparture = getSelectedDateTime();
+    const returnDeparture = tripMode === "return" ? getReturnDateTime() : null;
+
+    if (tripMode === "return" && returnDeparture <= outboundDeparture) {
+      throw new Error("Choose a return time after the outbound departure.");
+    }
+
+    const [outboundRoutes, returnRoutes] = await Promise.all([
+      fetchDrivingRoutes(startPoint, endPoint),
+      tripMode === "return" ? fetchDrivingRoutes(endPoint, startPoint) : Promise.resolve([]),
     ]);
-    const route = await fetchDrivingRoute(startPoint, endPoint);
-    const matchedGantries = matchGantriesToRoute(route);
-    const baseDeparture =
-      timeMode === "arrive" ? addSeconds(selected, -route.durationSeconds) : selected;
-    const currentTrip = calculateTrip(route, matchedGantries, baseDeparture);
-    const comparison = buildTimingComparison(route, matchedGantries, baseDeparture);
-    const suggestion = findBestSuggestion(route, matchedGantries, baseDeparture, selected, timeMode);
 
-    state.lastRoute = { route, matchedGantries, startPoint, endPoint };
-    renderRoute(startPoint, endPoint, route, matchedGantries);
-    renderSummary(route, matchedGantries, currentTrip);
-    renderTimingComparison(comparison, baseDeparture);
-    renderGantryList(currentTrip.entries);
-    renderRecommendation(currentTrip, suggestion, timeMode);
+    const outbound = buildLegOptions({
+      legKey: "outbound",
+      legLabel: "Outbound",
+      routes: outboundRoutes,
+      departureDate: outboundDeparture,
+      vehicleType,
+    });
+    const returnLeg =
+      tripMode === "return"
+        ? buildLegOptions({
+            legKey: "return",
+            legLabel: "Return",
+            routes: returnRoutes,
+            departureDate: returnDeparture,
+            vehicleType,
+          })
+        : [];
+
+    const routeSelectionToRestore = state.routeSelectionToRestore;
+    state.routeSelectionToRestore = null;
+    state.selectedRoutes = {
+      outbound: routeIndexOrDefault(routeSelectionToRestore?.outbound, outbound.length),
+      return: routeIndexOrDefault(routeSelectionToRestore?.return, returnLeg.length),
+    };
+    state.currentPlan = {
+      startPoint,
+      endPoint,
+      tripMode,
+      vehicleType,
+      outbound,
+      return: returnLeg,
+    };
+
+    renderPlan();
     focusMapAfterEstimate();
-
-    setStatus(
-      `Route matched ${matchedGantries.length} gantry location${
-        matchedGantries.length === 1 ? "" : "s"
-      }. ERP shown for ${state.erpData.meta.vehicleClass.toLowerCase()}.`,
-    );
+    replaceUrlWithShareState();
   } catch (error) {
     setStatus(error.message || "Unable to calculate this route.");
     renderErrorState(error.message || "Unable to calculate this route.");
@@ -137,24 +347,441 @@ async function handleRouteSubmit(event) {
   }
 }
 
+function buildLegOptions({ legKey, legLabel, routes, departureDate, vehicleType }) {
+  return routes.slice(0, MAX_ROUTE_OPTIONS).map((route, index) => {
+    const matchedGantries = matchGantriesToRoute(route);
+    const trip = calculateTrip(route, matchedGantries, departureDate, vehicleType, legLabel);
+    return {
+      id: `${legKey}-${index}`,
+      legKey,
+      legLabel,
+      index,
+      route,
+      matchedGantries,
+      trip,
+    };
+  });
+}
+
+function recalculatePlanForVehicle() {
+  const vehicleType = getVehicleType();
+  state.currentPlan.vehicleType = vehicleType;
+  state.currentPlan.outbound = state.currentPlan.outbound.map((option) => ({
+    ...option,
+    trip: calculateTrip(
+      option.route,
+      option.matchedGantries,
+      option.trip.departureDate,
+      vehicleType,
+      option.legLabel,
+    ),
+  }));
+  state.currentPlan.return = state.currentPlan.return.map((option) => ({
+    ...option,
+    trip: calculateTrip(
+      option.route,
+      option.matchedGantries,
+      option.trip.departureDate,
+      vehicleType,
+      option.legLabel,
+    ),
+  }));
+  renderPlan();
+  replaceUrlWithShareState();
+}
+
+function renderPlan() {
+  const selectedLegs = getSelectedLegs();
+  const total = selectedLegs.reduce((sum, option) => sum + option.trip.total, 0);
+  const gantryCount = selectedLegs.reduce((sum, option) => sum + option.trip.entries.length, 0);
+
+  renderRouteOptions();
+  renderRouteMap(selectedLegs);
+  renderSummary(selectedLegs, total, gantryCount);
+  renderTripBreakdown(selectedLegs);
+  renderTimingComparison(buildTimingComparison(selectedLegs), selectedLegs[0].trip.departureDate);
+  renderGantryList(selectedLegs.flatMap((option) => option.trip.entries));
+  renderRecommendation(selectedLegs);
+
+  setStatus(
+    `Selected ${state.currentPlan.tripMode === "return" ? "return" : "one-way"} route matched ${gantryCount} ERP location${
+      gantryCount === 1 ? "" : "s"
+    }. Vehicle: ${VEHICLE_TYPES[state.currentPlan.vehicleType].label}.`,
+  );
+}
+
+function renderRouteOptions() {
+  const sections = [
+    routeOptionsForLeg("outbound", state.currentPlan.outbound),
+    state.currentPlan.tripMode === "return"
+      ? routeOptionsForLeg("return", state.currentPlan.return)
+      : "",
+  ].filter(Boolean);
+
+  els.routeOptionsSection.hidden = false;
+  els.routeOptions.innerHTML = sections.join("");
+  els.routeOptions.querySelectorAll(".route-option").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.selectedRoutes[button.dataset.leg] = Number(button.dataset.index);
+      renderPlan();
+      replaceUrlWithShareState();
+    });
+  });
+}
+
+function routeOptionsForLeg(legKey, options) {
+  if (!options.length) {
+    return "";
+  }
+
+  const heading = `<div class="route-option-group-title">${legKey === "outbound" ? "Outbound" : "Return"}</div>`;
+  const cards = options
+    .map((option) => {
+      const isSelected = state.selectedRoutes[legKey] === option.index;
+      const tooltip = routeOptionTooltip(option);
+      return `<button class="route-option tooltip-card ${isSelected ? "selected" : ""}" data-leg="${legKey}" data-index="${
+        option.index
+      }" data-tooltip="${escapeHtml(tooltip)}" type="button">
+        <span class="route-option-name">${option.index === 0 ? "Fastest route" : `Alternative ${option.index + 1}`}</span>
+        <strong>${formatMoney(option.trip.total)}</strong>
+        <small>${formatDuration(option.route.durationSeconds)} · ${formatDistance(option.route.totalMeters)} · ${
+          option.trip.entries.length
+        } ERP</small>
+      </button>`;
+    })
+    .join("");
+  return `${heading}<div class="route-option-row">${cards}</div>`;
+}
+
+function routeOptionTooltip(option) {
+  const charged = option.trip.entries.filter((entry) => entry.amount > 0).length;
+  return `${option.legLabel}: ${formatDistance(option.route.totalMeters)}, ${formatDuration(
+    option.route.durationSeconds,
+  )}, ${option.trip.entries.length} matched ERP location${
+    option.trip.entries.length === 1 ? "" : "s"
+  }, ${charged} charged at this timing.`;
+}
+
+function renderSummary(selectedLegs, total, gantryCount) {
+  const durationSeconds = selectedLegs.reduce((sum, option) => sum + option.route.durationSeconds, 0);
+  const distanceMeters = selectedLegs.reduce((sum, option) => sum + option.route.totalMeters, 0);
+  els.totalCost.textContent = formatMoney(total);
+  els.driveTime.textContent = formatDuration(durationSeconds);
+  els.driveDistance.textContent = formatDistance(distanceMeters);
+  els.matchedCount.textContent = String(gantryCount);
+}
+
+function renderTripBreakdown(selectedLegs) {
+  els.tripBreakdown.hidden = !selectedLegs.length;
+  els.tripBreakdown.innerHTML = selectedLegs
+    .map((option) => {
+      return `<article>
+        <span>${option.legLabel}</span>
+        <strong>${formatMoney(option.trip.total)}</strong>
+        <small>${formatClock(option.trip.departureDate)} to ${formatClock(option.trip.arrivalDate)} · ${formatDistance(
+          option.route.totalMeters,
+        )}</small>
+      </article>`;
+    })
+    .join("");
+}
+
+function renderRouteMap(selectedLegs) {
+  clearRouteLayers();
+  const routeColors = {
+    outbound: "#1267d6",
+    return: "#0d835c",
+  };
+
+  state.currentPlan.outbound.forEach((option) => {
+    drawRouteOption(option, routeColors.outbound, state.selectedRoutes.outbound === option.index);
+  });
+  state.currentPlan.return.forEach((option) => {
+    drawRouteOption(option, routeColors.return, state.selectedRoutes.return === option.index);
+  });
+
+  L.circleMarker([state.currentPlan.startPoint.lat, state.currentPlan.startPoint.lng], {
+    radius: 7,
+    color: "#0d835c",
+    fillColor: "#0d835c",
+    fillOpacity: 1,
+    weight: 2,
+  })
+    .bindPopup(`<strong>Start</strong><br>${escapeHtml(state.currentPlan.startPoint.label)}`)
+    .addTo(state.pointLayer);
+
+  L.circleMarker([state.currentPlan.endPoint.lat, state.currentPlan.endPoint.lng], {
+    radius: 7,
+    color: "#d94b3d",
+    fillColor: "#d94b3d",
+    fillOpacity: 1,
+    weight: 2,
+  })
+    .bindPopup(`<strong>Destination</strong><br>${escapeHtml(state.currentPlan.endPoint.label)}`)
+    .addTo(state.pointLayer);
+
+  selectedLegs.forEach((option) => {
+    option.trip.entries.forEach((entry) => drawMatchedGantry(entry));
+  });
+
+  fitCurrentRoute();
+  refreshMapLayout();
+}
+
+function drawRouteOption(option, color, isSelected) {
+  const layer = L.polyline(
+    option.route.points.map((point) => [point.lat, point.lng]),
+    {
+      color,
+      weight: isSelected ? 6 : 4,
+      opacity: isSelected ? 0.9 : 0.22,
+      lineJoin: "round",
+      dashArray: isSelected ? null : "8 10",
+    },
+  ).addTo(state.routeLayerGroup);
+
+  const popup = `<strong>${escapeHtml(option.legLabel)} ${
+    option.index === 0 ? "fastest route" : `alternative ${option.index + 1}`
+  }</strong><br>${formatDistance(option.route.totalMeters)} · ${formatDuration(
+    option.route.durationSeconds,
+  )}<br>ERP at selected timing: ${formatMoney(option.trip.total)}`;
+  layer.bindPopup(popup);
+  bindHoverPopup(layer);
+}
+
+function drawMatchedGantry(entry) {
+  const color = entry.amount > 0 ? "#d94b3d" : "#465159";
+  const popup = popupForTripEntry(entry);
+
+  if (entry.match.gantry.line?.length > 1) {
+    const line = L.polyline(entry.match.gantry.line, {
+      color,
+      weight: entry.amount > 0 ? 6 : 4,
+      opacity: 0.95,
+    })
+      .bindPopup(popup)
+      .addTo(state.matchedGantriesLayer);
+    bindHoverPopup(line);
+  }
+
+  const marker = L.circleMarker(entry.match.gantry.center, {
+    radius: entry.amount > 0 ? 8 : 6,
+    color: "#ffffff",
+    fillColor: color,
+    fillOpacity: 1,
+    weight: 2,
+  })
+    .bindPopup(popup)
+    .addTo(state.matchedGantriesLayer);
+  bindHoverPopup(marker);
+}
+
+function popupForTripEntry(entry) {
+  return `<strong>${escapeHtml(entry.label)}</strong><br>
+    ${escapeHtml(entry.legLabel)} crossing around ${entry.crossingTime}<br>
+    ${escapeHtml(entry.rateLabel)}<br>
+    Base ${formatMoney(entry.baseAmount)} x ${formatMultiplier(entry.multiplier)} ${escapeHtml(entry.vehicleLabel)} = <strong>${formatMoney(
+      entry.amount,
+    )}</strong><br>
+    Matched ${Math.round(entry.match.distanceMeters)} m from official ${
+      entry.match.matchType === "line" ? "gantry line" : "marker"
+    }`;
+}
+
+function renderTimingComparison(rows, baseDeparture) {
+  const minCost = Math.min(...rows.map((row) => row.total));
+  const modeCopy =
+    state.currentPlan?.tripMode === "return"
+      ? "Outbound departure intervals; return time stays fixed."
+      : "15-minute departure intervals around your selected timing.";
+  els.comparisonNote.textContent = modeCopy;
+  els.timingBody.innerHTML = rows
+    .map((row) => {
+      const rowClasses = [
+        row.total === minCost ? "best-row" : "",
+        Math.abs(row.departureDate - baseDeparture) < 1000 ? "current-row" : "",
+      ]
+        .filter(Boolean)
+        .join(" ");
+      return `<tr class="${rowClasses}">
+        <td data-label="Leave">${formatClock(row.departureDate)}</td>
+        <td data-label="Arrive">${formatClock(row.arrivalDate)}</td>
+        <td data-label="ERP" class="money">${formatMoney(row.total)}</td>
+        <td data-label="Route ERP">${row.routeErp}</td>
+      </tr>`;
+    })
+    .join("");
+}
+
+function buildTimingComparison(selectedLegs) {
+  const outbound = selectedLegs[0];
+  const returnLeg = selectedLegs[1];
+  const rows = [];
+  for (let offset = -60; offset <= 180; offset += 15) {
+    const departure = addMinutes(outbound.trip.departureDate, offset);
+    const outboundTrip = calculateTrip(
+      outbound.route,
+      outbound.matchedGantries,
+      departure,
+      state.currentPlan.vehicleType,
+      outbound.legLabel,
+    );
+    const total = outboundTrip.total + (returnLeg?.trip.total || 0);
+    const routeErp = outboundTrip.entries.length + (returnLeg?.trip.entries.length || 0);
+    rows.push({
+      departureDate: departure,
+      arrivalDate: outboundTrip.arrivalDate,
+      total,
+      routeErp,
+    });
+  }
+  return rows;
+}
+
+function renderGantryList(entries) {
+  if (!entries.length) {
+    els.gantryList.innerHTML = `<div class="empty-state">No ERP gantries detected along this route.</div>`;
+    return;
+  }
+
+  els.gantryList.innerHTML = entries
+    .map((entry) => {
+      const priceClass = entry.amount > 0 ? "gantry-price charge" : "gantry-price";
+      const numbers = entry.gantryNos.filter(Boolean).join(", ") || "Unnumbered";
+      const tooltip = entryTooltip(entry);
+      return `<article class="gantry-item tooltip-card" tabindex="0" data-tooltip="${escapeHtml(tooltip)}">
+        <div>
+          <strong>${escapeHtml(entry.label)}</strong>
+          <small>${escapeHtml(entry.legLabel)} · Gantry ${escapeHtml(numbers)} at about ${
+            entry.crossingTime
+          }. ${escapeHtml(entry.rateLabel)}. Matched ${Math.round(entry.match.distanceMeters)} m by ${
+            entry.match.matchType === "line" ? "gantry line" : "marker"
+          }.</small>
+        </div>
+        <span class="${priceClass}">${formatMoney(entry.amount)}</span>
+      </article>`;
+    })
+    .join("");
+}
+
+function entryTooltip(entry) {
+  return `${entry.legLabel}: ${entry.label}. ${entry.rateLabel}. Base ${formatMoney(
+    entry.baseAmount,
+  )} x ${formatMultiplier(entry.multiplier)} for ${entry.vehicleLabel} = ${formatMoney(entry.amount)}.`;
+}
+
+function renderRecommendation(selectedLegs) {
+  const outbound = selectedLegs[0];
+  const currentTotal = selectedLegs.reduce((sum, option) => sum + option.trip.total, 0);
+  const suggestion = findBestSuggestion(selectedLegs);
+
+  if (!suggestion) {
+    els.recommendation.hidden = false;
+    els.recommendationTitle.textContent =
+      currentTotal === 0 ? "Your selected timing is already ERP-free" : "No lower-cost timing found nearby";
+    els.recommendationCopy.textContent =
+      currentTotal === 0
+        ? "The route has no estimated ERP charge at the selected timing."
+        : "The nearby search window did not find a lower ERP cost for this route.";
+    return;
+  }
+
+  const saving = currentTotal - suggestion.total;
+  els.recommendation.hidden = false;
+  els.recommendationTitle.textContent =
+    suggestion.total === 0
+      ? `Leave ${formatClock(suggestion.departureDate)} to avoid ERP`
+      : `Leave ${formatClock(suggestion.departureDate)} for ${formatMoney(suggestion.total)}`;
+  els.recommendationCopy.textContent = `Estimated arrival is ${formatClock(
+    addSeconds(suggestion.departureDate, outbound.route.durationSeconds),
+  )}. Estimated saving: ${formatMoney(saving)}.`;
+}
+
+function findBestSuggestion(selectedLegs) {
+  const outbound = selectedLegs[0];
+  const returnLeg = selectedLegs[1];
+  const baseDeparture = outbound.trip.departureDate;
+  const dateString = toDateInputValue(baseDeparture);
+  const startOfDay = new Date(`${dateString}T00:00:00`);
+  const currentTotal = selectedLegs.reduce((sum, option) => sum + option.trip.total, 0);
+  let best = null;
+
+  for (let minute = ROUTE_SEARCH_START_MINUTES; minute <= ROUTE_SEARCH_END_MINUTES; minute += 5) {
+    const departure = addMinutes(startOfDay, minute);
+    const outboundTrip = calculateTrip(
+      outbound.route,
+      outbound.matchedGantries,
+      departure,
+      state.currentPlan.vehicleType,
+      outbound.legLabel,
+    );
+    const total = outboundTrip.total + (returnLeg?.trip.total || 0);
+    const candidate = {
+      departureDate: departure,
+      total,
+    };
+    if (!best) {
+      best = candidate;
+      continue;
+    }
+    const bestDistance = Math.abs(best.departureDate - baseDeparture);
+    const candidateDistance = Math.abs(candidate.departureDate - baseDeparture);
+    if (candidate.total < best.total || (candidate.total === best.total && candidateDistance < bestDistance)) {
+      best = candidate;
+    }
+  }
+
+  if (!best || best.total >= currentTotal) {
+    return null;
+  }
+  return best;
+}
+
+function renderErrorState(message) {
+  els.totalCost.textContent = formatMoney(0);
+  els.driveTime.textContent = "--";
+  els.driveDistance.textContent = "--";
+  els.matchedCount.textContent = "--";
+  els.timingBody.innerHTML = `<tr><td colspan="4" class="empty-row">${escapeHtml(message)}</td></tr>`;
+  els.gantryList.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
+  els.recommendation.hidden = true;
+  els.recommendationTitle.textContent = "";
+  els.recommendationCopy.textContent = "";
+}
+
 function initMap() {
   state.map = L.map("map", {
     zoomControl: true,
     scrollWheelZoom: true,
   }).setView(SINGAPORE_CENTER, 12);
 
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-  }).addTo(state.map);
+  setMapSource(els.mapSource.value || "osm");
+  L.control.scale({ imperial: false, position: "bottomleft" }).addTo(state.map);
 
   state.allGantriesLayer = L.layerGroup().addTo(state.map);
   state.matchedGantriesLayer = L.layerGroup().addTo(state.map);
+  state.routeLayerGroup = L.layerGroup().addTo(state.map);
   state.pointLayer = L.layerGroup().addTo(state.map);
 }
 
+function setMapSource(sourceKey) {
+  const source = MAP_SOURCES[sourceKey] || MAP_SOURCES.osm;
+  if (state.baseLayer) {
+    state.baseLayer.remove();
+  }
+  state.baseLayer = L.tileLayer(source.url, source.options).addTo(state.map);
+  state.baseLayer.bringToBack();
+  els.mapSource.value = sourceKey in MAP_SOURCES ? sourceKey : "osm";
+}
+
 function renderAllGantries() {
+  if (!state.erpData || !state.allGantriesLayer) {
+    return;
+  }
   state.allGantriesLayer.clearLayers();
+  if (!state.showAllGantries) {
+    return;
+  }
   state.erpData.gantries.forEach((gantry) => {
     const marker = L.circleMarker(gantry.center, {
       radius: gantry.isPriced ? 4 : 3,
@@ -165,149 +792,185 @@ function renderAllGantries() {
       weight: 1,
     });
     marker.bindPopup(popupForGantry(gantry));
+    bindHoverPopup(marker);
     marker.addTo(state.allGantriesLayer);
   });
 }
 
-function renderRoute(startPoint, endPoint, route, matchedGantries) {
-  clearRouteLayers();
-
-  state.routeLayer = L.polyline(
-    route.points.map((point) => [point.lat, point.lng]),
-    {
-      color: "#1267d6",
-      weight: 6,
-      opacity: 0.82,
-      lineJoin: "round",
-    },
-  ).addTo(state.map);
-
-  L.circleMarker([startPoint.lat, startPoint.lng], {
-    radius: 7,
-    color: "#0f8b5f",
-    fillColor: "#0f8b5f",
-    fillOpacity: 1,
-    weight: 2,
-  })
-    .bindPopup(`<strong>Start</strong><br>${escapeHtml(startPoint.label)}`)
-    .addTo(state.pointLayer);
-
-  L.circleMarker([endPoint.lat, endPoint.lng], {
-    radius: 7,
-    color: "#d94b3d",
-    fillColor: "#d94b3d",
-    fillOpacity: 1,
-    weight: 2,
-  })
-    .bindPopup(`<strong>Destination</strong><br>${escapeHtml(endPoint.label)}`)
-    .addTo(state.pointLayer);
-
-  matchedGantries.forEach((match) => {
-    if (match.gantry.line?.length > 1) {
-      L.polyline(match.gantry.line, {
-        color: match.gantry.isPriced ? "#d94b3d" : "#465159",
-        weight: match.gantry.isPriced ? 5 : 3,
-        opacity: 0.95,
-      })
-        .bindPopup(popupForGantry(match.gantry, match.distanceMeters))
-        .addTo(state.matchedGantriesLayer);
-    }
-
-    L.circleMarker(match.gantry.center, {
-      radius: match.gantry.isPriced ? 7 : 5,
-      color: "#ffffff",
-      fillColor: match.gantry.isPriced ? "#d94b3d" : "#465159",
-      fillOpacity: 1,
-      weight: 2,
-    })
-      .bindPopup(popupForGantry(match.gantry, match.distanceMeters))
-      .addTo(state.matchedGantriesLayer);
-  });
-
-  const bounds = state.routeLayer.getBounds();
-  state.map.fitBounds(bounds.pad(0.16));
-  refreshMapLayout();
-}
-
-function clearRouteLayers() {
-  state.routeLayer?.remove();
-  state.routeLayer = null;
-  state.matchedGantriesLayer?.clearLayers();
-  state.pointLayer?.clearLayers();
-}
-
-function popupForGantry(gantry, distanceMeters) {
+function popupForGantry(gantry) {
   const number = gantry.gantryNo ? `Gantry ${escapeHtml(gantry.gantryNo)}` : "Unnumbered gantry";
-  const distance = Number.isFinite(distanceMeters)
-    ? `<br><span>${Math.round(distanceMeters)} m from route geometry</span>`
-    : "";
-  const priced = gantry.isPriced ? "Priced schedule available" : "No active price schedule";
-  return `<strong>${number}</strong><br>${escapeHtml(gantry.label)}<br><span>${priced}</span>${distance}`;
+  const priced = gantry.isPriced ? rateSummaryForGroup(gantry.groupId) : "No active price schedule";
+  const geometry = gantry.line?.length > 1 ? "Official line geometry available" : "Official marker point";
+  return `<strong>${number}</strong><br>${escapeHtml(gantry.label)}<br><span>${escapeHtml(
+    priced,
+  )}</span><br><span>${geometry}</span>`;
 }
 
-async function geocodeAddress(query) {
-  const coordinateMatch = query.trim().match(/^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/);
-  if (coordinateMatch) {
-    return {
-      lat: Number(coordinateMatch[1]),
-      lng: Number(coordinateMatch[2]),
-      label: query.trim(),
-    };
+function rateSummaryForGroup(groupId) {
+  const nonZero = state.erpData.baseRates
+    .filter((rate) => rate.groupId === groupId && rate.amount > 0)
+    .slice(0, 3)
+    .map((rate) => `${rate.start}-${rate.end} ${formatMoney(rate.amount)}`);
+  return nonZero.length ? `Base rates include ${nonZero.join(", ")}` : "No active base rate";
+}
+
+function bindHoverPopup(layer) {
+  layer.on("mouseover", () => {
+    if (window.matchMedia("(hover: hover)").matches) {
+      layer.openPopup();
+    }
+  });
+  layer.on("mouseout", () => {
+    if (window.matchMedia("(hover: hover)").matches) {
+      layer.closePopup();
+    }
+  });
+}
+
+async function requireConfirmedAddress(type) {
+  const input = els[type];
+  const value = input.value.trim();
+  const confirmed = state.address[type];
+  if (confirmed && confirmed.inputValue === value) {
+    return confirmed;
   }
 
+  const coordinatePoint = parseCoordinateInput(value);
+  if (coordinatePoint) {
+    setConfirmedAddress(type, coordinatePoint, value);
+    return state.address[type];
+  }
+
+  const suggestions = await fetchAddressSuggestions(value, 5);
+  renderAddressSuggestions(type, suggestions);
+  if (!suggestions.length) {
+    throw new Error(`No Singapore address match found for "${value}".`);
+  }
+  throw new Error(
+    `Confirm the ${type === "start" ? "start point" : "destination"} from the suggestions before estimating.`,
+  );
+}
+
+async function fetchAddressSuggestions(query, limit = 5) {
+  const coordinatePoint = parseCoordinateInput(query);
+  if (coordinatePoint) {
+    return [coordinatePoint];
+  }
   const searchQuery = /singapore/i.test(query) ? query : `${query}, Singapore`;
   const url = new URL("https://nominatim.openstreetmap.org/search");
   url.search = new URLSearchParams({
     format: "jsonv2",
     q: searchQuery,
-    limit: "1",
+    limit: String(limit),
     countrycodes: "sg",
+    addressdetails: "1",
     viewbox: "103.55,1.49,104.15,1.16",
     bounded: "1",
   }).toString();
 
   const results = await fetchJson(url.toString());
-  if (!Array.isArray(results) || !results.length) {
-    throw new Error(`No Singapore address match found for "${query}".`);
+  if (!Array.isArray(results)) {
+    return [];
   }
+  return results.map((result) => ({
+    lat: Number(result.lat),
+    lng: Number(result.lon),
+    label: result.display_name,
+  }));
+}
 
+function parseCoordinateInput(value) {
+  const coordinateMatch = value.trim().match(/^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/);
+  if (!coordinateMatch) {
+    return null;
+  }
   return {
-    lat: Number(results[0].lat),
-    lng: Number(results[0].lon),
-    label: results[0].display_name,
+    lat: Number(coordinateMatch[1]),
+    lng: Number(coordinateMatch[2]),
+    label: value.trim(),
   };
 }
 
-async function fetchDrivingRoute(startPoint, endPoint) {
+function renderAddressSuggestions(type, suggestions) {
+  const container = type === "start" ? els.startSuggestions : els.destinationSuggestions;
+  if (suggestions === null) {
+    container.innerHTML = `<div class="suggestion-muted">Searching...</div>`;
+    return;
+  }
+  if (!suggestions.length) {
+    container.innerHTML = "";
+    return;
+  }
+  container.innerHTML = suggestions
+    .map(
+      (suggestion, index) => `<button type="button" class="suggestion-option" data-index="${index}">
+        <strong>${escapeHtml(shortAddress(suggestion.label))}</strong>
+        <small>${escapeHtml(suggestion.label)}</small>
+      </button>`,
+    )
+    .join("");
+  container.querySelectorAll(".suggestion-option").forEach((button) => {
+    button.addEventListener("click", () => {
+      setConfirmedAddress(type, suggestions[Number(button.dataset.index)]);
+      container.innerHTML = "";
+    });
+  });
+}
+
+function setConfirmedAddress(type, point, inputValue = null) {
+  const input = els[type];
+  if (inputValue !== null) {
+    input.value = inputValue;
+  }
+  state.address[type] = {
+    lat: point.lat,
+    lng: point.lng,
+    label: point.label,
+    inputValue: input.value.trim(),
+  };
+  renderAddressConfirmation(type);
+}
+
+function renderAddressConfirmation(type) {
+  const confirmation = type === "start" ? els.startConfirmation : els.destinationConfirmation;
+  const point = state.address[type];
+  confirmation.textContent = point ? `Using: ${shortAddress(point.label)}` : "";
+}
+
+function shortAddress(label) {
+  return label.split(",").slice(0, 3).join(",").trim();
+}
+
+async function fetchDrivingRoutes(startPoint, endPoint) {
   const coordinates = `${startPoint.lng},${startPoint.lat};${endPoint.lng},${endPoint.lat}`;
-  const url = `https://router.project-osrm.org/route/v1/driving/${coordinates}?overview=full&geometries=geojson&steps=false&alternatives=false`;
+  const url = `https://router.project-osrm.org/route/v1/driving/${coordinates}?overview=full&geometries=geojson&steps=false&alternatives=true`;
   const payload = await fetchJson(url);
 
   if (payload.code !== "Ok" || !payload.routes?.length) {
     throw new Error("No driving route found between those points.");
   }
 
-  const route = payload.routes[0];
-  const points = route.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
-  const cumulativeMeters = buildCumulativeDistances(points);
-  return {
-    points,
-    cumulativeMeters,
-    totalMeters: route.distance,
-    durationSeconds: route.duration,
-  };
+  return payload.routes.slice(0, MAX_ROUTE_OPTIONS).map((route, index) => {
+    const points = route.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
+    const cumulativeMeters = buildCumulativeDistances(points);
+    return {
+      index,
+      points,
+      cumulativeMeters,
+      totalMeters: route.distance,
+      durationSeconds: route.duration,
+    };
+  });
 }
 
 function matchGantriesToRoute(route) {
   const matches = [];
   for (const gantry of state.erpData.gantries) {
-    const closest = closestProgressOnRoute(
-      { lat: gantry.center[0], lng: gantry.center[1] },
-      route.points,
-      route.cumulativeMeters,
-    );
+    const closest = closestProgressToGantry(gantry, route);
+    const threshold =
+      closest.matchType === "line" ? GANTRY_LINE_MATCH_THRESHOLD_METERS : GANTRY_POINT_MATCH_THRESHOLD_METERS;
     if (
-      closest.distanceMeters <= GANTRY_MATCH_THRESHOLD_METERS &&
+      closest.distanceMeters <= threshold &&
       routeDirectionMatchesGantry(closest.routeBearingDegrees, gantry.directionDegrees)
     ) {
       matches.push({
@@ -316,6 +979,7 @@ function matchGantriesToRoute(route) {
         directionDelta: directionDelta(closest.routeBearingDegrees, gantry.directionDegrees),
         progressMeters: closest.progressMeters,
         progressRatio: route.totalMeters > 0 ? closest.progressMeters / route.totalMeters : 0,
+        matchType: closest.matchType,
       });
     }
   }
@@ -323,7 +987,112 @@ function matchGantriesToRoute(route) {
   return matches.sort((a, b) => a.progressMeters - b.progressMeters);
 }
 
-function calculateTrip(route, matchedGantries, departureDate) {
+function closestProgressToGantry(gantry, route) {
+  if (gantry.line?.length > 1) {
+    return closestProgressToGantryLine(
+      gantry.line.map(([lat, lng]) => ({ lat, lng })),
+      route.points,
+      route.cumulativeMeters,
+    );
+  }
+  return {
+    ...closestProgressOnRoute({ lat: gantry.center[0], lng: gantry.center[1] }, route.points, route.cumulativeMeters),
+    matchType: "marker",
+  };
+}
+
+function closestProgressToGantryLine(linePoints, routePoints, cumulativeMeters) {
+  let best = {
+    distanceMeters: Number.POSITIVE_INFINITY,
+    progressMeters: 0,
+    routeBearingDegrees: null,
+    matchType: "line",
+  };
+  const originLat = linePoints[0].lat;
+
+  for (let routeIndex = 0; routeIndex < routePoints.length - 1; routeIndex += 1) {
+    const routeStart = routePoints[routeIndex];
+    const routeEnd = routePoints[routeIndex + 1];
+    const routeStartMeters = toMeters(routeStart, originLat);
+    const routeEndMeters = toMeters(routeEnd, originLat);
+
+    for (let lineIndex = 0; lineIndex < linePoints.length - 1; lineIndex += 1) {
+      const gantryStartMeters = toMeters(linePoints[lineIndex], originLat);
+      const gantryEndMeters = toMeters(linePoints[lineIndex + 1], originLat);
+      const closest = closestSegmentDistance(routeStartMeters, routeEndMeters, gantryStartMeters, gantryEndMeters);
+      if (closest.distanceMeters < best.distanceMeters) {
+        const segmentMeters = haversineMeters(routeStart, routeEnd);
+        best = {
+          distanceMeters: closest.distanceMeters,
+          progressMeters: cumulativeMeters[routeIndex] + segmentMeters * closest.routeT,
+          routeBearingDegrees: bearingDegrees(routeStart, routeEnd),
+          matchType: "line",
+        };
+      }
+    }
+  }
+
+  return best;
+}
+
+function closestSegmentDistance(a, b, c, d) {
+  const intersection = segmentIntersectionParameter(a, b, c, d);
+  if (intersection !== null) {
+    return {
+      distanceMeters: 0,
+      routeT: intersection,
+    };
+  }
+
+  const candidates = [
+    { distanceMeters: pointToSegmentDistance(a, c, d).distanceMeters, routeT: 0 },
+    { distanceMeters: pointToSegmentDistance(b, c, d).distanceMeters, routeT: 1 },
+  ];
+  const cToRoute = pointToSegmentDistance(c, a, b);
+  const dToRoute = pointToSegmentDistance(d, a, b);
+  candidates.push({ distanceMeters: cToRoute.distanceMeters, routeT: cToRoute.t });
+  candidates.push({ distanceMeters: dToRoute.distanceMeters, routeT: dToRoute.t });
+  return candidates.reduce((best, item) => (item.distanceMeters < best.distanceMeters ? item : best));
+}
+
+function segmentIntersectionParameter(a, b, c, d) {
+  const r = { x: b.x - a.x, y: b.y - a.y };
+  const s = { x: d.x - c.x, y: d.y - c.y };
+  const denominator = cross(r, s);
+  if (Math.abs(denominator) < 1e-9) {
+    return null;
+  }
+  const cMinusA = { x: c.x - a.x, y: c.y - a.y };
+  const t = cross(cMinusA, s) / denominator;
+  const u = cross(cMinusA, r) / denominator;
+  if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
+    return t;
+  }
+  return null;
+}
+
+function pointToSegmentDistance(point, start, end) {
+  const segmentX = end.x - start.x;
+  const segmentY = end.y - start.y;
+  const lengthSquared = segmentX * segmentX + segmentY * segmentY;
+  if (lengthSquared === 0) {
+    return {
+      distanceMeters: Math.hypot(point.x - start.x, point.y - start.y),
+      t: 0,
+    };
+  }
+  const t = clamp(((point.x - start.x) * segmentX + (point.y - start.y) * segmentY) / lengthSquared, 0, 1);
+  const closest = {
+    x: start.x + segmentX * t,
+    y: start.y + segmentY * t,
+  };
+  return {
+    distanceMeters: Math.hypot(point.x - closest.x, point.y - closest.y),
+    t,
+  };
+}
+
+function calculateTrip(route, matchedGantries, departureDate, vehicleType, legLabel) {
   const groupMatches = new Map();
   const unpricedEntries = [];
 
@@ -332,6 +1101,7 @@ function calculateTrip(route, matchedGantries, departureDate) {
     const crossingDate = addSeconds(departureDate, offsetSeconds);
     const base = {
       match,
+      legLabel,
       crossingDate,
       crossingTime: formatClock(crossingDate),
       crossingDateString: toDateInputValue(crossingDate),
@@ -349,6 +1119,9 @@ function calculateTrip(route, matchedGantries, departureDate) {
         label: match.gantry.label,
         gantryNos: match.gantry.gantryNo ? [match.gantry.gantryNo] : [],
         amount: 0,
+        baseAmount: 0,
+        multiplier: VEHICLE_TYPES[vehicleType].multiplier,
+        vehicleLabel: VEHICLE_TYPES[vehicleType].label,
         rateLabel: "No priced schedule",
       });
     }
@@ -356,13 +1129,16 @@ function calculateTrip(route, matchedGantries, departureDate) {
 
   const pricedEntries = [...groupMatches.entries()].map(([groupId, item]) => {
     const group = state.erpData.groups.find((candidate) => candidate.id === groupId);
-    const rate = getRateForGroup(groupId, item.crossingDate);
+    const rate = getRateForGroup(groupId, item.crossingDate, vehicleType);
     return {
       ...item,
       groupId,
       label: group?.label || item.match.gantry.label,
       gantryNos: group?.gantryNos || [item.match.gantry.gantryNo],
       amount: rate.amount,
+      baseAmount: rate.baseAmount,
+      multiplier: rate.multiplier,
+      vehicleLabel: rate.vehicleLabel,
       rateLabel: rate.label,
     };
   });
@@ -375,22 +1151,31 @@ function calculateTrip(route, matchedGantries, departureDate) {
     departureDate,
     arrivalDate: addSeconds(departureDate, route.durationSeconds),
     entries,
-    total: entries.reduce((sum, entry) => sum + entry.amount, 0),
+    total: roundMoney(entries.reduce((sum, entry) => sum + entry.amount, 0)),
     chargedCount: entries.filter((entry) => entry.amount > 0).length,
   };
 }
 
-function getRateForGroup(groupId, crossingDate) {
+function getRateForGroup(groupId, crossingDate, vehicleType) {
   const dateString = toDateInputValue(crossingDate);
   const minutes = crossingDate.getHours() * 60 + crossingDate.getMinutes();
+  const vehicle = VEHICLE_TYPES[vehicleType] || VEHICLE_TYPES.car;
+  const zero = (label) => ({
+    amount: 0,
+    baseAmount: 0,
+    multiplier: vehicle.multiplier,
+    vehicleLabel: vehicle.label,
+    label,
+  });
+
   if (isZeroErpDate(dateString)) {
-    return { amount: 0, label: "Sunday or Singapore public holiday" };
+    return zero("Sunday or Singapore public holiday");
   }
   if (isMajorHolidayEveCutoff(dateString, minutes)) {
-    return { amount: 0, label: "Eve of major public holiday after 13:00" };
+    return zero("Eve of major public holiday after 13:00");
   }
   if (!isWeekday(dateString)) {
-    return { amount: 0, label: "No modelled Saturday ERP rate" };
+    return zero("No modelled Saturday ERP rate");
   }
 
   const adjustment = state.erpData.adjustments.find((item) => {
@@ -404,7 +1189,13 @@ function getRateForGroup(groupId, crossingDate) {
   });
 
   if (adjustment) {
-    return { amount: adjustment.amount, label: adjustment.reason };
+    return {
+      amount: roundMoney(adjustment.amount * vehicle.multiplier),
+      baseAmount: adjustment.amount,
+      multiplier: vehicle.multiplier,
+      vehicleLabel: vehicle.label,
+      label: adjustment.reason,
+    };
   }
 
   const baseRate = state.erpData.baseRates.find((item) => {
@@ -416,163 +1207,234 @@ function getRateForGroup(groupId, crossingDate) {
   });
 
   if (baseRate) {
-    return { amount: baseRate.amount, label: "Base weekday rate" };
+    return {
+      amount: roundMoney(baseRate.amount * vehicle.multiplier),
+      baseAmount: baseRate.amount,
+      multiplier: vehicle.multiplier,
+      vehicleLabel: vehicle.label,
+      label: "Base weekday rate",
+    };
   }
 
-  return { amount: 0, label: "No active ERP rate" };
+  return zero("No active ERP rate");
 }
 
-function buildTimingComparison(route, matchedGantries, baseDeparture) {
-  const rows = [];
-  for (let offset = -60; offset <= 180; offset += 15) {
-    const departure = addMinutes(baseDeparture, offset);
-    const trip = calculateTrip(route, matchedGantries, departure);
-    rows.push(trip);
+function getSelectedLegs() {
+  if (!state.currentPlan) {
+    return [];
   }
-  return rows;
+  return [
+    state.currentPlan.outbound[state.selectedRoutes.outbound],
+    state.currentPlan.tripMode === "return" ? state.currentPlan.return[state.selectedRoutes.return] : null,
+  ].filter(Boolean);
 }
 
-function findBestSuggestion(route, matchedGantries, baseDeparture, selectedDate, timeMode) {
-  const dateString = toDateInputValue(baseDeparture);
-  const startOfDay = new Date(`${dateString}T00:00:00`);
-  const currentTrip = calculateTrip(route, matchedGantries, baseDeparture);
-  let best = null;
+function clearRouteLayers() {
+  state.routeLayerGroup?.clearLayers();
+  state.matchedGantriesLayer?.clearLayers();
+  state.pointLayer?.clearLayers();
+}
 
-  for (let minute = ROUTE_SEARCH_START_MINUTES; minute <= ROUTE_SEARCH_END_MINUTES; minute += 5) {
-    const departure = addMinutes(startOfDay, minute);
-    const trip = calculateTrip(route, matchedGantries, departure);
-    if (timeMode === "arrive" && trip.arrivalDate > selectedDate) {
-      continue;
+function fitCurrentRoute() {
+  const selectedLegs = getSelectedLegs();
+  if (!selectedLegs.length || !state.map) {
+    state.map?.setView(SINGAPORE_CENTER, 12);
+    return;
+  }
+  const bounds = selectedLegs.reduce((combined, option) => {
+    const routeBounds = L.latLngBounds(option.route.points.map((point) => [point.lat, point.lng]));
+    return combined ? combined.extend(routeBounds) : routeBounds;
+  }, null);
+  if (bounds?.isValid()) {
+    state.map.fitBounds(bounds.pad(0.14));
+  }
+}
+
+function handleSwap() {
+  const oldStart = els.start.value;
+  els.start.value = els.destination.value;
+  els.destination.value = oldStart;
+  const oldAddress = state.address.start;
+  state.address.start = state.address.destination
+    ? { ...state.address.destination, inputValue: els.start.value.trim() }
+    : null;
+  state.address.destination = oldAddress ? { ...oldAddress, inputValue: els.destination.value.trim() } : null;
+  renderAddressConfirmation("start");
+  renderAddressConfirmation("destination");
+  els.start.focus();
+}
+
+function renderTripMode() {
+  const isReturn = getTripMode() === "return";
+  els.returnControls.hidden = !isReturn;
+  if (isReturn) {
+    syncReturnDateIfBeforeDeparture();
+  }
+}
+
+function getTripMode() {
+  return new FormData(els.form).get("tripMode") || "one-way";
+}
+
+function getVehicleType() {
+  return els.vehicleType.value in VEHICLE_TYPES ? els.vehicleType.value : "car";
+}
+
+function getSelectedDateTime() {
+  return new Date(`${els.date.value}T${els.time.value}:00`);
+}
+
+function getReturnDateTime() {
+  return new Date(`${els.returnDate.value}T${els.returnTime.value}:00`);
+}
+
+function setReturnOffset(hours) {
+  const departure = getSelectedDateTime();
+  const returnDate = addHours(departure, hours);
+  els.returnDate.value = toDateInputValue(returnDate);
+  els.returnTime.value = formatClock(returnDate);
+}
+
+function syncReturnDateIfBeforeDeparture() {
+  if (!els.returnDate.value || !els.returnTime.value) {
+    setReturnOffset(8);
+    return;
+  }
+  if (getReturnDateTime() <= getSelectedDateTime()) {
+    setReturnOffset(8);
+  }
+}
+
+function stepTimeInput(input, minutes) {
+  if (!input?.value) {
+    input.value = "08:00";
+  }
+  const [hours, currentMinutes] = input.value.split(":").map(Number);
+  const date = new Date(2026, 0, 1, hours, currentMinutes);
+  const next = addMinutes(date, minutes);
+  input.value = formatClock(next);
+}
+
+function replaceUrlWithShareState() {
+  window.history.replaceState(null, "", buildShareUrl());
+}
+
+async function copyShareUrl() {
+  const url = buildShareUrl();
+  window.history.replaceState(null, "", url);
+  try {
+    await navigator.clipboard.writeText(url);
+    setStatus("Share URL copied to clipboard.");
+  } catch {
+    setStatus("Share URL is ready in the address bar.");
+  }
+}
+
+function buildShareUrl() {
+  const url = new URL(window.location.href);
+  const params = url.searchParams;
+  params.set("s", els.start.value.trim());
+  params.set("d", els.destination.value.trim());
+  params.set("date", els.date.value);
+  params.set("time", els.time.value);
+  params.set("mode", new FormData(els.form).get("timeMode") || "depart");
+  params.set("trip", getTripMode());
+  params.set("vehicle", getVehicleType());
+  params.set("layer", els.mapSource.value);
+  params.set("allErp", els.showAllGantries.checked ? "1" : "0");
+  if (getTripMode() === "return") {
+    params.set("returnDate", els.returnDate.value);
+    params.set("returnTime", els.returnTime.value);
+  } else {
+    params.delete("returnDate");
+    params.delete("returnTime");
+  }
+  for (const type of ["start", "destination"]) {
+    const prefix = type === "start" ? "s" : "d";
+    const point = state.address[type];
+    if (point) {
+      params.set(`${prefix}lat`, String(point.lat));
+      params.set(`${prefix}lng`, String(point.lng));
+      params.set(`${prefix}label`, point.label);
+    } else {
+      params.delete(`${prefix}lat`);
+      params.delete(`${prefix}lng`);
+      params.delete(`${prefix}label`);
     }
-    if (!best) {
-      best = trip;
-      continue;
-    }
-    const bestDistance = Math.abs(best.departureDate - baseDeparture);
-    const tripDistance = Math.abs(trip.departureDate - baseDeparture);
-    if (trip.total < best.total || (trip.total === best.total && tripDistance < bestDistance)) {
-      best = trip;
-    }
   }
-
-  if (!best || best.total >= currentTrip.total) {
-    return null;
+  if (state.currentPlan) {
+    params.set("auto", "1");
+    params.set("outRoute", String(state.selectedRoutes.outbound));
+    params.set("retRoute", String(state.selectedRoutes.return));
   }
-
-  return best;
+  return url.toString();
 }
 
-function renderSummary(route, matchedGantries, trip) {
-  els.totalCost.textContent = formatMoney(trip.total);
-  els.driveTime.textContent = formatDuration(route.durationSeconds);
-  els.driveDistance.textContent = formatDistance(route.totalMeters);
-  els.matchedCount.textContent = String(matchedGantries.length);
-}
-
-function renderTimingComparison(rows, baseDeparture) {
-  const minCost = Math.min(...rows.map((row) => row.total));
-  els.comparisonNote.textContent = "15-minute departure intervals around your selected timing.";
-  els.timingBody.innerHTML = rows
-    .map((trip) => {
-      const rowClasses = [
-        trip.total === minCost ? "best-row" : "",
-        Math.abs(trip.departureDate - baseDeparture) < 1000 ? "current-row" : "",
-      ]
-        .filter(Boolean)
-        .join(" ");
-      const routeErp = trip.entries.filter((entry) => entry.match.gantry.isPriced).length;
-      return `<tr class="${rowClasses}">
-        <td data-label="Leave">${formatClock(trip.departureDate)}</td>
-        <td data-label="Arrive">${formatClock(trip.arrivalDate)}</td>
-        <td data-label="ERP" class="money">${formatMoney(trip.total)}</td>
-        <td data-label="Route ERP">${routeErp}</td>
-      </tr>`;
-    })
-    .join("");
-}
-
-function renderGantryList(entries) {
-  if (!entries.length) {
-    els.gantryList.innerHTML = `<div class="empty-state">No ERP gantries detected along this route.</div>`;
+function hydrateFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  if (!params.size) {
     return;
   }
+  if (params.get("s")) {
+    els.start.value = params.get("s");
+  }
+  if (params.get("d")) {
+    els.destination.value = params.get("d");
+  }
+  if (params.get("date")) {
+    els.date.value = params.get("date");
+  }
+  if (params.get("time")) {
+    els.time.value = params.get("time");
+  }
+  if (params.get("returnDate")) {
+    els.returnDate.value = params.get("returnDate");
+  }
+  if (params.get("returnTime")) {
+    els.returnTime.value = params.get("returnTime");
+  }
+  if (params.get("vehicle") in VEHICLE_TYPES) {
+    els.vehicleType.value = params.get("vehicle");
+  }
+  if (params.get("layer") in MAP_SOURCES) {
+    setMapSource(params.get("layer"));
+  }
+  els.showAllGantries.checked = params.get("allErp") !== "0";
+  state.showAllGantries = els.showAllGantries.checked;
+  setRadioValue("timeMode", params.get("mode"));
+  setRadioValue("tripMode", params.get("trip"));
 
-  els.gantryList.innerHTML = entries
-    .map((entry) => {
-      const priceClass = entry.amount > 0 ? "gantry-price charge" : "gantry-price";
-      const numbers = entry.gantryNos.filter(Boolean).join(", ") || "Unnumbered";
-      return `<article class="gantry-item">
-        <div>
-          <strong>${escapeHtml(entry.label)}</strong>
-          <small>Gantry ${escapeHtml(numbers)} at about ${entry.crossingTime}. ${escapeHtml(entry.rateLabel)}.</small>
-        </div>
-        <span class="${priceClass}">${formatMoney(entry.amount)}</span>
-      </article>`;
-    })
-    .join("");
+  hydratePointFromParams("start", params, "s");
+  hydratePointFromParams("destination", params, "d");
+  state.routeSelectionToRestore = {
+    outbound: params.get("outRoute"),
+    return: params.get("retRoute"),
+  };
+  state.autoEstimateOnReady = params.get("auto") === "1" && !!state.address.start && !!state.address.destination;
 }
 
-function renderRecommendation(currentTrip, suggestion, timeMode) {
-  if (!suggestion) {
-    els.recommendation.hidden = false;
-    els.recommendationTitle.textContent =
-      currentTrip.total === 0 ? "Your selected timing is already ERP-free" : "No lower-cost timing found nearby";
-    els.recommendationCopy.textContent =
-      currentTrip.total === 0
-        ? "The route has no estimated ERP charge at the selected timing."
-        : "The nearby search window did not find a lower ERP cost for this route.";
+function routeIndexOrDefault(value, optionCount) {
+  const index = Number(value);
+  return Number.isInteger(index) && index >= 0 && index < optionCount ? index : 0;
+}
+
+function hydratePointFromParams(type, params, prefix) {
+  const lat = Number(params.get(`${prefix}lat`));
+  const lng = Number(params.get(`${prefix}lng`));
+  const label = params.get(`${prefix}label`);
+  if (Number.isFinite(lat) && Number.isFinite(lng) && label) {
+    setConfirmedAddress(type, { lat, lng, label });
+  }
+}
+
+function setRadioValue(name, value) {
+  if (!value) {
     return;
   }
-
-  const saving = currentTrip.total - suggestion.total;
-  const title =
-    suggestion.total === 0
-      ? `Leave ${formatClock(suggestion.departureDate)} to avoid ERP`
-      : `Leave ${formatClock(suggestion.departureDate)} for ${formatMoney(suggestion.total)}`;
-  const arriveCopy =
-    timeMode === "arrive"
-      ? `It still arrives by ${formatClock(suggestion.arrivalDate)}.`
-      : `Estimated arrival is ${formatClock(suggestion.arrivalDate)}.`;
-
-  els.recommendation.hidden = false;
-  els.recommendationTitle.textContent = title;
-  els.recommendationCopy.textContent = `${arriveCopy} Estimated saving: ${formatMoney(saving)}.`;
-}
-
-function renderErrorState(message) {
-  els.totalCost.textContent = formatMoney(0);
-  els.driveTime.textContent = "--";
-  els.driveDistance.textContent = "--";
-  els.matchedCount.textContent = "--";
-  els.timingBody.innerHTML = `<tr><td colspan="4" class="empty-row">${escapeHtml(message)}</td></tr>`;
-  els.gantryList.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
-  els.recommendation.hidden = true;
-  els.recommendationTitle.textContent = "";
-  els.recommendationCopy.textContent = "";
-}
-
-function focusMapAfterEstimate() {
-  if (!els.mapPanel || !window.matchMedia("(max-width: 760px)").matches) {
-    refreshMapLayout();
-    return;
+  const radio = document.querySelector(`input[name="${name}"][value="${value}"]`);
+  if (radio) {
+    radio.checked = true;
   }
-
-  const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
-  requestAnimationFrame(() => {
-    els.mapPanel.scrollIntoView({ behavior, block: "start" });
-    refreshMapLayout();
-    window.setTimeout(refreshMapLayout, 450);
-  });
-}
-
-function refreshMapLayout() {
-  if (!state.map) {
-    return;
-  }
-
-  requestAnimationFrame(() => {
-    state.map.invalidateSize({ pan: false });
-  });
 }
 
 function renderSourceMetadata() {
@@ -586,7 +1448,47 @@ function renderSourceMetadata() {
     : "unknown date";
   const pricedCount = state.erpData.gantries.filter((gantry) => gantry.isPriced).length;
   els.sourceGenerated.textContent = `Generated ${generatedDate}; ${pricedCount} priced gantry geometries indexed.`;
-  els.sourceCopy.textContent = state.erpData.meta.notes.join(" ");
+  els.sourceCopy.textContent = `${state.erpData.meta.notes.join(" ")} Vehicle types use the official base-rate multipliers.`;
+}
+
+function focusMapAfterEstimate() {
+  if (!els.mapPanel || !window.matchMedia("(max-width: 760px)").matches) {
+    refreshMapLayout();
+    return;
+  }
+  const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+  requestAnimationFrame(() => {
+    els.mapPanel.scrollIntoView({ behavior, block: "start" });
+    refreshMapLayout();
+    window.setTimeout(refreshMapLayout, 450);
+  });
+}
+
+function refreshMapLayout() {
+  if (!state.map) {
+    return;
+  }
+  requestAnimationFrame(() => {
+    state.map.invalidateSize({ pan: false });
+  });
+}
+
+function setDefaultSingaporeDateTime() {
+  const formatter = new Intl.DateTimeFormat("en-SG", {
+    timeZone: "Asia/Singapore",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  const parts = Object.fromEntries(formatter.formatToParts(new Date()).map((part) => [part.type, part.value]));
+  els.date.value = `${parts.year}-${parts.month}-${parts.day}`;
+  const roundedMinute = Math.ceil(Number(parts.minute) / 5) * 5;
+  const hour = Number(parts.hour) + (roundedMinute === 60 ? 1 : 0);
+  const minute = roundedMinute === 60 ? 0 : roundedMinute;
+  els.time.value = `${String(hour % 24).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 }
 
 function buildCumulativeDistances(points) {
@@ -609,31 +1511,12 @@ function closestProgressOnRoute(point, routePoints, cumulativeMeters) {
   for (let index = 0; index < routePoints.length - 1; index += 1) {
     const start = toMeters(routePoints[index], originLat);
     const end = toMeters(routePoints[index + 1], originLat);
-    const segmentX = end.x - start.x;
-    const segmentY = end.y - start.y;
-    const segmentLengthSquared = segmentX * segmentX + segmentY * segmentY;
-    if (segmentLengthSquared === 0) {
-      continue;
-    }
-
-    const t = clamp(
-      ((pointXY.x - start.x) * segmentX + (pointXY.y - start.y) * segmentY) /
-        segmentLengthSquared,
-      0,
-      1,
-    );
-    const closest = {
-      x: start.x + segmentX * t,
-      y: start.y + segmentY * t,
-    };
-    const dx = pointXY.x - closest.x;
-    const dy = pointXY.y - closest.y;
-    const distanceMeters = Math.hypot(dx, dy);
-    if (distanceMeters < best.distanceMeters) {
+    const closest = pointToSegmentDistance(pointXY, start, end);
+    if (closest.distanceMeters < best.distanceMeters) {
       const segmentMeters = haversineMeters(routePoints[index], routePoints[index + 1]);
       best = {
-        distanceMeters,
-        progressMeters: cumulativeMeters[index] + segmentMeters * t,
+        distanceMeters: closest.distanceMeters,
+        progressMeters: cumulativeMeters[index] + segmentMeters * closest.t,
         routeBearingDegrees: bearingDegrees(routePoints[index], routePoints[index + 1]),
       };
     }
@@ -653,8 +1536,7 @@ function directionDelta(a, b) {
   if (!Number.isFinite(a) || !Number.isFinite(b)) {
     return null;
   }
-  const delta = Math.abs((((a - b) % 360) + 540) % 360 - 180);
-  return Math.round(delta);
+  return Math.round(Math.abs((((a - b) % 360) + 540) % 360 - 180));
 }
 
 function bearingDegrees(a, b) {
@@ -692,26 +1574,8 @@ function toRadians(value) {
   return (value * Math.PI) / 180;
 }
 
-function setDefaultSingaporeDateTime() {
-  const formatter = new Intl.DateTimeFormat("en-SG", {
-    timeZone: "Asia/Singapore",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-  const parts = Object.fromEntries(formatter.formatToParts(new Date()).map((part) => [part.type, part.value]));
-  els.date.value = `${parts.year}-${parts.month}-${parts.day}`;
-  const roundedMinute = Math.ceil(Number(parts.minute) / 5) * 5;
-  const hour = Number(parts.hour) + (roundedMinute === 60 ? 1 : 0);
-  const minute = roundedMinute === 60 ? 0 : roundedMinute;
-  els.time.value = `${String(hour % 24).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
-}
-
-function getSelectedDateTime() {
-  return new Date(`${els.date.value}T${els.time.value}:00`);
+function cross(a, b) {
+  return a.x * b.y - a.y * b.x;
 }
 
 function isWeekday(dateString) {
@@ -736,6 +1600,14 @@ function addSeconds(date, seconds) {
 
 function addMinutes(date, minutes) {
   return new Date(date.getTime() + minutes * 60000);
+}
+
+function addHours(date, hours) {
+  return new Date(date.getTime() + hours * 3600000);
+}
+
+function addDays(date, days) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days, date.getHours(), date.getMinutes());
 }
 
 function minutesFromClock(clock) {
@@ -772,6 +1644,14 @@ function formatDistance(meters) {
 
 function formatMoney(amount) {
   return `S$${amount.toFixed(2)}`;
+}
+
+function formatMultiplier(multiplier) {
+  return `${Number(multiplier).toFixed(1)}x`;
+}
+
+function roundMoney(amount) {
+  return Math.round((amount + Number.EPSILON) * 100) / 100;
 }
 
 async function fetchJson(url) {

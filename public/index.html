@@ -10,7 +10,7 @@
       integrity="sha256-p4NxAoJBhIINfQKJvI5v3XYPS0obTRR9BMYgqNJFlIk="
       crossorigin=""
     />
-    <link rel="stylesheet" href="./styles.css?v=2026-06-08-ux-v5" />
+    <link rel="stylesheet" href="./styles.css?v=2026-06-08-feature-v2" />
   </head>
   <body>
     <main class="app-shell">
@@ -34,6 +34,8 @@
                 placeholder="Tampines Mall"
                 required
               />
+              <small class="address-confirmation" id="start-confirmation"></small>
+              <div class="address-suggestions" id="start-suggestions" role="listbox" aria-label="Start suggestions"></div>
             </label>
 
             <button
@@ -54,8 +56,36 @@
                 placeholder="Raffles Place"
                 required
               />
+              <small class="address-confirmation" id="destination-confirmation"></small>
+              <div
+                class="address-suggestions"
+                id="destination-suggestions"
+                role="listbox"
+                aria-label="Destination suggestions"
+              ></div>
             </label>
           </div>
+
+          <div class="mode-control trip-type-control" aria-label="Trip type">
+            <label>
+              <input type="radio" name="tripMode" value="one-way" checked />
+              <span>One-way</span>
+            </label>
+            <label>
+              <input type="radio" name="tripMode" value="return" />
+              <span>Return</span>
+            </label>
+          </div>
+
+          <label class="field">
+            <span>Vehicle type</span>
+            <select id="vehicle-type" name="vehicleType">
+              <option value="car">Passenger car / taxi / light goods</option>
+              <option value="motorcycle">Motorcycle</option>
+              <option value="heavy">Heavy goods / small bus</option>
+              <option value="very-heavy">Very heavy goods / big bus</option>
+            </select>
+          </label>
 
           <div class="trip-controls">
             <div class="mode-control" aria-label="Time mode">
@@ -79,36 +109,133 @@
                 <input id="time-input" type="time" step="300" required />
               </label>
             </div>
+
+            <div class="quick-picker" aria-label="Quick departure date and time">
+              <button type="button" class="chip-button date-chip" data-date-offset="0">Today</button>
+              <button type="button" class="chip-button date-chip" data-date-offset="1">Tomorrow</button>
+              <button type="button" class="chip-button time-chip" data-time="07:30">7:30</button>
+              <button type="button" class="chip-button time-chip" data-time="08:30">8:30</button>
+              <button type="button" class="chip-button time-chip" data-time="18:00">18:00</button>
+              <button type="button" class="chip-button time-step" data-target="time-input" data-minutes="-15">
+                <i data-lucide="minus"></i>15m
+              </button>
+              <button type="button" class="chip-button time-step" data-target="time-input" data-minutes="15">
+                <i data-lucide="plus"></i>15m
+              </button>
+            </div>
+          </div>
+
+          <div class="return-controls" id="return-controls" hidden>
+            <div class="section-heading compact-heading">
+              <h2>Return trip</h2>
+              <span>Pick when you leave the destination.</span>
+            </div>
+            <div class="time-grid">
+              <label class="field">
+                <span>Return date</span>
+                <input id="return-date-input" type="date" />
+              </label>
+              <label class="field">
+                <span>Return time</span>
+                <input id="return-time-input" type="time" step="300" />
+              </label>
+            </div>
+            <div class="quick-picker" aria-label="Quick return date and time">
+              <button type="button" class="chip-button return-chip" data-hours="4">+4h</button>
+              <button type="button" class="chip-button return-chip" data-hours="8">+8h</button>
+              <button type="button" class="chip-button return-chip" data-hours="10">+10h</button>
+              <button type="button" class="chip-button time-step" data-target="return-time-input" data-minutes="-15">
+                <i data-lucide="minus"></i>15m
+              </button>
+              <button type="button" class="chip-button time-step" data-target="return-time-input" data-minutes="15">
+                <i data-lucide="plus"></i>15m
+              </button>
+            </div>
           </div>
 
           <div class="sample-row" aria-label="Sample routes">
-            <button type="button" class="sample-button" data-start="Tampines Mall" data-destination="Raffles Place">
+            <button
+              type="button"
+              class="sample-button"
+              data-start="Tampines Mall"
+              data-start-label="Tampines Mall, Tampines Central 5, Singapore"
+              data-start-lat="1.3529"
+              data-start-lng="103.9447"
+              data-destination="Raffles Place"
+              data-destination-label="Raffles Place, Downtown Core, Singapore"
+              data-destination-lat="1.2844"
+              data-destination-lng="103.8510"
+            >
               Tampines to CBD
             </button>
-            <button type="button" class="sample-button" data-start="Ang Mo Kio Hub" data-destination="Marina Bay Financial Centre">
+            <button
+              type="button"
+              class="sample-button"
+              data-start="Ang Mo Kio Hub"
+              data-start-label="AMK Hub, Ang Mo Kio Avenue 3, Singapore"
+              data-start-lat="1.3697"
+              data-start-lng="103.8485"
+              data-destination="Marina Bay Financial Centre"
+              data-destination-label="Marina Bay Financial Centre, Marina Boulevard, Singapore"
+              data-destination-lat="1.2795"
+              data-destination-lng="103.8543"
+            >
               AMK to Marina Bay
             </button>
           </div>
 
-          <button class="primary-button" type="submit">
-            <i data-lucide="route"></i>
-            Estimate ERP
-          </button>
+          <div class="form-actions">
+            <button class="primary-button" type="submit">
+              <i data-lucide="route"></i>
+              Estimate ERP
+            </button>
+            <button class="secondary-button" id="share-button" type="button">
+              <i data-lucide="share-2"></i>
+              Share URL
+            </button>
+          </div>
         </form>
       </section>
 
       <section class="map-panel" id="map-panel" aria-label="Map and route">
         <div id="map"></div>
+        <div class="map-controls" aria-label="Map controls">
+          <label>
+            <span>Map</span>
+            <select id="map-source">
+              <option value="osm">OpenStreetMap</option>
+              <option value="osm-hot">OSM Humanitarian</option>
+              <option value="carto-light">Carto Light</option>
+              <option value="esri-imagery">Esri Imagery</option>
+            </select>
+          </label>
+          <label class="toggle-row">
+            <input id="show-all-gantries" type="checkbox" checked />
+            <span>All ERP</span>
+          </label>
+          <button type="button" class="icon-button" id="fit-route-button" aria-label="Fit route on map">
+            <i data-lucide="scan"></i>
+          </button>
+        </div>
         <div class="map-legend">
           <span><i class="legend-line route"></i> Route</span>
+          <span><i class="legend-line return-route"></i> Return</span>
           <span><i class="legend-dot priced"></i> Priced ERP</span>
           <span><i class="legend-dot matched"></i> On route</span>
-          <span><i class="legend-dot all"></i> Other gantries</span>
+          <span><i class="legend-dot all"></i> Other</span>
         </div>
         <div class="status-bar" id="status-bar" role="status">Enter a start point, destination and timing.</div>
       </section>
 
       <section class="insights-panel" aria-label="ERP estimate results">
+        <section class="results-section route-options-section" id="route-options-section" hidden>
+          <div class="section-heading">
+            <h2>Route options</h2>
+            <span id="route-options-note">Choose an alternative route to compare ERP.</span>
+          </div>
+          <div class="route-options" id="route-options"></div>
+        </section>
+
         <section class="summary-grid" aria-label="Route summary">
           <article class="metric-card highlight">
             <span>Total ERP</span>
@@ -127,6 +254,8 @@
             <strong id="matched-count">--</strong>
           </article>
         </section>
+
+        <section class="trip-breakdown" id="trip-breakdown" hidden aria-label="Trip breakdown"></section>
 
         <section class="recommendation" id="recommendation" hidden>
           <div class="recommendation-icon" aria-hidden="true">
@@ -214,6 +343,6 @@
       crossorigin=""
     ></script>
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
-    <script src="./app.js?v=2026-06-08-ux-v5" type="module"></script>
+    <script src="./app.js?v=2026-06-08-feature-v2" type="module"></script>
   </body>
 </html>

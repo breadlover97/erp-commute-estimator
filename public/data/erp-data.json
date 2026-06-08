@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2026-06-08T11:43:53.084403+00:00",
+    "generatedAt": "2026-06-08T13:21:14.426649+00:00",
     "vehicleClass": "Passenger cars, taxis and light goods vehicles",
     "baseRateSource": "OneMotoring ERP Rates PDF, with effect from 23 Mar 2026",
     "latestAdjustmentSource": "LTA news release, Revised ERP Rates from 2 June 2026, published 25 May 2026",
@@ -994,7 +994,7 @@
       "uniqueId": null,
       "groupId": "35",
       "label": "CTE between Ang Mo Kio Avenue 1 and Braddell Road",
-      "directionDegrees": null,
+      "directionDegrees": 180,
       "center": [
         1.34630899,
         103.8595446

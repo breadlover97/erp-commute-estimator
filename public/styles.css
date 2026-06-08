@@ -122,19 +122,6 @@ h2 {
   line-height: 1.2;
 }
 
-.source-pill {
-  flex: 0 0 auto;
-  max-width: 156px;
-  padding: 7px 10px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  color: var(--muted);
-  background: #f8fbfa;
-  font-size: 0.72rem;
-  font-weight: 800;
-  text-align: right;
-}
-
 .route-form {
   display: grid;
   gap: 13px;
@@ -1186,7 +1173,6 @@ tbody tr.current-row {
     flex-direction: column;
   }
 
-  .source-pill,
   .section-heading span {
     max-width: none;
     text-align: left;

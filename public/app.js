@@ -2,7 +2,7 @@ const SINGAPORE_CENTER = [1.3521, 103.8198];
 const GANTRY_POINT_MATCH_THRESHOLD_METERS = 115;
 const GANTRY_LINE_MATCH_THRESHOLD_METERS = 70;
 const DIRECTION_TOLERANCE_DEGREES = 75;
-const DATA_VERSION = "2026-06-09-onemap-v12";
+const DATA_VERSION = "2026-06-09-audit-v13";
 const ROUTE_SEARCH_START_MINUTES = 4 * 60 + 30;
 const ROUTE_SEARCH_END_MINUTES = 22 * 60 + 30;
 const ERP_RATE_TABLE_START_MINUTES = 7 * 60;
@@ -497,7 +497,8 @@ function routeOptionName(option) {
 
 function routeOptionTooltip(option) {
   const charged = option.trip.entries.filter((entry) => entry.amount > 0).length;
-  return `${option.legLabel}: ${option.route.providerLabel}. Ranked by drive time, distance, detour and ERP charge. ${formatDistance(option.route.totalMeters)}, ${formatDuration(
+  const routeName = option.route.routeName ? ` Via ${option.route.routeName}.` : "";
+  return `${option.legLabel}: ${option.route.providerLabel}.${routeName} Ranked by drive time, distance, detour and ERP charge. ${formatDistance(option.route.totalMeters)}, ${formatDuration(
     option.route.durationSeconds,
   )}, ${option.trip.entries.length} matched ERP location${
     option.trip.entries.length === 1 ? "" : "s"
@@ -1332,7 +1333,44 @@ async function fetchValhallaRoutes(startPoint, endPoint) {
 }
 
 function parseOneMapRoutes(payload, providerMeta) {
-  const routePayload = payload || {};
+  const routes = oneMapRoutePayloads(payload)
+    .flatMap((routePayload, index) =>
+      parseOneMapRouteCandidate(routePayload, {
+        ...providerMeta,
+        providerRank: providerMeta.providerRank + index * 0.05,
+      }),
+    );
+
+  if (!routes.length) {
+    throw new Error("No usable OneMap driving route found.");
+  }
+
+  return routes;
+}
+
+function oneMapRoutePayloads(payload) {
+  const candidates = [
+    payload,
+    ...(Array.isArray(payload?.alternativeroute) ? payload.alternativeroute : []),
+    payload?.phyroute,
+  ].filter(Boolean);
+  const seen = new Set();
+  return candidates.filter((routePayload) => {
+    const signature = [
+      routePayload.route_geometry || routePayload.routeGeometry || routePayload.geometry || "",
+      routePayload.route_summary?.total_distance || routePayload.routeSummary?.totalDistance || "",
+      routePayload.route_summary?.total_time || routePayload.routeSummary?.totalTime || "",
+    ].join("|");
+    if (seen.has(signature)) {
+      return false;
+    }
+    seen.add(signature);
+    return true;
+  });
+}
+
+function parseOneMapRouteCandidate(routePayload, providerMeta) {
+  routePayload ||= {};
   const points = parseOneMapRouteGeometry(
     routePayload.route_geometry ||
       routePayload.routeGeometry ||
@@ -1358,7 +1396,7 @@ function parseOneMapRoutes(payload, providerMeta) {
   );
 
   if (points.length < 2 || !Number.isFinite(totalMeters) || !Number.isFinite(durationSeconds)) {
-    throw new Error("No usable OneMap driving route found.");
+    return [];
   }
 
   return [
@@ -1366,9 +1404,17 @@ function parseOneMapRoutes(payload, providerMeta) {
       points,
       totalMeters,
       durationSeconds,
+      routeName: oneMapRouteName(routePayload),
       ...providerMeta,
     }),
   ];
+}
+
+function oneMapRouteName(routePayload) {
+  if (Array.isArray(routePayload.route_name)) {
+    return routePayload.route_name.filter(Boolean).join(" / ");
+  }
+  return routePayload.viaRoute || routePayload.subtitle || "";
 }
 
 function parseOsrmRoutes(payload, providerMeta) {

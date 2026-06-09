@@ -30,7 +30,7 @@ The checked-in app data is in `public/data/erp-data.json`.
 
 - This is an estimate. Route-to-gantry matching is based on proximity to official ERP marker coordinates or gantry line geometry plus a directional check.
 - 2026 public holidays and major public-holiday eve cut-offs are modelled; later years need a public-holiday data refresh.
-- The app uses public Nominatim for geocoding and a multi-engine routing stack for route geometry. OneMap drive routing is tried first when the `ONEMAP_API_TOKEN` Cloudflare Pages secret is configured. OpenStreetMap/FOSSGIS OSRM, Valhalla, and the OSRM project demo remain as fallbacks.
+- The app uses public Nominatim for geocoding and a multi-engine routing stack for route geometry. OneMap drive routing is tried first when `ONEMAP_EMAIL` and `ONEMAP_PASSWORD` Cloudflare Pages secrets are configured. OpenStreetMap/FOSSGIS OSRM, Valhalla, and the OSRM project demo remain as fallbacks.
 - Public demo routing services are rate-limited and do not include live traffic. OneMap is Singapore-specific, but still depends on OneMap service availability, token access and quota limits.
 - ERP directionality is estimated from the route geometry and gantry position, not from an authoritative lane-level routing engine.
 - The validation script includes regression cases for common opposite-direction false positives, but live route geometry still depends on the public routing provider.
@@ -38,6 +38,7 @@ The checked-in app data is in `public/data/erp-data.json`.
 ## Local Commands
 
 ```bash
+npm run build
 npm run validate
 npm run serve
 ```
@@ -63,6 +64,11 @@ npm run validate
 ## Deploy
 
 Cloudflare Pages can serve the static `public/` directory directly.
+
+- Build command: `npm run build`
+- Output directory: `public`
+- Functions directory: `functions`
+- Required production secrets for OneMap routing: `ONEMAP_EMAIL`, `ONEMAP_PASSWORD`
 
 ```bash
 wrangler pages deploy public --project-name erp-commute-estimator --branch main

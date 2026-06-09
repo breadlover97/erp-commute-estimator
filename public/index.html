@@ -4,6 +4,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>ERP Commute Estimator</title>
+    <meta
+      name="description"
+      content="Estimate Singapore ERP charges for a driving commute with route matching, gantry details and timing comparisons."
+    />
     <link rel="icon" href="./favicon.svg?v=2026-06-08-favicon-v1" type="image/svg+xml" />
     <meta name="theme-color" content="#153238" />
     <link
@@ -12,7 +16,7 @@
       integrity="sha256-p4NxAoJBhIINfQKJvI5v3XYPS0obTRR9BMYgqNJFlIk="
       crossorigin=""
     />
-    <link rel="stylesheet" href="./styles.css?v=2026-06-09-onemap-v12" />
+    <link rel="stylesheet" href="./styles.css?v=2026-06-09-audit-v13" />
   </head>
   <body>
     <main class="app-shell">
@@ -122,10 +126,22 @@
                 <button type="button" class="chip-button time-chip" data-time="18:00">18:00</button>
               </div>
               <div class="quick-picker-group stepper-group" aria-label="Adjust time">
-                <button type="button" class="chip-button time-step" data-target="time-input" data-minutes="-15">
+                <button
+                  type="button"
+                  class="chip-button time-step"
+                  data-target="time-input"
+                  data-minutes="-15"
+                  aria-label="Move departure time 15 minutes earlier"
+                >
                   <i data-lucide="minus"></i>15m
                 </button>
-                <button type="button" class="chip-button time-step" data-target="time-input" data-minutes="15">
+                <button
+                  type="button"
+                  class="chip-button time-step"
+                  data-target="time-input"
+                  data-minutes="15"
+                  aria-label="Move departure time 15 minutes later"
+                >
                   <i data-lucide="plus"></i>15m
                 </button>
               </div>
@@ -154,10 +170,22 @@
                 <button type="button" class="chip-button return-chip" data-hours="10">+10h</button>
               </div>
               <div class="quick-picker-group stepper-group" aria-label="Adjust return time">
-                <button type="button" class="chip-button time-step" data-target="return-time-input" data-minutes="-15">
+                <button
+                  type="button"
+                  class="chip-button time-step"
+                  data-target="return-time-input"
+                  data-minutes="-15"
+                  aria-label="Move return time 15 minutes earlier"
+                >
                   <i data-lucide="minus"></i>15m
                 </button>
-                <button type="button" class="chip-button time-step" data-target="return-time-input" data-minutes="15">
+                <button
+                  type="button"
+                  class="chip-button time-step"
+                  data-target="return-time-input"
+                  data-minutes="15"
+                  aria-label="Move return time 15 minutes later"
+                >
                   <i data-lucide="plus"></i>15m
                 </button>
               </div>
@@ -327,6 +355,6 @@
       crossorigin=""
     ></script>
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
-    <script src="./app.js?v=2026-06-09-onemap-v12" type="module"></script>
+    <script src="./app.js?v=2026-06-09-audit-v13" type="module"></script>
   </body>
 </html>

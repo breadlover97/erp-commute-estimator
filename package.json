@@ -5,10 +5,11 @@
   "type": "module",
   "scripts": {
     "build": "npm run validate",
-    "check": "node --check public/app.js && node --check functions/api/routes/onemap.js && node --check scripts/fetch-gantries.mjs && node --check scripts/validate-data.mjs && node --check scripts/validate-routing.mjs && npm run validate",
+    "check": "node --check public/app.js && node --check functions/api/routes/onemap.js && node --check scripts/fetch-gantries.mjs && node --check scripts/validate-data.mjs && node --check scripts/validate-routing.mjs && node --check scripts/validate-calculations.mjs && npm run validate",
     "serve": "python3 -m http.server 4173 --directory public",
-    "validate": "node scripts/validate-data.mjs && node scripts/validate-routing.mjs",
+    "validate": "node scripts/validate-data.mjs && node scripts/validate-routing.mjs && node scripts/validate-calculations.mjs",
     "validate:data": "node scripts/validate-data.mjs",
+    "validate:calculations": "node scripts/validate-calculations.mjs",
     "validate:routing": "node scripts/validate-routing.mjs",
     "fetch:gantries": "node scripts/fetch-gantries.mjs"
   }

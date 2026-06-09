@@ -4,7 +4,7 @@ const GANTRY_LINE_MATCH_THRESHOLD_METERS = 70;
 const DIRECTION_TOLERANCE_DEGREES = 75;
 const COMPETING_GANTRY_PROGRESS_WINDOW_METERS = 45;
 const COMPETING_GANTRY_SPATIAL_WINDOW_METERS = 55;
-const DATA_VERSION = "2026-06-10-ui-flow-v21";
+const DATA_VERSION = "2026-06-10-production-ux-v23";
 const SINGAPORE_MAP_BOUNDS = [
   [1.11, 103.55],
   [1.5, 104.15],
@@ -20,7 +20,10 @@ const ROUTE_SEARCH_END_MINUTES = 22 * 60 + 30;
 const TIMING_COMPARISON_START_OFFSET_MINUTES = -60;
 const TIMING_COMPARISON_END_OFFSET_MINUTES = 180;
 const TIMING_COMPARISON_STEP_MINUTES = 15;
-const TIMING_CHART_COLORS = ["#1267d6", "#0d835c", "#b26200", "#7a4fd3"];
+const ROUTE_COLORS = {
+  outbound: ["#1267d6", "#b26200", "#7a4fd3"],
+  return: ["#0d835c", "#c44e52", "#26758f"],
+};
 const ERP_RATE_TABLE_START_MINUTES = 7 * 60;
 const ERP_RATE_TABLE_END_MINUTES = 20 * 60;
 const MAX_ROUTE_OPTIONS = 3;
@@ -132,6 +135,7 @@ const state = {
   suggestionTimers: {},
   autoEstimateOnReady: false,
   routeRequestId: 0,
+  selectedErpDetail: null,
 };
 
 const els = {
@@ -175,6 +179,9 @@ const els = {
   mapDockMeta: document.querySelector("#map-dock-meta"),
   mapDockProvider: document.querySelector("#map-dock-provider"),
   tripBreakdown: document.querySelector("#trip-breakdown"),
+  erpDetailPanel: document.querySelector("#erp-detail-panel"),
+  erpDetailContent: document.querySelector("#erp-detail-content"),
+  erpDetailClose: document.querySelector("#erp-detail-close"),
 };
 
 init().catch((error) => {
@@ -204,6 +211,7 @@ function bindEvents() {
   els.form.addEventListener("submit", handleRouteSubmit);
   els.swap.addEventListener("click", handleSwap);
   els.vehicleType.addEventListener("change", () => {
+    closeErpDetail();
     renderAllGantries();
     if (state.currentPlan) {
       recalculatePlanForVehicle();
@@ -217,11 +225,14 @@ function bindEvents() {
   els.fitRoute.addEventListener("click", fitCurrentRoute);
   els.share.addEventListener("click", copyShareUrl);
   els.reset.addEventListener("click", resetEstimator);
+  els.erpDetailClose.addEventListener("click", closeErpDetail);
   els.date.addEventListener("change", () => {
+    closeErpDetail();
     syncReturnDateIfBeforeDeparture();
     renderAllGantries();
   });
   els.time.addEventListener("change", () => {
+    closeErpDetail();
     syncReturnDateIfBeforeDeparture();
     renderAllGantries();
   });
@@ -237,6 +248,7 @@ function bindEvents() {
     button.addEventListener("click", () => {
       const target = document.querySelector(`#${button.dataset.target}`);
       stepDateInput(target, Number(button.dataset.days));
+      closeErpDetail();
       syncReturnDateIfBeforeDeparture();
       renderAllGantries();
     });
@@ -246,6 +258,7 @@ function bindEvents() {
     button.addEventListener("click", () => {
       const target = document.querySelector(`#${button.dataset.target}`);
       stepTimeInput(target, Number(button.dataset.minutes));
+      closeErpDetail();
       syncReturnDateIfBeforeDeparture();
       renderAllGantries();
     });
@@ -260,6 +273,12 @@ function bindEvents() {
     });
     if (tooltipCard && window.matchMedia("(hover: none)").matches) {
       tooltipCard.classList.toggle("show-tooltip");
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeErpDetail();
     }
   });
 }
@@ -295,6 +314,7 @@ async function handleRouteSubmit(event) {
   event.preventDefault();
   const requestId = ++state.routeRequestId;
   setLoading(true);
+  closeErpDetail();
   clearRouteLayers();
   setStatus("Confirming addresses and finding route options...");
 
@@ -488,12 +508,13 @@ function routeOptionsForLeg(legKey, options) {
     .map((option) => {
       const isSelected = state.selectedRoutes[legKey] === option.index;
       const tooltip = routeOptionTooltip(option);
-      return `<article class="route-option-card ${isSelected ? "selected" : ""}">
+      const routeColor = routeColorForOption(option);
+      return `<article class="route-option-card ${isSelected ? "selected" : ""}" style="--route-color: ${routeColor}">
         <button class="route-option tooltip-card ${
           isSelected ? "selected" : ""
         }" data-leg="${legKey}" data-index="${option.index}" data-tooltip="${escapeHtml(tooltip)}" type="button">
           <span class="route-option-topline">
-            <span class="route-option-name">${routeOptionName(option)}</span>
+            <span class="route-option-name"><i class="route-color-dot" aria-hidden="true"></i>${routeOptionName(option)}</span>
             <span class="route-provider-chip">${escapeHtml(routingProviderLabel(option.route))}</span>
           </span>
           <strong>${formatMoney(option.trip.total)}</strong>
@@ -512,7 +533,7 @@ function selectedRouteTimingTemplate() {
   return `<section class="route-option-timing" aria-label="Selected route timing comparison">
     <div class="route-timing-heading">
       <strong>Timing comparison</strong>
-      <small id="comparison-note">Selected route only.</small>
+      <small id="comparison-note">All route options.</small>
     </div>
     <div class="timing-chart-card" id="timing-chart" aria-label="ERP cost by departure time for selected route">
       <div class="empty-state">No route calculated yet.</div>
@@ -572,6 +593,11 @@ function routeOptionName(option) {
   return `Alternative ${option.index + 1}`;
 }
 
+function routeColorForOption(option) {
+  const palette = ROUTE_COLORS[option.legKey] || ROUTE_COLORS.outbound;
+  return palette[option.index % palette.length];
+}
+
 function routeOptionTooltip(option) {
   const charged = option.trip.entries.filter((entry) => entry.amount > 0).length;
   const routeName = option.route.routeName ? ` Via ${option.route.routeName}.` : "";
@@ -629,16 +655,12 @@ function renderTripBreakdown(selectedLegs) {
 
 function renderRouteMap(selectedLegs) {
   clearRouteLayers();
-  const routeColors = {
-    outbound: "#1267d6",
-    return: "#0d835c",
-  };
 
   state.currentPlan.outbound.forEach((option) => {
-    drawRouteOption(option, routeColors.outbound, state.selectedRoutes.outbound === option.index);
+    drawRouteOption(option, routeColorForOption(option), state.selectedRoutes.outbound === option.index);
   });
   state.currentPlan.return.forEach((option) => {
-    drawRouteOption(option, routeColors.return, state.selectedRoutes.return === option.index);
+    drawRouteOption(option, routeColorForOption(option), state.selectedRoutes.return === option.index);
   });
 
   L.circleMarker([state.currentPlan.startPoint.lat, state.currentPlan.startPoint.lng], {
@@ -692,7 +714,7 @@ function drawRouteOption(option, color, isSelected) {
 
 function drawMatchedGantry(entry) {
   const color = entry.amount > 0 ? "#d94b3d" : "#465159";
-  const info = infoForTripEntry(entry);
+  const detail = infoForTripEntry(entry);
 
   if (entry.match.gantry.line?.length > 1) {
     const line = L.polyline(entry.match.gantry.line, {
@@ -701,7 +723,7 @@ function drawMatchedGantry(entry) {
       opacity: 0.95,
       className: "erp-map-target",
     }).addTo(state.matchedGantriesLayer);
-    bindGantryInfo(line, info.popup, info.tooltip);
+    bindGantryInfo(line, detail);
   }
 
   const marker = L.circleMarker(entry.match.gantry.center, {
@@ -712,7 +734,7 @@ function drawMatchedGantry(entry) {
     weight: 2,
     className: "erp-map-target",
   }).addTo(state.matchedGantriesLayer);
-  bindGantryInfo(marker, info.popup, info.tooltip);
+  bindGantryInfo(marker, detail);
 }
 
 function infoForTripEntry(entry) {
@@ -735,8 +757,8 @@ function renderTimingComparison(comparison, baseDeparture) {
   const routeSeries = comparison.routeSeries || [];
   timingEls.note.textContent =
     state.currentPlan?.tripMode === "return"
-      ? "Selected outbound route; return stays fixed."
-      : "Selected route only.";
+      ? "All outbound routes; return stays fixed."
+      : "All route options.";
   renderTimingChart(routeSeries, baseDeparture, timingEls.chart);
   renderTimingRows(selectedRows, baseDeparture, timingEls.body);
 }
@@ -759,16 +781,19 @@ function renderTimingRows(rows, baseDeparture, bodyElement = document.querySelec
   }
 
   const minCost = Math.min(...rows.map((row) => row.total));
+  const maxCost = Math.max(...rows.map((row) => row.total));
   bodyElement.innerHTML = rows
     .map((row) => {
+      const isCurrent = isSameDeparture(row.departureDate, baseDeparture);
       const rowClasses = [
         row.total === minCost ? "best-row" : "",
-        isSameDeparture(row.departureDate, baseDeparture) ? "current-row" : "",
+        row.total === maxCost && maxCost > minCost ? "highest-row" : "",
+        isCurrent ? "current-row" : "",
       ]
         .filter(Boolean)
         .join(" ");
-      return `<tr class="${rowClasses}">
-        <td data-label="Leave">${formatClock(row.departureDate)}</td>
+      return `<tr class="${rowClasses}" style="${timingHeatStyle(row.total, minCost, maxCost)}">
+        <td data-label="Leave">${formatClock(row.departureDate)}${isCurrent ? '<span class="selected-time-badge">Selected</span>' : ""}</td>
         <td data-label="Arrive">${formatClock(row.arrivalDate)}</td>
         <td data-label="ERP" class="money">${formatMoney(row.total)}</td>
         <td data-label="Route ERP">${row.routeErp}</td>
@@ -777,12 +802,26 @@ function renderTimingRows(rows, baseDeparture, bodyElement = document.querySelec
     .join("");
 }
 
+function timingHeatStyle(total, minCost, maxCost) {
+  if (maxCost <= minCost) {
+    return "--heat-bg: #eef8f2; --heat-border: rgba(13, 131, 92, 0.26);";
+  }
+  const level = clamp((total - minCost) / (maxCost - minCost), 0, 1);
+  const start = [234, 248, 242];
+  const end = [255, 235, 230];
+  const borderStart = [13, 131, 92];
+  const borderEnd = [217, 75, 61];
+  const bg = start.map((value, index) => Math.round(value + (end[index] - value) * level));
+  const border = borderStart.map((value, index) => Math.round(value + (borderEnd[index] - value) * level));
+  return `--heat-bg: rgb(${bg.join(", ")}); --heat-border: rgba(${border.join(", ")}, 0.34);`;
+}
+
 function buildTimingComparison(selectedLegs) {
   const outbound = selectedLegs[0];
   const returnLeg = selectedLegs[1];
   const baseDeparture = outbound.trip.departureDate;
-  const outboundOptions = [outbound];
-  const routeSeries = outboundOptions.map((option, seriesIndex) => {
+  const outboundOptions = state.currentPlan?.outbound?.length ? state.currentPlan.outbound : [outbound];
+  const routeSeries = outboundOptions.map((option) => {
     const rows = buildTimingRowsForOption(option, baseDeparture, returnLeg);
     const minRow = findBestTimingRow(rows, baseDeparture);
     return {
@@ -790,7 +829,7 @@ function buildTimingComparison(selectedLegs) {
       name: routeOptionName(option),
       provider: routingProviderLabel(option.route),
       selected: option.index === state.selectedRoutes.outbound,
-      color: TIMING_CHART_COLORS[seriesIndex % TIMING_CHART_COLORS.length],
+      color: routeColorForOption(option),
       rows,
       minRow,
       currentRow: rows.find((row) => isSameDeparture(row.departureDate, baseDeparture)) || null,
@@ -1033,11 +1072,10 @@ function renderGantryList(entries) {
   }
 
   els.gantryList.innerHTML = entries
-    .map((entry) => {
+    .map((entry, index) => {
       const priceClass = entry.amount > 0 ? "gantry-price charge" : "gantry-price";
       const numbers = entry.gantryNos.filter(Boolean).join(", ") || "Unnumbered";
-      const tooltip = entryTooltip(entry);
-      return `<article class="gantry-item tooltip-card" tabindex="0" data-tooltip="${escapeHtml(tooltip)}">
+      return `<button class="gantry-item" type="button" data-gantry-index="${index}">
         <div>
           <strong>${escapeHtml(entry.label)}</strong>
           <small>${escapeHtml(entry.legLabel)} · Gantry ${escapeHtml(numbers)} at about ${
@@ -1047,15 +1085,17 @@ function renderGantryList(entries) {
           }.</small>
         </div>
         <span class="${priceClass}">${formatMoney(entry.amount)}</span>
-      </article>`;
+      </button>`;
     })
     .join("");
-}
-
-function entryTooltip(entry) {
-  return `${entry.legLabel}: ${entry.label}. ${entry.rateLabel}. Base ${formatMoney(
-    entry.baseAmount,
-  )} x ${formatMultiplier(entry.multiplier)} for ${entry.vehicleLabel} = ${formatMoney(entry.amount)}.`;
+  els.gantryList.querySelectorAll(".gantry-item").forEach((button) => {
+    button.addEventListener("click", () => {
+      const entry = entries[Number(button.dataset.gantryIndex)];
+      if (entry) {
+        openErpDetail(infoForTripEntry(entry));
+      }
+    });
+  });
 }
 
 function renderRecommendation(selectedLegs) {
@@ -1126,6 +1166,7 @@ function findBestSuggestion(selectedLegs) {
 }
 
 function renderErrorState(message) {
+  closeErpDetail();
   const timingEls = getTimingElements();
   els.totalCost.textContent = formatMoney(0);
   els.driveTime.textContent = "--";
@@ -1179,7 +1220,9 @@ function renderInitialResults() {
 function initMap() {
   state.map = L.map("map", {
     zoomControl: true,
-    scrollWheelZoom: false,
+    scrollWheelZoom: "center",
+    wheelDebounceTime: 80,
+    wheelPxPerZoomLevel: 120,
     maxBounds: SINGAPORE_MAP_BOUNDS,
     maxBoundsViscosity: 0.85,
     worldCopyJump: false,
@@ -1222,8 +1265,7 @@ function renderAllGantries() {
       weight: gantry.isPriced ? 1.5 : 1,
       className: "erp-map-target",
     });
-    const info = infoForGantry(gantry);
-    bindGantryInfo(marker, info.popup, info.tooltip);
+    bindGantryInfo(marker, infoForGantry(gantry));
     marker.addTo(state.allGantriesLayer);
   });
 }
@@ -1240,18 +1282,34 @@ function infoForGantry(gantry) {
 }
 
 function infoForErpRates(options) {
+  return erpDetailModel(options);
+}
+
+function erpDetailModel({ groupId, title, vehicleType, dateString, highlightMinutes, note = "" }) {
+  const rows = buildErpRateRows(groupId, dateString, vehicleType);
+  const activeMinutes = Number.isFinite(highlightMinutes) ? highlightMinutes : selectedRateMinutes();
+  const activeRow = rowForMinutes(rows, activeMinutes);
+  const maxAmount = Math.max(...rows.map((row) => row.amount));
   return {
-    popup: popupForErpRates(options),
-    tooltip: tooltipForErpRates(options),
+    groupId,
+    title,
+    vehicleType,
+    vehicleLabel: vehiclePopupLabel(vehicleType),
+    dateString,
+    dayLabel: rateDayLabel(dateString),
+    activeMinutes,
+    activeRow,
+    maxAmount,
+    chargedWindow: chargedWindowSummary(rows),
+    rows,
+    note,
   };
 }
 
-function popupForErpRates({ groupId, title, vehicleType, dateString, highlightMinutes, note = "" }) {
-  const rows = buildErpRateRows(groupId, dateString, vehicleType);
-  const activeMinutes = Number.isFinite(highlightMinutes) ? highlightMinutes : selectedRateMinutes();
-  const body = rows
+function erpDetailTemplate(detail) {
+  const rows = detail.rows
     .map((row) => {
-      const isActive = Number.isFinite(row.start) && activeMinutes >= row.start && activeMinutes < row.end;
+      const isActive = Number.isFinite(row.start) && detail.activeMinutes >= row.start && detail.activeMinutes < row.end;
       return `<tr class="${isActive ? "active-rate-row" : ""}">
         <td>${escapeHtml(row.range)}</td>
         <td>${formatPopupMoney(row.amount)}</td>
@@ -1259,47 +1317,36 @@ function popupForErpRates({ groupId, title, vehicleType, dateString, highlightMi
     })
     .join("");
 
-  return `<div class="erp-rate-card">
-    <h3>${escapeHtml(title)}</h3>
-    <div class="erp-rate-controls">
-      <div class="erp-rate-select" aria-hidden="true">${escapeHtml(vehiclePopupLabel(vehicleType))}</div>
-      <div class="erp-rate-select" aria-hidden="true">${escapeHtml(rateDayLabel(dateString))}</div>
+  return `<section class="erp-detail-card">
+    <div class="erp-detail-title">
+      <span>ERP rates</span>
+      <h3>${escapeHtml(detail.title)}</h3>
+    </div>
+    <div class="erp-detail-meta">
+      <span>${escapeHtml(detail.vehicleLabel)}</span>
+      <span>${escapeHtml(detail.dayLabel)}</span>
+    </div>
+    <div class="erp-detail-stats">
+      <article>
+        <span>${escapeHtml(clockFromMinutes(detail.activeMinutes))}</span>
+        <strong>${formatPopupMoney(detail.activeRow.amount)}</strong>
+      </article>
+      <article>
+        <span>Peak</span>
+        <strong>${formatPopupMoney(detail.maxAmount)}</strong>
+      </article>
+      <article>
+        <span>Charged window</span>
+        <strong>${escapeHtml(detail.chargedWindow)}</strong>
+      </article>
     </div>
     <div class="erp-rate-table-wrap">
       <table class="erp-rate-table">
-        <tbody>${body}</tbody>
+        <tbody>${rows}</tbody>
       </table>
     </div>
-    ${note ? `<p class="erp-rate-note">${escapeHtml(note)}</p>` : ""}
-  </div>`;
-}
-
-function tooltipForErpRates({ groupId, title, vehicleType, dateString, highlightMinutes }) {
-  const rows = buildErpRateRows(groupId, dateString, vehicleType);
-  const activeMinutes = Number.isFinite(highlightMinutes) ? highlightMinutes : selectedRateMinutes();
-  const activeRow = rowForMinutes(rows, activeMinutes);
-  const maxAmount = Math.max(...rows.map((row) => row.amount));
-  const chargedWindow = chargedWindowSummary(rows);
-
-  return `<div class="erp-hover-card">
-    <span class="erp-hover-kicker">ERP rates</span>
-    <h3>${escapeHtml(title)}</h3>
-    <div class="erp-hover-meta">
-      <span>${escapeHtml(vehiclePopupLabel(vehicleType))}</span>
-      <span>${escapeHtml(rateDayLabel(dateString))}</span>
-    </div>
-    <div class="erp-hover-stats">
-      <div>
-        <span>${escapeHtml(clockFromMinutes(activeMinutes))}</span>
-        <strong>${formatPopupMoney(activeRow.amount)}</strong>
-      </div>
-      <div>
-        <span>Peak</span>
-        <strong>${formatPopupMoney(maxAmount)}</strong>
-      </div>
-    </div>
-    <p><span>Charged window</span><strong>${escapeHtml(chargedWindow)}</strong></p>
-  </div>`;
+    ${detail.note ? `<p class="erp-rate-note">${escapeHtml(detail.note)}</p>` : ""}
+  </section>`;
 }
 
 function erpRateTitle(label, gantryNos) {
@@ -1434,39 +1481,25 @@ function bindHoverPopup(layer) {
   });
 }
 
-function bindGantryInfo(layer, popupContent, tooltipContent) {
-  layer.bindPopup(popupContent, {
-    className: "map-info-popup",
-    maxWidth: 320,
-    autoPan: false,
-    keepInView: false,
-  });
-  layer.bindTooltip(tooltipContent, {
-    className: "map-info-tooltip",
-    direction: "top",
-    offset: [0, -10],
-    opacity: 1,
-    sticky: true,
-  });
-
-  layer.on("mouseover", () => {
-    if (canUseHoverTooltips()) {
-      layer.openTooltip();
-    }
-  });
-  layer.on("mouseout", () => {
-    if (canUseHoverTooltips()) {
-      layer.closeTooltip();
-    }
-  });
+function bindGantryInfo(layer, detail) {
   layer.on("click", () => {
-    layer.closeTooltip();
-    layer.openPopup();
+    openErpDetail(detail);
   });
 }
 
-function canUseHoverTooltips() {
-  return window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+function openErpDetail(detail) {
+  state.selectedErpDetail = detail;
+  els.erpDetailContent.innerHTML = erpDetailTemplate(detail);
+  els.erpDetailPanel.hidden = false;
+  els.erpDetailPanel.classList.add("open");
+  window.lucide?.createIcons();
+}
+
+function closeErpDetail() {
+  state.selectedErpDetail = null;
+  els.erpDetailPanel.hidden = true;
+  els.erpDetailPanel.classList.remove("open");
+  els.erpDetailContent.innerHTML = "";
 }
 
 async function requireConfirmedAddress(type) {
@@ -2303,6 +2336,7 @@ function clearRouteLayers() {
 }
 
 function resetEstimator() {
+  closeErpDetail();
   state.routeRequestId += 1;
   state.address = {
     start: null,
@@ -2780,10 +2814,6 @@ function formatMoney(amount) {
 
 function formatPopupMoney(amount) {
   return `$${amount.toFixed(2)}`;
-}
-
-function formatMultiplier(multiplier) {
-  return `${Number(multiplier).toFixed(1)}x`;
 }
 
 function roundMoney(amount) {

@@ -16,7 +16,7 @@
       integrity="sha256-p4NxAoJBhIINfQKJvI5v3XYPS0obTRR9BMYgqNJFlIk="
       crossorigin=""
     />
-    <link rel="stylesheet" href="./styles.css?v=2026-06-10-ui-flow-v21" />
+    <link rel="stylesheet" href="./styles.css?v=2026-06-10-production-ux-v23" />
   </head>
   <body>
     <main class="app-shell">
@@ -306,6 +306,15 @@
             <small id="map-dock-provider">--</small>
           </div>
         </aside>
+        <aside class="erp-detail-panel" id="erp-detail-panel" hidden aria-label="ERP gantry details">
+          <header>
+            <span>ERP gantry details</span>
+            <button type="button" class="icon-button" id="erp-detail-close" aria-label="Close ERP gantry details">
+              <i data-lucide="x"></i>
+            </button>
+          </header>
+          <div id="erp-detail-content"></div>
+        </aside>
       </section>
 
       <section class="insights-panel" aria-label="ERP estimate results">
@@ -406,6 +415,6 @@
       crossorigin=""
     ></script>
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
-    <script src="./app.js?v=2026-06-10-ui-flow-v21" type="module"></script>
+    <script src="./app.js?v=2026-06-10-production-ux-v23" type="module"></script>
   </body>
 </html>

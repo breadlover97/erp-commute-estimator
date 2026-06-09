@@ -2,7 +2,7 @@ const SINGAPORE_CENTER = [1.3521, 103.8198];
 const GANTRY_POINT_MATCH_THRESHOLD_METERS = 115;
 const GANTRY_LINE_MATCH_THRESHOLD_METERS = 70;
 const DIRECTION_TOLERANCE_DEGREES = 75;
-const DATA_VERSION = "2026-06-09-redesign-v16";
+const DATA_VERSION = "2026-06-09-redesign-v17";
 const ROUTE_SEARCH_START_MINUTES = 4 * 60 + 30;
 const ROUTE_SEARCH_END_MINUTES = 22 * 60 + 30;
 const ERP_RATE_TABLE_START_MINUTES = 7 * 60;
@@ -156,6 +156,10 @@ const els = {
   routeOptionsSection: document.querySelector("#route-options-section"),
   routeOptions: document.querySelector("#route-options"),
   routeProvider: document.querySelector("#route-provider"),
+  mapResultDock: document.querySelector("#map-result-dock"),
+  mapDockTotal: document.querySelector("#map-dock-total"),
+  mapDockMeta: document.querySelector("#map-dock-meta"),
+  mapDockProvider: document.querySelector("#map-dock-provider"),
   tripBreakdown: document.querySelector("#trip-breakdown"),
 };
 
@@ -435,6 +439,7 @@ function renderPlan() {
   renderRouteProvider(selectedLegs);
   renderRouteMap(selectedLegs);
   renderSummary(selectedLegs, total, gantryCount);
+  renderMapResultDock(selectedLegs, total, gantryCount);
   renderTripBreakdown(selectedLegs);
   renderTimingComparison(buildTimingComparison(selectedLegs), selectedLegs[0].trip.departureDate);
   renderGantryList(selectedLegs.flatMap((option) => option.trip.entries));
@@ -539,6 +544,21 @@ function renderSummary(selectedLegs, total, gantryCount) {
   els.driveTime.textContent = formatDuration(durationSeconds);
   els.driveDistance.textContent = formatDistance(distanceMeters);
   els.matchedCount.textContent = String(gantryCount);
+}
+
+function renderMapResultDock(selectedLegs, total, gantryCount) {
+  if (!selectedLegs.length) {
+    els.mapResultDock.hidden = true;
+    return;
+  }
+
+  const durationSeconds = selectedLegs.reduce((sum, option) => sum + option.route.durationSeconds, 0);
+  const distanceMeters = selectedLegs.reduce((sum, option) => sum + option.route.totalMeters, 0);
+  const providers = [...new Set(selectedLegs.map((option) => routingProviderLabel(option.route)))];
+  els.mapResultDock.hidden = false;
+  els.mapDockTotal.textContent = formatMoney(total);
+  els.mapDockMeta.textContent = `${formatDuration(durationSeconds)} · ${formatDistance(distanceMeters)} · ${gantryCount} ERP`;
+  els.mapDockProvider.textContent = providers.length === 1 ? providers[0] : providers.join(" · ");
 }
 
 function renderTripBreakdown(selectedLegs) {
@@ -820,6 +840,7 @@ function renderErrorState(message) {
   els.routeOptionsSection.hidden = true;
   els.routeOptions.innerHTML = "";
   els.routeProvider.textContent = "";
+  els.mapResultDock.hidden = true;
   els.tripBreakdown.hidden = true;
   els.tripBreakdown.innerHTML = "";
   els.recommendation.hidden = true;
@@ -838,6 +859,7 @@ function renderInitialResults() {
   els.routeOptionsSection.hidden = true;
   els.routeOptions.innerHTML = "";
   els.routeProvider.textContent = "";
+  els.mapResultDock.hidden = true;
   els.tripBreakdown.hidden = true;
   els.tripBreakdown.innerHTML = "";
   els.recommendation.hidden = true;

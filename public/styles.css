@@ -1304,7 +1304,8 @@ tbody tr.current-row {
 }
 
 .map-legend,
-.status-bar {
+.status-bar,
+.map-result-dock {
   position: absolute;
   z-index: 500;
   left: 10px;
@@ -1381,16 +1382,57 @@ tbody tr.current-row {
 }
 
 .status-bar {
+  top: 12px;
   right: auto;
-  bottom: 12px;
+  bottom: auto;
   left: 12px;
-  max-width: min(460px, calc(100% - 24px));
+  max-width: min(320px, calc(100% - 132px));
   padding: 9px 11px;
   color: #344054;
   font-size: 0.8rem;
   font-weight: 760;
   line-height: 1.35;
   backdrop-filter: blur(10px);
+}
+
+.map-result-dock {
+  z-index: 540;
+  right: 12px;
+  bottom: 12px;
+  left: 12px;
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(12px);
+}
+
+.map-result-dock span,
+.map-result-dock small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 780;
+  line-height: 1.25;
+}
+
+.map-result-dock strong {
+  display: block;
+  margin-top: 3px;
+  color: var(--green);
+  font-size: 1.55rem;
+  line-height: 1;
+}
+
+.map-result-dock small {
+  text-align: right;
+}
+
+.map-result-dock small + small {
+  margin-top: 4px;
+  color: var(--accent-deep);
 }
 
 .leaflet-popup-content {
@@ -1838,6 +1880,13 @@ tbody tr.current-row {
     right: auto;
     max-width: 560px;
     font-size: 0.86rem;
+  }
+
+  .map-result-dock {
+    right: auto;
+    bottom: 16px;
+    left: 16px;
+    width: min(420px, calc(100% - 32px));
   }
 
   .map-controls {

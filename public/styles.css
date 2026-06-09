@@ -390,83 +390,113 @@ select:focus {
   font-size: 0.73rem;
 }
 
-.quick-picker {
+.adjuster-grid {
   display: grid;
-  gap: 7px;
-  padding: 0;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
+  grid-template-columns: minmax(118px, 0.58fr) minmax(0, 1.42fr);
+  gap: 8px;
 }
 
-.quick-picker-group {
-  display: flex;
-  flex-wrap: wrap;
+.adjuster-block {
+  display: grid;
   gap: 6px;
+  min-width: 0;
 }
 
-.chip-button {
+.adjuster-block > span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 820;
+  line-height: 1.2;
+}
+
+.date-stepper,
+.time-stepper {
+  display: grid;
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.035);
+}
+
+.date-stepper {
+  grid-template-columns: 38px minmax(0, 1fr) 38px;
+}
+
+.date-stepper strong {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  min-height: 36px;
-  border: 1px solid var(--line-strong);
-  border-radius: 999px;
-  padding: 7px 11px;
-  background: #ffffff;
   color: #344054;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-  font-size: 0.79rem;
-  font-weight: 840;
+  font-size: 0.78rem;
+  font-weight: 860;
+}
+
+.time-stepper {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.icon-step,
+.step-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: #344054;
   transition:
-    border-color 0.16s ease,
     background 0.16s ease,
-    box-shadow 0.16s ease,
-    color 0.16s ease,
-    transform 0.16s ease;
+    color 0.16s ease;
 }
 
-.chip-button:hover {
-  border-color: rgba(37, 99, 235, 0.42);
+.icon-step {
+  min-height: 40px;
+}
+
+.icon-step:first-child,
+.step-action:first-child {
+  border-right: 1px solid var(--line);
+}
+
+.step-action {
+  gap: 7px;
+  min-height: 40px;
+  padding: 6px 9px;
+}
+
+.icon-step:hover,
+.step-action:hover {
   background: var(--accent-soft);
   color: var(--accent-deep);
-  box-shadow: 0 5px 14px rgba(15, 23, 42, 0.09);
-  transform: translateY(-1px);
 }
 
-.date-chip,
-.return-chip {
-  border-color: rgba(37, 99, 235, 0.22);
-  background: var(--accent-soft);
-  color: var(--accent-deep);
+.step-action span {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  text-align: left;
 }
 
-.date-chip:hover,
-.return-chip:hover {
-  border-color: rgba(37, 99, 235, 0.42);
-  background: #dbeafe;
-  color: var(--accent-deep);
+.step-action strong {
+  color: inherit;
+  font-size: 0.78rem;
+  font-weight: 860;
+  line-height: 1.1;
 }
 
-.time-chip {
-  min-width: 58px;
+.step-action small {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 780;
+  line-height: 1.1;
 }
 
-.time-step {
-  min-width: 66px;
-  background: #fff7e7;
-  color: #6a3c00;
-}
-
-.time-step:hover {
-  border-color: rgba(240, 165, 52, 0.72);
-  color: #6a3c00;
-}
-
-.chip-button svg {
-  width: 14px;
-  height: 14px;
+.icon-step svg,
+.step-action svg {
+  flex: 0 0 auto;
+  width: 15px;
+  height: 15px;
 }
 
 .address-confirmation {
@@ -700,35 +730,50 @@ select:focus {
   gap: 8px;
 }
 
-.route-option {
+.route-option-card {
   position: relative;
   display: grid;
-  gap: 6px;
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 12px;
   background: var(--panel);
   color: var(--ink);
-  text-align: left;
   transition:
     border-color 0.16s ease,
-    transform 0.16s ease,
     box-shadow 0.16s ease;
 }
 
-.route-option:hover,
-.route-option.selected {
+.route-option-card:hover,
+.route-option-card.selected {
   border-color: rgba(37, 99, 235, 0.45);
   box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
-  transform: translateY(-1px);
 }
 
-.route-option.selected {
+.route-option-card.selected {
+  grid-column: 1 / -1;
   background: var(--accent-soft);
   box-shadow:
     inset 3px 0 0 var(--accent),
     0 8px 18px rgba(15, 23, 42, 0.08);
+}
+
+.route-option {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  padding: 12px;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  transition:
+    background 0.16s ease,
+    color 0.16s ease;
+}
+
+.route-option:hover {
+  background: rgba(37, 99, 235, 0.04);
 }
 
 .route-option-topline {
@@ -769,6 +814,52 @@ select:focus {
 .route-option small {
   color: var(--muted);
   font-size: 0.78rem;
+}
+
+.route-option-timing {
+  display: grid;
+  gap: 10px;
+  margin: 0 12px 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(37, 99, 235, 0.16);
+}
+
+.route-option-timing .timing-chart-card {
+  gap: 9px;
+}
+
+.route-option-timing .timing-chart-summary article {
+  padding: 9px 10px;
+  background: #ffffff;
+}
+
+.route-option-timing .timing-chart-svg {
+  min-height: 168px;
+}
+
+.route-option-timing .timing-table-details {
+  background: #ffffff;
+}
+
+.route-timing-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.route-timing-heading strong {
+  color: var(--ink);
+  font-size: 0.86rem;
+  line-height: 1.2;
+}
+
+.route-timing-heading small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 780;
+  line-height: 1.25;
+  text-align: right;
 }
 
 .trip-breakdown {
@@ -1353,12 +1444,14 @@ tbody tr.current-row {
   width: 100%;
   height: 52dvh;
   min-height: 360px;
+  overscroll-behavior: contain;
 }
 
 /* Critical Leaflet layout rules are kept locally so the map still works if CDN CSS is delayed. */
 .leaflet-container {
   overflow: hidden;
   outline-offset: 1px;
+  overscroll-behavior: contain;
 }
 
 .leaflet-pane,
@@ -1676,12 +1769,12 @@ tbody tr.current-row {
 .map-info-popup .leaflet-popup-content-wrapper {
   overflow: hidden;
   border: 1px solid rgba(21, 50, 56, 0.14);
-  border-radius: 10px;
+  border-radius: 8px;
   box-shadow: 0 20px 48px rgba(20, 37, 44, 0.26);
 }
 
 .map-info-popup .leaflet-popup-content {
-  width: min(316px, calc(100vw - 72px)) !important;
+  width: min(292px, calc(100vw - 72px)) !important;
 }
 
 .map-info-popup .leaflet-popup-close-button {
@@ -1704,74 +1797,80 @@ tbody tr.current-row {
   overflow: hidden;
   background: #ffffff;
   color: #111b20;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 .erp-rate-card h3 {
   margin: 0;
-  padding: 12px 40px 12px 13px;
-  background: #153238;
-  color: #ffffff;
-  font-size: 1.02rem;
-  font-weight: 800;
+  padding: 12px 40px 10px 12px;
+  border-bottom: 1px solid #e3ece9;
+  background: #f8fbfa;
+  color: #16272d;
+  font-size: 0.94rem;
+  font-weight: 850;
   line-height: 1.28;
 }
 
 .erp-rate-controls {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 6px;
-  padding: 10px 10px 0;
+  padding: 9px 10px 0;
 }
 
 .erp-rate-select {
   position: relative;
-  min-height: 22px;
-  padding: 5px 26px 5px 8px;
-  border: 1px solid #a7b7b5;
-  border-radius: 6px;
+  min-height: 24px;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 5px 9px;
+  border: 1px solid #c9d8d5;
+  border-radius: 999px;
   background: #f7fbfa;
-  color: #111b20;
-  font-size: 0.82rem;
+  color: #344850;
+  font-size: 0.72rem;
+  font-weight: 780;
   line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .erp-rate-select::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  right: 8px;
-  width: 0;
-  height: 0;
-  border-right: 4px solid transparent;
-  border-left: 4px solid transparent;
-  border-top: 5px solid #20282c;
-  transform: translateY(-35%);
+  display: none;
 }
 
 .erp-rate-table-wrap {
-  max-height: min(360px, 56vh);
-  margin: 10px;
-  border: 1px solid #8fb0af;
-  border-radius: 7px;
+  max-height: min(330px, 54vh);
+  margin: 9px 10px 10px;
+  border: 1px solid #c1d6d4;
+  border-radius: 8px;
   overflow: auto;
+  background: #f8fbfa;
 }
 
 .erp-rate-table {
   width: 100%;
   border-collapse: collapse;
   color: #111b20;
-  font-size: 0.86rem;
+  font-size: 0.8rem;
   line-height: 1.2;
 }
 
 .erp-rate-table td {
-  padding: 5px 7px;
-  border-bottom: 1px solid #9bbdbc;
-  background: #e0f8f7;
+  padding: 6px 9px;
+  border-bottom: 1px solid #d4e5e3;
+  background: #eefafa;
 }
 
 .erp-rate-table tr:nth-child(even) td {
-  background: #edfdfc;
+  background: #f8fefe;
+}
+
+.erp-rate-table tr.active-rate-row td {
+  background: #fff4df;
+  color: #4b2f00;
+  font-weight: 860;
 }
 
 .erp-rate-table tr:last-child td {
@@ -1779,8 +1878,10 @@ tbody tr.current-row {
 }
 
 .erp-rate-table td:last-child {
-  width: 84px;
-  text-align: left;
+  width: 62px;
+  color: #172027;
+  font-weight: 850;
+  text-align: right;
   white-space: nowrap;
 }
 
@@ -1884,28 +1985,28 @@ tbody tr.current-row {
 
 @media (max-width: 760px) {
   .map-info-popup .leaflet-popup-content {
-    width: min(284px, calc(100vw - 88px)) !important;
+    width: min(276px, calc(100vw - 88px)) !important;
   }
 
   .erp-rate-card h3 {
     padding: 11px 38px 11px 12px;
-    font-size: 0.94rem;
+    font-size: 0.9rem;
   }
 
   .erp-rate-select {
-    font-size: 0.76rem;
+    font-size: 0.7rem;
   }
 
   .erp-rate-table-wrap {
-    max-height: min(300px, 42vh);
+    max-height: min(290px, 42vh);
   }
 
   .erp-rate-table {
-    font-size: 0.8rem;
+    font-size: 0.76rem;
   }
 
   .erp-rate-table td:last-child {
-    width: 72px;
+    width: 58px;
   }
 
   .erp-hover-card {
@@ -1956,23 +2057,8 @@ tbody tr.current-row {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 
-  .quick-picker {
-    gap: 7px;
-  }
-
-  .quick-picker-group {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .time-shortcuts {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .chip-button {
-    min-width: 0;
-    padding-right: 8px;
-    padding-left: 8px;
+  .adjuster-grid {
+    grid-template-columns: 1fr;
   }
 
   .form-actions {
@@ -2163,7 +2249,7 @@ tbody tr.current-row {
 .metric-card,
 .recommendation,
 .gantry-item,
-.route-option,
+.route-option-card,
 .trip-breakdown article {
   animation: fade-up 0.22s ease both;
 }

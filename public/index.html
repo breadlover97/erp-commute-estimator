@@ -16,7 +16,7 @@
       integrity="sha256-p4NxAoJBhIINfQKJvI5v3XYPS0obTRR9BMYgqNJFlIk="
       crossorigin=""
     />
-    <link rel="stylesheet" href="./styles.css?v=2026-06-10-timing-chart-v20" />
+    <link rel="stylesheet" href="./styles.css?v=2026-06-10-ui-flow-v21" />
   </head>
   <body>
     <main class="app-shell">
@@ -123,35 +123,55 @@
               </label>
             </div>
 
-            <div class="quick-picker" aria-label="Quick departure date and time">
-              <div class="quick-picker-group date-shortcuts" aria-label="Date shortcuts">
-                <button type="button" class="chip-button date-chip" data-date-offset="0">Today</button>
-                <button type="button" class="chip-button date-chip" data-date-offset="1">Tomorrow</button>
+            <div class="adjuster-grid" aria-label="Adjust departure date and time">
+              <div class="adjuster-block" aria-label="Adjust departure date">
+                <span>Date</span>
+                <div class="date-stepper">
+                  <button
+                    type="button"
+                    class="icon-step date-step"
+                    data-target="date-input"
+                    data-days="-1"
+                    aria-label="Move departure date one day earlier"
+                  >
+                    <i data-lucide="minus"></i>
+                  </button>
+                  <strong>1 day</strong>
+                  <button
+                    type="button"
+                    class="icon-step date-step"
+                    data-target="date-input"
+                    data-days="1"
+                    aria-label="Move departure date one day later"
+                  >
+                    <i data-lucide="plus"></i>
+                  </button>
+                </div>
               </div>
-              <div class="quick-picker-group time-shortcuts" aria-label="Time shortcuts">
-                <button type="button" class="chip-button time-chip" data-time="07:30">7:30</button>
-                <button type="button" class="chip-button time-chip" data-time="08:30">8:30</button>
-                <button type="button" class="chip-button time-chip" data-time="18:00">18:00</button>
-              </div>
-              <div class="quick-picker-group stepper-group" aria-label="Adjust time">
-                <button
-                  type="button"
-                  class="chip-button time-step"
-                  data-target="time-input"
-                  data-minutes="-15"
-                  aria-label="Move departure time 15 minutes earlier"
-                >
-                  <i data-lucide="minus"></i>15m
-                </button>
-                <button
-                  type="button"
-                  class="chip-button time-step"
-                  data-target="time-input"
-                  data-minutes="15"
-                  aria-label="Move departure time 15 minutes later"
-                >
-                  <i data-lucide="plus"></i>15m
-                </button>
+              <div class="adjuster-block" aria-label="Adjust departure time">
+                <span>Time</span>
+                <div class="time-stepper">
+                  <button
+                    type="button"
+                    class="step-action time-step"
+                    data-target="time-input"
+                    data-minutes="-15"
+                    aria-label="Move departure time 15 minutes earlier"
+                  >
+                    <i data-lucide="arrow-left"></i>
+                    <span><strong>Earlier</strong><small>15 min</small></span>
+                  </button>
+                  <button
+                    type="button"
+                    class="step-action time-step"
+                    data-target="time-input"
+                    data-minutes="15"
+                    aria-label="Move departure time 15 minutes later"
+                  >
+                    <span><strong>Later</strong><small>15 min</small></span>
+                    <i data-lucide="arrow-right"></i>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -171,31 +191,55 @@
                 <input id="return-time-input" type="time" step="300" />
               </label>
             </div>
-            <div class="quick-picker" aria-label="Quick return date and time">
-              <div class="quick-picker-group return-shortcuts" aria-label="Return time offsets">
-                <button type="button" class="chip-button return-chip" data-hours="4">+4h</button>
-                <button type="button" class="chip-button return-chip" data-hours="8">+8h</button>
-                <button type="button" class="chip-button return-chip" data-hours="10">+10h</button>
+            <div class="adjuster-grid" aria-label="Adjust return date and time">
+              <div class="adjuster-block" aria-label="Adjust return date">
+                <span>Date</span>
+                <div class="date-stepper">
+                  <button
+                    type="button"
+                    class="icon-step date-step"
+                    data-target="return-date-input"
+                    data-days="-1"
+                    aria-label="Move return date one day earlier"
+                  >
+                    <i data-lucide="minus"></i>
+                  </button>
+                  <strong>1 day</strong>
+                  <button
+                    type="button"
+                    class="icon-step date-step"
+                    data-target="return-date-input"
+                    data-days="1"
+                    aria-label="Move return date one day later"
+                  >
+                    <i data-lucide="plus"></i>
+                  </button>
+                </div>
               </div>
-              <div class="quick-picker-group stepper-group" aria-label="Adjust return time">
-                <button
-                  type="button"
-                  class="chip-button time-step"
-                  data-target="return-time-input"
-                  data-minutes="-15"
-                  aria-label="Move return time 15 minutes earlier"
-                >
-                  <i data-lucide="minus"></i>15m
-                </button>
-                <button
-                  type="button"
-                  class="chip-button time-step"
-                  data-target="return-time-input"
-                  data-minutes="15"
-                  aria-label="Move return time 15 minutes later"
-                >
-                  <i data-lucide="plus"></i>15m
-                </button>
+              <div class="adjuster-block" aria-label="Adjust return time">
+                <span>Time</span>
+                <div class="time-stepper">
+                  <button
+                    type="button"
+                    class="step-action time-step"
+                    data-target="return-time-input"
+                    data-minutes="-15"
+                    aria-label="Move return time 15 minutes earlier"
+                  >
+                    <i data-lucide="arrow-left"></i>
+                    <span><strong>Earlier</strong><small>15 min</small></span>
+                  </button>
+                  <button
+                    type="button"
+                    class="step-action time-step"
+                    data-target="return-time-input"
+                    data-minutes="15"
+                    aria-label="Move return time 15 minutes later"
+                  >
+                    <span><strong>Later</strong><small>15 min</small></span>
+                    <i data-lucide="arrow-right"></i>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -308,42 +352,6 @@
 
         <section class="trip-breakdown" id="trip-breakdown" hidden aria-label="Return trip breakdown"></section>
 
-        <details class="results-section detail-disclosure timing-disclosure" open>
-          <summary>
-            <span>
-              <strong>Timing comparison</strong>
-              <small id="comparison-note">Run an estimate to compare costs.</small>
-            </span>
-            <i data-lucide="chevron-down"></i>
-          </summary>
-          <div class="timing-chart-card" id="timing-chart" aria-label="ERP cost by route and departure time">
-            <div class="empty-state">No route calculated yet.</div>
-          </div>
-          <details class="timing-table-details">
-            <summary>
-              <span>Exact selected-route timings</span>
-              <i data-lucide="chevron-down"></i>
-            </summary>
-            <div class="table-shell">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Leave</th>
-                    <th>Arrive</th>
-                    <th>ERP</th>
-                    <th>Route ERP</th>
-                  </tr>
-                </thead>
-                <tbody id="timing-body">
-                  <tr>
-                    <td colspan="4" class="empty-row">No route calculated yet.</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </details>
-        </details>
-
         <details class="results-section detail-disclosure">
           <summary>
             <span>
@@ -398,6 +406,6 @@
       crossorigin=""
     ></script>
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
-    <script src="./app.js?v=2026-06-10-timing-chart-v20" type="module"></script>
+    <script src="./app.js?v=2026-06-10-ui-flow-v21" type="module"></script>
   </body>
 </html>

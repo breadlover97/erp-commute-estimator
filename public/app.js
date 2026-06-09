@@ -4,7 +4,11 @@ const GANTRY_LINE_MATCH_THRESHOLD_METERS = 70;
 const DIRECTION_TOLERANCE_DEGREES = 75;
 const COMPETING_GANTRY_PROGRESS_WINDOW_METERS = 45;
 const COMPETING_GANTRY_SPATIAL_WINDOW_METERS = 55;
-const DATA_VERSION = "2026-06-10-timing-chart-v20";
+const DATA_VERSION = "2026-06-10-ui-flow-v21";
+const SINGAPORE_MAP_BOUNDS = [
+  [1.11, 103.55],
+  [1.5, 104.15],
+];
 const DEFAULT_START_POINT = {
   inputValue: "838 Yishun St 81 Singapore 760838",
   lat: 1.41642178701227,
@@ -154,11 +158,8 @@ const els = {
   driveTime: document.querySelector("#drive-time"),
   driveDistance: document.querySelector("#drive-distance"),
   matchedCount: document.querySelector("#matched-count"),
-  timingChart: document.querySelector("#timing-chart"),
-  timingBody: document.querySelector("#timing-body"),
   gantryList: document.querySelector("#gantry-list"),
   status: document.querySelector("#status-bar"),
-  comparisonNote: document.querySelector("#comparison-note"),
   recommendation: document.querySelector("#recommendation"),
   recommendationTitle: document.querySelector("#recommendation-title"),
   recommendationCopy: document.querySelector("#recommendation-copy"),
@@ -232,23 +233,13 @@ function bindEvents() {
   bindAddressField("start");
   bindAddressField("destination");
 
-  document.querySelectorAll(".date-chip").forEach((button) => {
+  document.querySelectorAll(".date-step").forEach((button) => {
     button.addEventListener("click", () => {
-      const date = addDays(new Date(), Number(button.dataset.dateOffset));
-      els.date.value = toDateInputValue(date);
+      const target = document.querySelector(`#${button.dataset.target}`);
+      stepDateInput(target, Number(button.dataset.days));
       syncReturnDateIfBeforeDeparture();
+      renderAllGantries();
     });
-  });
-
-  document.querySelectorAll(".time-chip").forEach((button) => {
-    button.addEventListener("click", () => {
-      els.time.value = button.dataset.time;
-      syncReturnDateIfBeforeDeparture();
-    });
-  });
-
-  document.querySelectorAll(".return-chip").forEach((button) => {
-    button.addEventListener("click", () => setReturnOffset(Number(button.dataset.hours)));
   });
 
   document.querySelectorAll(".time-step").forEach((button) => {
@@ -256,6 +247,7 @@ function bindEvents() {
       const target = document.querySelector(`#${button.dataset.target}`);
       stepTimeInput(target, Number(button.dataset.minutes));
       syncReturnDateIfBeforeDeparture();
+      renderAllGantries();
     });
   });
 
@@ -458,6 +450,7 @@ function renderPlan() {
   renderTimingComparison(buildTimingComparison(selectedLegs), selectedLegs[0].trip.departureDate);
   renderGantryList(selectedLegs.flatMap((option) => option.trip.entries));
   renderRecommendation(selectedLegs);
+  window.lucide?.createIcons();
 
   setStatus(
     `Selected ${state.currentPlan.tripMode === "return" ? "return" : "one-way"} route matched ${gantryCount} ERP location${
@@ -495,21 +488,59 @@ function routeOptionsForLeg(legKey, options) {
     .map((option) => {
       const isSelected = state.selectedRoutes[legKey] === option.index;
       const tooltip = routeOptionTooltip(option);
-      return `<button class="route-option tooltip-card ${isSelected ? "selected" : ""}" data-leg="${legKey}" data-index="${
-        option.index
-      }" data-tooltip="${escapeHtml(tooltip)}" type="button">
-        <span class="route-option-topline">
-          <span class="route-option-name">${routeOptionName(option)}</span>
-          <span class="route-provider-chip">${escapeHtml(routingProviderLabel(option.route))}</span>
-        </span>
-        <strong>${formatMoney(option.trip.total)}</strong>
-        <small>${formatDuration(option.route.durationSeconds)} · ${formatDistance(option.route.totalMeters)} · ${
-          option.trip.entries.length
-        } ERP</small>
-      </button>`;
+      return `<article class="route-option-card ${isSelected ? "selected" : ""}">
+        <button class="route-option tooltip-card ${
+          isSelected ? "selected" : ""
+        }" data-leg="${legKey}" data-index="${option.index}" data-tooltip="${escapeHtml(tooltip)}" type="button">
+          <span class="route-option-topline">
+            <span class="route-option-name">${routeOptionName(option)}</span>
+            <span class="route-provider-chip">${escapeHtml(routingProviderLabel(option.route))}</span>
+          </span>
+          <strong>${formatMoney(option.trip.total)}</strong>
+          <small>${formatDuration(option.route.durationSeconds)} · ${formatDistance(option.route.totalMeters)} · ${
+            option.trip.entries.length
+          } ERP</small>
+        </button>
+        ${isSelected && legKey === "outbound" ? selectedRouteTimingTemplate() : ""}
+      </article>`;
     })
     .join("");
   return `${heading}<div class="route-option-row">${cards}</div>`;
+}
+
+function selectedRouteTimingTemplate() {
+  return `<section class="route-option-timing" aria-label="Selected route timing comparison">
+    <div class="route-timing-heading">
+      <strong>Timing comparison</strong>
+      <small id="comparison-note">Selected route only.</small>
+    </div>
+    <div class="timing-chart-card" id="timing-chart" aria-label="ERP cost by departure time for selected route">
+      <div class="empty-state">No route calculated yet.</div>
+    </div>
+    <details class="timing-table-details">
+      <summary>
+        <span>Exact timings</span>
+        <i data-lucide="chevron-down"></i>
+      </summary>
+      <div class="table-shell">
+        <table>
+          <thead>
+            <tr>
+              <th>Leave</th>
+              <th>Arrive</th>
+              <th>ERP</th>
+              <th>Route ERP</th>
+            </tr>
+          </thead>
+          <tbody id="timing-body">
+            <tr>
+              <td colspan="4" class="empty-row">No route calculated yet.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+  </section>`;
 }
 
 function renderRouteProvider(selectedLegs) {
@@ -655,7 +686,7 @@ function drawRouteOption(option, color, isSelected) {
   }</strong><br>${formatDistance(option.route.totalMeters)} · ${formatDuration(
     option.route.durationSeconds,
   )}<br>ERP at selected timing: ${formatMoney(option.trip.total)}`;
-  layer.bindPopup(popup);
+  layer.bindPopup(popup, { autoPan: false });
   bindHoverPopup(layer);
 }
 
@@ -696,26 +727,39 @@ function infoForTripEntry(entry) {
 }
 
 function renderTimingComparison(comparison, baseDeparture) {
+  const timingEls = getTimingElements();
+  if (!timingEls.chart || !timingEls.body || !timingEls.note) {
+    return;
+  }
   const selectedRows = comparison.selectedRows || [];
   const routeSeries = comparison.routeSeries || [];
-  const routeCount = routeSeries.length || 1;
-  const routeLabel = `${routeCount} route option${routeCount === 1 ? "" : "s"}`;
-  els.comparisonNote.textContent =
+  timingEls.note.textContent =
     state.currentPlan?.tripMode === "return"
-      ? `ERP by outbound departure time across ${routeLabel}; selected return stays fixed.`
-      : `ERP by departure time across ${routeLabel}.`;
-  renderTimingChart(routeSeries, baseDeparture);
-  renderTimingRows(selectedRows, baseDeparture);
+      ? "Selected outbound route; return stays fixed."
+      : "Selected route only.";
+  renderTimingChart(routeSeries, baseDeparture, timingEls.chart);
+  renderTimingRows(selectedRows, baseDeparture, timingEls.body);
 }
 
-function renderTimingRows(rows, baseDeparture) {
+function getTimingElements() {
+  return {
+    chart: document.querySelector("#timing-chart"),
+    body: document.querySelector("#timing-body"),
+    note: document.querySelector("#comparison-note"),
+  };
+}
+
+function renderTimingRows(rows, baseDeparture, bodyElement = document.querySelector("#timing-body")) {
+  if (!bodyElement) {
+    return;
+  }
   if (!rows.length) {
-    els.timingBody.innerHTML = `<tr><td colspan="4" class="empty-row">No timing comparison available.</td></tr>`;
+    bodyElement.innerHTML = `<tr><td colspan="4" class="empty-row">No timing comparison available.</td></tr>`;
     return;
   }
 
   const minCost = Math.min(...rows.map((row) => row.total));
-  els.timingBody.innerHTML = rows
+  bodyElement.innerHTML = rows
     .map((row) => {
       const rowClasses = [
         row.total === minCost ? "best-row" : "",
@@ -737,7 +781,7 @@ function buildTimingComparison(selectedLegs) {
   const outbound = selectedLegs[0];
   const returnLeg = selectedLegs[1];
   const baseDeparture = outbound.trip.departureDate;
-  const outboundOptions = state.currentPlan?.outbound?.length ? state.currentPlan.outbound : [outbound];
+  const outboundOptions = [outbound];
   const routeSeries = outboundOptions.map((option, seriesIndex) => {
     const rows = buildTimingRowsForOption(option, baseDeparture, returnLeg);
     const minRow = findBestTimingRow(rows, baseDeparture);
@@ -788,10 +832,13 @@ function buildTimingRowsForOption(option, baseDeparture, returnLeg) {
   return rows;
 }
 
-function renderTimingChart(routeSeries, baseDeparture) {
+function renderTimingChart(routeSeries, baseDeparture, chartElement = document.querySelector("#timing-chart")) {
+  if (!chartElement) {
+    return;
+  }
   const series = routeSeries.filter((item) => item.rows.length);
   if (!series.length) {
-    els.timingChart.innerHTML = `<div class="empty-state">No route calculated yet.</div>`;
+    chartElement.innerHTML = `<div class="empty-state">No route calculated yet.</div>`;
     return;
   }
 
@@ -867,25 +914,28 @@ function renderTimingChart(routeSeries, baseDeparture) {
     .join("");
 
   const currentX = formatSvgNumber(xForIndex(currentIndex));
-  const legend = series
-    .map((item) => {
-      const minRow = item.minRow || item.rows[0];
-      return `<div class="timing-legend-item ${item.selected ? "selected" : ""}">
-        <span class="timing-legend-swatch" style="--route-color: ${item.color}"></span>
-        <div>
-          <strong>${escapeHtml(item.name)}</strong>
-          <small>${formatMoney(minRow.total)} low at ${formatClock(minRow.departureDate)}</small>
-        </div>
-      </div>`;
-    })
-    .join("");
+  const legend =
+    series.length > 1
+      ? `<div class="timing-chart-legend">${series
+          .map((item) => {
+            const minRow = item.minRow || item.rows[0];
+            return `<div class="timing-legend-item ${item.selected ? "selected" : ""}">
+              <span class="timing-legend-swatch" style="--route-color: ${item.color}"></span>
+              <div>
+                <strong>${escapeHtml(item.name)}</strong>
+                <small>${formatMoney(minRow.total)} low at ${formatClock(minRow.departureDate)}</small>
+              </div>
+            </div>`;
+          })
+          .join("")}</div>`
+      : "";
 
-  els.timingChart.innerHTML = `
+  chartElement.innerHTML = `
     <div class="timing-chart-summary">
       <article>
-        <span>Lowest nearby</span>
-        <strong>${escapeHtml(best.series.name)}</strong>
-        <small>${formatClock(best.row.departureDate)} · ${formatMoney(best.row.total)}</small>
+        <span>Lowest in window</span>
+        <strong>${formatMoney(best.row.total)}</strong>
+        <small>Leave ${formatClock(best.row.departureDate)}</small>
       </article>
       <article>
         <span>Selected now</span>
@@ -907,7 +957,7 @@ function renderTimingChart(routeSeries, baseDeparture) {
         ${xLabels}
       </svg>
     </div>
-    <div class="timing-chart-legend">${legend}</div>
+    ${legend}
     <p class="sr-only">${escapeHtml(accessibleTimingSummary(series))}</p>
   `;
 }
@@ -1076,12 +1126,17 @@ function findBestSuggestion(selectedLegs) {
 }
 
 function renderErrorState(message) {
+  const timingEls = getTimingElements();
   els.totalCost.textContent = formatMoney(0);
   els.driveTime.textContent = "--";
   els.driveDistance.textContent = "--";
   els.matchedCount.textContent = "--";
-  els.timingChart.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
-  els.timingBody.innerHTML = `<tr><td colspan="4" class="empty-row">${escapeHtml(message)}</td></tr>`;
+  if (timingEls.chart) {
+    timingEls.chart.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
+  }
+  if (timingEls.body) {
+    timingEls.body.innerHTML = `<tr><td colspan="4" class="empty-row">${escapeHtml(message)}</td></tr>`;
+  }
   els.gantryList.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
   els.routeOptionsSection.hidden = true;
   els.routeOptions.innerHTML = "";
@@ -1095,13 +1150,20 @@ function renderErrorState(message) {
 }
 
 function renderInitialResults() {
+  const timingEls = getTimingElements();
   els.totalCost.textContent = formatMoney(0);
   els.driveTime.textContent = "--";
   els.driveDistance.textContent = "--";
   els.matchedCount.textContent = "--";
-  els.comparisonNote.textContent = "Run an estimate to compare costs.";
-  els.timingChart.innerHTML = `<div class="empty-state">No route calculated yet.</div>`;
-  els.timingBody.innerHTML = `<tr><td colspan="4" class="empty-row">No route calculated yet.</td></tr>`;
+  if (timingEls.note) {
+    timingEls.note.textContent = "Run an estimate to compare costs.";
+  }
+  if (timingEls.chart) {
+    timingEls.chart.innerHTML = `<div class="empty-state">No route calculated yet.</div>`;
+  }
+  if (timingEls.body) {
+    timingEls.body.innerHTML = `<tr><td colspan="4" class="empty-row">No route calculated yet.</td></tr>`;
+  }
   els.gantryList.innerHTML = `<div class="empty-state">No route calculated yet.</div>`;
   els.routeOptionsSection.hidden = true;
   els.routeOptions.innerHTML = "";
@@ -1117,12 +1179,14 @@ function renderInitialResults() {
 function initMap() {
   state.map = L.map("map", {
     zoomControl: true,
-    scrollWheelZoom: true,
+    scrollWheelZoom: false,
+    maxBounds: SINGAPORE_MAP_BOUNDS,
+    maxBoundsViscosity: 0.85,
+    worldCopyJump: false,
   }).setView(SINGAPORE_CENTER, 12);
 
   setMapSource(els.mapSource.value || "osm");
   L.control.scale({ imperial: false, position: "bottomleft" }).addTo(state.map);
-  state.map.on("popupopen", keepPopupInViewport);
 
   state.allGantriesLayer = L.layerGroup().addTo(state.map);
   state.matchedGantriesLayer = L.layerGroup().addTo(state.map);
@@ -1182,11 +1246,13 @@ function infoForErpRates(options) {
   };
 }
 
-function popupForErpRates({ groupId, title, vehicleType, dateString, note = "" }) {
+function popupForErpRates({ groupId, title, vehicleType, dateString, highlightMinutes, note = "" }) {
   const rows = buildErpRateRows(groupId, dateString, vehicleType);
+  const activeMinutes = Number.isFinite(highlightMinutes) ? highlightMinutes : selectedRateMinutes();
   const body = rows
     .map((row) => {
-      return `<tr>
+      const isActive = Number.isFinite(row.start) && activeMinutes >= row.start && activeMinutes < row.end;
+      return `<tr class="${isActive ? "active-rate-row" : ""}">
         <td>${escapeHtml(row.range)}</td>
         <td>${formatPopupMoney(row.amount)}</td>
       </tr>`;
@@ -1372,9 +1438,8 @@ function bindGantryInfo(layer, popupContent, tooltipContent) {
   layer.bindPopup(popupContent, {
     className: "map-info-popup",
     maxWidth: 320,
-    autoPan: true,
-    autoPanPadding: [44, 44],
-    keepInView: true,
+    autoPan: false,
+    keepInView: false,
   });
   layer.bindTooltip(tooltipContent, {
     className: "map-info-tooltip",
@@ -1397,39 +1462,6 @@ function bindGantryInfo(layer, popupContent, tooltipContent) {
   layer.on("click", () => {
     layer.closeTooltip();
     layer.openPopup();
-  });
-}
-
-function keepPopupInViewport(event) {
-  const clampPopup = () => {
-    const container = event.popup?._container;
-    if (!container) {
-      return;
-    }
-
-    const rect = container.getBoundingClientRect();
-    const margin = 8;
-    let shiftX = 0;
-    if (rect.left < margin) {
-      shiftX = margin - rect.left;
-    } else if (rect.right > window.innerWidth - margin) {
-      shiftX = window.innerWidth - margin - rect.right;
-    }
-    if (!shiftX) {
-      return;
-    }
-
-    const match = container.style.transform.match(/translate3d\(([-\d.]+)px,\s*([-\d.]+)px,\s*0px\)/);
-    if (!match) {
-      return;
-    }
-    const nextX = Number(match[1]) + shiftX;
-    container.style.transform = `translate3d(${nextX}px, ${match[2]}px, 0px)`;
-  };
-
-  requestAnimationFrame(() => {
-    clampPopup();
-    requestAnimationFrame(clampPopup);
   });
 }
 
@@ -2396,6 +2428,14 @@ function stepTimeInput(input, minutes) {
   const date = new Date(2026, 0, 1, hours, currentMinutes);
   const next = addMinutes(date, minutes);
   input.value = formatClock(next);
+}
+
+function stepDateInput(input, days) {
+  if (!input) {
+    return;
+  }
+  const current = input.value ? new Date(`${input.value}T00:00:00`) : new Date();
+  input.value = toDateInputValue(addDays(current, days));
 }
 
 function replaceUrlWithShareState() {

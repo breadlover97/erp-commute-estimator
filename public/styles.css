@@ -26,6 +26,10 @@
   display: none !important;
 }
 
+details:not([open]) > :not(summary) {
+  display: none !important;
+}
+
 html,
 body {
   min-height: 100%;

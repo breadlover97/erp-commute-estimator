@@ -1,1 +1,2 @@
-ONEMAP_API_TOKEN=replace-with-your-onemap-token
+ONEMAP_EMAIL=replace-with-your-onemap-login-email
+ONEMAP_PASSWORD=replace-with-your-onemap-password

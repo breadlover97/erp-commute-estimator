@@ -1,4 +1,6 @@
+const ONEMAP_AUTH_ENDPOINT = "https://www.onemap.gov.sg/api/auth/post/getToken";
 const ONEMAP_ROUTE_ENDPOINT = "https://www.onemap.gov.sg/api/public/routingsvc/route";
+const TOKEN_REFRESH_BUFFER_MS = 5 * 60 * 1000;
 const SINGAPORE_BOUNDS = {
   minLat: 1.13,
   maxLat: 1.49,
@@ -6,18 +8,10 @@ const SINGAPORE_BOUNDS = {
   maxLng: 104.12,
 };
 
-export async function onRequestGet(context) {
-  const token = context.env.ONEMAP_API_TOKEN;
-  if (!token) {
-    return jsonResponse(
-      {
-        error: "OneMap routing is not configured.",
-        code: "missing_onemap_token",
-      },
-      503,
-    );
-  }
+let cachedOneMapToken = null;
+let cachedOneMapTokenExpiresAtMs = 0;
 
+export async function onRequestGet(context) {
   const requestUrl = new URL(context.request.url);
   const start = parseCoordinatePair(requestUrl.searchParams.get("start"));
   const end = parseCoordinatePair(requestUrl.searchParams.get("end"));
@@ -42,19 +36,31 @@ export async function onRequestGet(context) {
     );
   }
 
+  const tokenResult = await getOneMapToken(context.env);
+  if (!tokenResult.token) {
+    return jsonResponse(
+      {
+        error: tokenResult.error || "OneMap routing is not configured.",
+        code: tokenResult.code || "missing_onemap_credentials",
+        details: tokenResult.details || null,
+      },
+      503,
+    );
+  }
+
   const oneMapUrl = new URL(ONEMAP_ROUTE_ENDPOINT);
   oneMapUrl.searchParams.set("start", `${start.lat},${start.lng}`);
   oneMapUrl.searchParams.set("end", `${end.lat},${end.lng}`);
   oneMapUrl.searchParams.set("routeType", "drive");
 
-  const response = await fetch(oneMapUrl.toString(), {
-    headers: {
-      Accept: "application/json",
-      Authorization: token,
-    },
-  });
-
-  const payload = await response.json().catch(() => null);
+  let { response, payload } = await fetchOneMapRoute(oneMapUrl, tokenResult.token);
+  if (shouldRetryWithFreshToken(response, payload) && hasRefreshCredentials(context.env)) {
+    clearCachedOneMapToken();
+    const retryTokenResult = await getOneMapToken(context.env, { forceRefresh: true });
+    if (retryTokenResult.token) {
+      ({ response, payload } = await fetchOneMapRoute(oneMapUrl, retryTokenResult.token));
+    }
+  }
   if (!response.ok) {
     return jsonResponse(
       {
@@ -68,6 +74,82 @@ export async function onRequestGet(context) {
   }
 
   return jsonResponse(payload, 200);
+}
+
+async function getOneMapToken(env, options = {}) {
+  if (hasRefreshCredentials(env)) {
+    return getOneMapTokenFromCredentials(env, options);
+  }
+  if (env.ONEMAP_API_TOKEN) {
+    return { token: env.ONEMAP_API_TOKEN };
+  }
+  return {
+    error: "OneMap routing is not configured. Add ONEMAP_EMAIL and ONEMAP_PASSWORD secrets.",
+    code: "missing_onemap_credentials",
+  };
+}
+
+async function getOneMapTokenFromCredentials(env, { forceRefresh = false } = {}) {
+  const now = Date.now();
+  if (!forceRefresh && cachedOneMapToken && cachedOneMapTokenExpiresAtMs - TOKEN_REFRESH_BUFFER_MS > now) {
+    return { token: cachedOneMapToken };
+  }
+
+  const response = await fetch(ONEMAP_AUTH_ENDPOINT, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      email: env.ONEMAP_EMAIL,
+      password: env.ONEMAP_PASSWORD,
+    }),
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok || !payload?.access_token) {
+    clearCachedOneMapToken();
+    return {
+      error: "OneMap authentication failed.",
+      code: "onemap_auth_failed",
+      details: summarizeOneMapError(payload) || `HTTP ${response.status}`,
+    };
+  }
+
+  const expirySeconds = Number(payload.expiry_timestamp);
+  cachedOneMapToken = payload.access_token;
+  cachedOneMapTokenExpiresAtMs = Number.isFinite(expirySeconds)
+    ? expirySeconds * 1000
+    : now + 70 * 60 * 60 * 1000;
+  return { token: cachedOneMapToken };
+}
+
+async function fetchOneMapRoute(oneMapUrl, token) {
+  const response = await fetch(oneMapUrl.toString(), {
+    headers: {
+      Accept: "application/json",
+      Authorization: token,
+    },
+  });
+  const payload = await response.json().catch(() => null);
+  return { response, payload };
+}
+
+function shouldRetryWithFreshToken(response, payload) {
+  if (response.status === 401 || response.status === 403) {
+    return true;
+  }
+  const message = summarizeOneMapError(payload);
+  return typeof message === "string" && /token|auth|expired/i.test(message);
+}
+
+function hasRefreshCredentials(env) {
+  return Boolean(env.ONEMAP_EMAIL && env.ONEMAP_PASSWORD);
+}
+
+function clearCachedOneMapToken() {
+  cachedOneMapToken = null;
+  cachedOneMapTokenExpiresAtMs = 0;
 }
 
 function parseCoordinatePair(value) {

@@ -48,7 +48,9 @@ Open `http://localhost:4173`.
 
 The OneMap routing proxy lives at `functions/api/routes/onemap.js`, which Cloudflare Pages deploys as `/api/routes/onemap`.
 
-Set the OneMap token as a Cloudflare Pages secret named `ONEMAP_API_TOKEN`. For local Wrangler testing, copy `.dev.vars.example` to `.dev.vars` and fill in the token. The checked-in `.dev.vars.example` is only a template; do not commit real tokens.
+Set the OneMap login credentials as Cloudflare Pages secrets named `ONEMAP_EMAIL` and `ONEMAP_PASSWORD`. The proxy exchanges them for a OneMap access token server-side and refreshes it before expiry. `ONEMAP_API_TOKEN` is still supported as a fallback, but direct tokens expire after about 3 days.
+
+For local Wrangler testing, copy `.dev.vars.example` to `.dev.vars` and fill in the credentials. The checked-in `.dev.vars.example` is only a template; do not commit real secrets.
 
 ## Refreshing Source Data
 

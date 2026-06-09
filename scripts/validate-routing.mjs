@@ -6,6 +6,8 @@ const data = JSON.parse(await readFile(new URL("../public/data/erp-data.json", i
 const GANTRY_POINT_MATCH_THRESHOLD_METERS = 115;
 const GANTRY_LINE_MATCH_THRESHOLD_METERS = 70;
 const DIRECTION_TOLERANCE_DEGREES = 75;
+const COMPETING_GANTRY_PROGRESS_WINDOW_METERS = 45;
+const COMPETING_GANTRY_SPATIAL_WINDOW_METERS = 55;
 
 const routeCases = [
   {
@@ -76,6 +78,22 @@ for (const routeCase of routeCases) {
   assert.equal(reverseMatch, undefined, `${routeCase.label} matched in the opposite direction`);
 }
 
+const cteBraddellRoute = syntheticRouteThrough(
+  data.gantries.find((item) => item.gantryNo === "31"),
+  180,
+);
+const cteBraddellGroups = matchGantriesToRoute(cteBraddellRoute)
+  .map((match) => match.gantry.groupId)
+  .filter(Boolean);
+assert.ok(
+  cteBraddellGroups.includes("31,33,34"),
+  "CTE after Braddell should keep the direct mainline gantry group",
+);
+assert.ok(
+  !cteBraddellGroups.includes("68"),
+  "CTE after Braddell should not also charge the side-by-side slip-road gantry",
+);
+
 console.log("ERP route matching validation passed");
 
 function matchGantriesToRoute(route) {
@@ -98,7 +116,7 @@ function matchGantriesToRoute(route) {
       });
     }
   }
-  return matches.sort((a, b) => a.progressMeters - b.progressMeters);
+  return dedupeCompetingGantryMatches(matches).sort((a, b) => a.progressMeters - b.progressMeters);
 }
 
 function closestProgressToGantry(gantry, route) {
@@ -113,6 +131,45 @@ function closestProgressToGantry(gantry, route) {
     ...closestProgressOnRoute({ lat: gantry.center[0], lng: gantry.center[1] }, route.points, route.cumulativeMeters),
     matchType: "marker",
   };
+}
+
+function dedupeCompetingGantryMatches(matches) {
+  const kept = [];
+  for (const match of matches.sort((a, b) => a.progressMeters - b.progressMeters)) {
+    const competingIndex = kept.findIndex((existing) => gantryMatchesCompete(existing, match));
+    if (competingIndex === -1) {
+      kept.push(match);
+      continue;
+    }
+    if (gantryMatchQualityScore(match) < gantryMatchQualityScore(kept[competingIndex])) {
+      kept[competingIndex] = match;
+    }
+  }
+  return kept;
+}
+
+function gantryMatchesCompete(a, b) {
+  if (a.gantry.groupId && b.gantry.groupId && a.gantry.groupId === b.gantry.groupId) {
+    return false;
+  }
+  return (
+    Math.abs(a.progressMeters - b.progressMeters) <= COMPETING_GANTRY_PROGRESS_WINDOW_METERS &&
+    haversineMeters(gantryCenterPoint(a.gantry), gantryCenterPoint(b.gantry)) <=
+      COMPETING_GANTRY_SPATIAL_WINDOW_METERS
+  );
+}
+
+function gantryMatchQualityScore(match) {
+  const directionPenalty = Number.isFinite(match.directionDelta) ? match.directionDelta * 0.2 : 8;
+  const markerPenalty = match.matchType === "line" ? 0 : 3;
+  return match.distanceMeters + directionPenalty + markerPenalty;
+}
+
+function gantryCenterPoint(gantry) {
+  if (gantry.line?.length > 1) {
+    return lineMidpoint(gantry.line);
+  }
+  return { lat: gantry.center[0], lng: gantry.center[1] };
 }
 
 function closestProgressToGantryLine(linePoints, routePoints, cumulativeMeters) {

@@ -2,7 +2,9 @@ const SINGAPORE_CENTER = [1.3521, 103.8198];
 const GANTRY_POINT_MATCH_THRESHOLD_METERS = 115;
 const GANTRY_LINE_MATCH_THRESHOLD_METERS = 70;
 const DIRECTION_TOLERANCE_DEGREES = 75;
-const DATA_VERSION = "2026-06-10-default-start-v18";
+const COMPETING_GANTRY_PROGRESS_WINDOW_METERS = 45;
+const COMPETING_GANTRY_SPATIAL_WINDOW_METERS = 55;
+const DATA_VERSION = "2026-06-10-gantry-dedupe-v19";
 const DEFAULT_START_POINT = {
   inputValue: "838 Yishun St 81 Singapore 760838",
   lat: 1.41642178701227,
@@ -1731,7 +1733,7 @@ function matchGantriesToRoute(route) {
     }
   }
 
-  return matches.sort((a, b) => a.progressMeters - b.progressMeters);
+  return dedupeCompetingGantryMatches(matches).sort((a, b) => a.progressMeters - b.progressMeters);
 }
 
 function closestProgressToGantry(gantry, route) {
@@ -1746,6 +1748,54 @@ function closestProgressToGantry(gantry, route) {
     ...closestProgressOnRoute({ lat: gantry.center[0], lng: gantry.center[1] }, route.points, route.cumulativeMeters),
     matchType: "marker",
   };
+}
+
+function dedupeCompetingGantryMatches(matches) {
+  const kept = [];
+  for (const match of matches.sort((a, b) => a.progressMeters - b.progressMeters)) {
+    const competingIndex = kept.findIndex((existing) => gantryMatchesCompete(existing, match));
+    if (competingIndex === -1) {
+      kept.push(match);
+      continue;
+    }
+    if (gantryMatchQualityScore(match) < gantryMatchQualityScore(kept[competingIndex])) {
+      kept[competingIndex] = match;
+    }
+  }
+  return kept;
+}
+
+function gantryMatchesCompete(a, b) {
+  if (a.gantry.groupId && b.gantry.groupId && a.gantry.groupId === b.gantry.groupId) {
+    return false;
+  }
+  return (
+    Math.abs(a.progressMeters - b.progressMeters) <= COMPETING_GANTRY_PROGRESS_WINDOW_METERS &&
+    haversineMeters(gantryCenterPoint(a.gantry), gantryCenterPoint(b.gantry)) <=
+      COMPETING_GANTRY_SPATIAL_WINDOW_METERS
+  );
+}
+
+function gantryMatchQualityScore(match) {
+  const directionPenalty = Number.isFinite(match.directionDelta) ? match.directionDelta * 0.2 : 8;
+  const markerPenalty = match.matchType === "line" ? 0 : 3;
+  return match.distanceMeters + directionPenalty + markerPenalty;
+}
+
+function gantryCenterPoint(gantry) {
+  if (gantry.line?.length > 1) {
+    const midpoint = lineMidpoint(gantry.line);
+    return { lat: midpoint[0], lng: midpoint[1] };
+  }
+  return { lat: gantry.center[0], lng: gantry.center[1] };
+}
+
+function lineMidpoint(line) {
+  const middleIndex = Math.floor((line.length - 1) / 2);
+  if (line.length === 2) {
+    return [(line[0][0] + line[1][0]) / 2, (line[0][1] + line[1][1]) / 2];
+  }
+  return line[middleIndex];
 }
 
 function closestProgressToGantryLine(linePoints, routePoints, cumulativeMeters) {

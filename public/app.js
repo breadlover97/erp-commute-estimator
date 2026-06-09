@@ -2,7 +2,7 @@ const SINGAPORE_CENTER = [1.3521, 103.8198];
 const GANTRY_POINT_MATCH_THRESHOLD_METERS = 115;
 const GANTRY_LINE_MATCH_THRESHOLD_METERS = 70;
 const DIRECTION_TOLERANCE_DEGREES = 75;
-const DATA_VERSION = "2026-06-09-provider-v14";
+const DATA_VERSION = "2026-06-09-redesign-v15";
 const ROUTE_SEARCH_START_MINUTES = 4 * 60 + 30;
 const ROUTE_SEARCH_END_MINUTES = 22 * 60 + 30;
 const ERP_RATE_TABLE_START_MINUTES = 7 * 60;
@@ -542,7 +542,13 @@ function renderSummary(selectedLegs, total, gantryCount) {
 }
 
 function renderTripBreakdown(selectedLegs) {
-  els.tripBreakdown.hidden = !selectedLegs.length;
+  if (selectedLegs.length < 2) {
+    els.tripBreakdown.hidden = true;
+    els.tripBreakdown.innerHTML = "";
+    return;
+  }
+
+  els.tripBreakdown.hidden = false;
   els.tripBreakdown.innerHTML = selectedLegs
     .map((option) => {
       return `<article>

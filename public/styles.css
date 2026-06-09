@@ -26,6 +26,15 @@
   display: none !important;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 details:not([open]) > :not(summary) {
   display: none !important;
 }
@@ -821,7 +830,7 @@ select:focus {
   background: var(--panel);
 }
 
-.detail-disclosure summary {
+.detail-disclosure > summary {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -831,18 +840,18 @@ select:focus {
   cursor: pointer;
 }
 
-.detail-disclosure summary::-webkit-details-marker {
+.detail-disclosure > summary::-webkit-details-marker {
   display: none;
 }
 
-.detail-disclosure summary strong {
+.detail-disclosure > summary strong {
   display: block;
   color: var(--ink);
   font-size: 0.96rem;
   line-height: 1.2;
 }
 
-.detail-disclosure summary small {
+.detail-disclosure > summary small {
   display: block;
   margin-top: 4px;
   color: var(--muted);
@@ -851,7 +860,7 @@ select:focus {
   line-height: 1.35;
 }
 
-.detail-disclosure summary svg {
+.detail-disclosure > summary svg {
   flex: 0 0 auto;
   width: 18px;
   height: 18px;
@@ -859,12 +868,201 @@ select:focus {
   transition: transform 0.18s ease;
 }
 
-.detail-disclosure[open] summary svg {
+.detail-disclosure[open] > summary svg {
   transform: rotate(180deg);
 }
 
 .detail-disclosure > :not(summary) {
   margin: 0 13px 13px;
+}
+
+.timing-chart-card {
+  display: grid;
+  gap: 12px;
+}
+
+.timing-chart-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.timing-chart-summary article {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 11px;
+  background: var(--panel-soft);
+}
+
+.timing-chart-summary span,
+.timing-legend-item small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 820;
+  line-height: 1.25;
+}
+
+.timing-chart-summary strong {
+  display: block;
+  overflow: hidden;
+  margin-top: 4px;
+  color: var(--ink);
+  font-size: 0.98rem;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timing-chart-summary small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 760;
+  line-height: 1.3;
+}
+
+.timing-chart-shell {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 250, 252, 0.92)),
+    var(--panel-soft);
+}
+
+.timing-chart-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 190px;
+}
+
+.timing-chart-grid line {
+  stroke: #dfe6ee;
+  stroke-width: 1;
+}
+
+.timing-chart-grid text,
+.timing-chart-x-label {
+  fill: #69747c;
+  font-size: 10px;
+  font-weight: 760;
+}
+
+.timing-chart-axis {
+  stroke: #b8c3ce;
+  stroke-width: 1.2;
+}
+
+.timing-current-line {
+  stroke: rgba(37, 99, 235, 0.34);
+  stroke-dasharray: 4 5;
+  stroke-width: 1.4;
+}
+
+.timing-route-line {
+  fill: none;
+  opacity: 0.72;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.timing-route-line.selected {
+  opacity: 1;
+}
+
+.timing-route-point {
+  opacity: 0.68;
+  stroke-width: 1;
+}
+
+.timing-route-point.selected,
+.timing-route-point.current {
+  opacity: 1;
+  stroke: #ffffff;
+  stroke-width: 1.4;
+}
+
+.timing-chart-legend {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.timing-legend-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 9px 10px;
+  background: var(--panel);
+}
+
+.timing-legend-item.selected {
+  border-color: rgba(37, 99, 235, 0.3);
+  background: var(--accent-soft);
+}
+
+.timing-legend-swatch {
+  width: 11px;
+  height: 11px;
+  border-radius: 999px;
+  background: var(--route-color);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.88), 0 0 0 4px var(--route-color);
+}
+
+.timing-legend-item strong {
+  display: block;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 0.82rem;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timing-table-details {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-soft);
+}
+
+.timing-table-details summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 11px;
+  color: #35404a;
+  font-size: 0.82rem;
+  font-weight: 850;
+  list-style: none;
+  cursor: pointer;
+}
+
+.timing-table-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.timing-table-details summary svg {
+  width: 16px;
+  height: 16px;
+  color: #69747c;
+  transition: transform 0.18s ease;
+}
+
+.timing-table-details[open] summary svg {
+  transform: rotate(180deg);
+}
+
+.timing-table-details .table-shell {
+  margin: 0 10px 10px;
 }
 
 .table-shell {
@@ -1783,6 +1981,19 @@ tbody tr.current-row {
 
   .trip-breakdown {
     grid-template-columns: 1fr;
+  }
+
+  .timing-chart-summary,
+  .timing-chart-legend {
+    grid-template-columns: 1fr;
+  }
+
+  .timing-chart-svg {
+    min-height: 180px;
+  }
+
+  .timing-table-details .table-shell {
+    margin: 0 9px 9px;
   }
 
   .table-shell {

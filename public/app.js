@@ -4,7 +4,7 @@ const GANTRY_LINE_MATCH_THRESHOLD_METERS = 70;
 const DIRECTION_TOLERANCE_DEGREES = 75;
 const COMPETING_GANTRY_PROGRESS_WINDOW_METERS = 45;
 const COMPETING_GANTRY_SPATIAL_WINDOW_METERS = 55;
-const DATA_VERSION = "2026-06-10-gantry-dedupe-v19";
+const DATA_VERSION = "2026-06-10-timing-chart-v20";
 const DEFAULT_START_POINT = {
   inputValue: "838 Yishun St 81 Singapore 760838",
   lat: 1.41642178701227,
@@ -13,6 +13,10 @@ const DEFAULT_START_POINT = {
 };
 const ROUTE_SEARCH_START_MINUTES = 4 * 60 + 30;
 const ROUTE_SEARCH_END_MINUTES = 22 * 60 + 30;
+const TIMING_COMPARISON_START_OFFSET_MINUTES = -60;
+const TIMING_COMPARISON_END_OFFSET_MINUTES = 180;
+const TIMING_COMPARISON_STEP_MINUTES = 15;
+const TIMING_CHART_COLORS = ["#1267d6", "#0d835c", "#b26200", "#7a4fd3"];
 const ERP_RATE_TABLE_START_MINUTES = 7 * 60;
 const ERP_RATE_TABLE_END_MINUTES = 20 * 60;
 const MAX_ROUTE_OPTIONS = 3;
@@ -150,6 +154,7 @@ const els = {
   driveTime: document.querySelector("#drive-time"),
   driveDistance: document.querySelector("#drive-distance"),
   matchedCount: document.querySelector("#matched-count"),
+  timingChart: document.querySelector("#timing-chart"),
   timingBody: document.querySelector("#timing-body"),
   gantryList: document.querySelector("#gantry-list"),
   status: document.querySelector("#status-bar"),
@@ -690,18 +695,31 @@ function infoForTripEntry(entry) {
   });
 }
 
-function renderTimingComparison(rows, baseDeparture) {
-  const minCost = Math.min(...rows.map((row) => row.total));
-  const modeCopy =
+function renderTimingComparison(comparison, baseDeparture) {
+  const selectedRows = comparison.selectedRows || [];
+  const routeSeries = comparison.routeSeries || [];
+  const routeCount = routeSeries.length || 1;
+  const routeLabel = `${routeCount} route option${routeCount === 1 ? "" : "s"}`;
+  els.comparisonNote.textContent =
     state.currentPlan?.tripMode === "return"
-      ? "Outbound departure intervals; return time stays fixed."
-      : "15-minute departure intervals around your selected timing.";
-  els.comparisonNote.textContent = modeCopy;
+      ? `ERP by outbound departure time across ${routeLabel}; selected return stays fixed.`
+      : `ERP by departure time across ${routeLabel}.`;
+  renderTimingChart(routeSeries, baseDeparture);
+  renderTimingRows(selectedRows, baseDeparture);
+}
+
+function renderTimingRows(rows, baseDeparture) {
+  if (!rows.length) {
+    els.timingBody.innerHTML = `<tr><td colspan="4" class="empty-row">No timing comparison available.</td></tr>`;
+    return;
+  }
+
+  const minCost = Math.min(...rows.map((row) => row.total));
   els.timingBody.innerHTML = rows
     .map((row) => {
       const rowClasses = [
         row.total === minCost ? "best-row" : "",
-        Math.abs(row.departureDate - baseDeparture) < 1000 ? "current-row" : "",
+        isSameDeparture(row.departureDate, baseDeparture) ? "current-row" : "",
       ]
         .filter(Boolean)
         .join(" ");
@@ -718,26 +736,244 @@ function renderTimingComparison(rows, baseDeparture) {
 function buildTimingComparison(selectedLegs) {
   const outbound = selectedLegs[0];
   const returnLeg = selectedLegs[1];
+  const baseDeparture = outbound.trip.departureDate;
+  const outboundOptions = state.currentPlan?.outbound?.length ? state.currentPlan.outbound : [outbound];
+  const routeSeries = outboundOptions.map((option, seriesIndex) => {
+    const rows = buildTimingRowsForOption(option, baseDeparture, returnLeg);
+    const minRow = findBestTimingRow(rows, baseDeparture);
+    return {
+      id: option.id || `outbound-${option.index}`,
+      name: routeOptionName(option),
+      provider: routingProviderLabel(option.route),
+      selected: option.index === state.selectedRoutes.outbound,
+      color: TIMING_CHART_COLORS[seriesIndex % TIMING_CHART_COLORS.length],
+      rows,
+      minRow,
+      currentRow: rows.find((row) => isSameDeparture(row.departureDate, baseDeparture)) || null,
+    };
+  });
+  const selectedSeries = routeSeries.find((series) => series.selected) || routeSeries[0];
+  return {
+    selectedRows: selectedSeries?.rows || [],
+    routeSeries,
+  };
+}
+
+function buildTimingRowsForOption(option, baseDeparture, returnLeg) {
   const rows = [];
-  for (let offset = -60; offset <= 180; offset += 15) {
-    const departure = addMinutes(outbound.trip.departureDate, offset);
+  const fixedReturnTotal = returnLeg?.trip.total || 0;
+  const fixedReturnErp = returnLeg?.trip.entries.length || 0;
+
+  for (
+    let offset = TIMING_COMPARISON_START_OFFSET_MINUTES;
+    offset <= TIMING_COMPARISON_END_OFFSET_MINUTES;
+    offset += TIMING_COMPARISON_STEP_MINUTES
+  ) {
+    const departure = addMinutes(baseDeparture, offset);
     const outboundTrip = calculateTrip(
-      outbound.route,
-      outbound.matchedGantries,
+      option.route,
+      option.matchedGantries,
       departure,
       state.currentPlan.vehicleType,
-      outbound.legLabel,
+      option.legLabel,
     );
-    const total = outboundTrip.total + (returnLeg?.trip.total || 0);
-    const routeErp = outboundTrip.entries.length + (returnLeg?.trip.entries.length || 0);
     rows.push({
       departureDate: departure,
       arrivalDate: outboundTrip.arrivalDate,
-      total,
-      routeErp,
+      total: roundMoney(outboundTrip.total + fixedReturnTotal),
+      routeErp: outboundTrip.entries.length + fixedReturnErp,
+      outboundTotal: outboundTrip.total,
     });
   }
   return rows;
+}
+
+function renderTimingChart(routeSeries, baseDeparture) {
+  const series = routeSeries.filter((item) => item.rows.length);
+  if (!series.length) {
+    els.timingChart.innerHTML = `<div class="empty-state">No route calculated yet.</div>`;
+    return;
+  }
+
+  const allRows = series.flatMap((item) => item.rows);
+  const maxCost = Math.max(...allRows.map((row) => row.total), 0);
+  const yMax = Math.max(1, Math.ceil(maxCost / 2) * 2);
+  const width = 380;
+  const height = 220;
+  const padding = { top: 18, right: 16, bottom: 34, left: 50 };
+  const plotWidth = width - padding.left - padding.right;
+  const plotHeight = height - padding.top - padding.bottom;
+  const rowCount = series[0].rows.length;
+  const currentIndex = Math.max(
+    0,
+    series[0].rows.findIndex((row) => isSameDeparture(row.departureDate, baseDeparture)),
+  );
+  const xForIndex = (index) =>
+    padding.left + (rowCount <= 1 ? plotWidth / 2 : (plotWidth * index) / (rowCount - 1));
+  const yForValue = (value) => padding.top + plotHeight - (value / yMax) * plotHeight;
+  const yTicks = [...new Set([0, yMax / 2, yMax])];
+  const xTickIndexes = [...new Set([0, currentIndex, rowCount - 1])];
+  const best = findBestTimingCandidate(series, baseDeparture);
+  const selectedSeries = series.find((item) => item.selected) || series[0];
+  const selectedCurrent = selectedSeries.currentRow || selectedSeries.rows[currentIndex] || selectedSeries.rows[0];
+
+  const grid = yTicks
+    .map((tick) => {
+      const y = formatSvgNumber(yForValue(tick));
+      return `<g class="timing-chart-grid">
+        <line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}"></line>
+        <text x="${padding.left - 8}" y="${y}" text-anchor="end">${formatCompactMoney(tick)}</text>
+      </g>`;
+    })
+    .join("");
+
+  const xLabels = xTickIndexes
+    .map((index) => {
+      const x = formatSvgNumber(xForIndex(index));
+      const anchor = index === 0 ? "start" : index === rowCount - 1 ? "end" : "middle";
+      return `<text class="timing-chart-x-label" x="${x}" y="${height - 8}" text-anchor="${anchor}">${formatClock(
+        series[0].rows[index].departureDate,
+      )}</text>`;
+    })
+    .join("");
+
+  const lines = series
+    .map((item) => {
+      const path = stepPathForSeries(item.rows, xForIndex, yForValue);
+      const strokeWidth = item.selected ? 4 : 2.75;
+      const points = item.rows
+        .map((row, index) => {
+          const isCurrent = isSameDeparture(row.departureDate, baseDeparture);
+          const isLowest = item.minRow && isSameDeparture(row.departureDate, item.minRow.departureDate);
+          const radius = isCurrent || isLowest ? 3.7 : 2.3;
+          const classes = ["timing-route-point", item.selected ? "selected" : "", isCurrent ? "current" : ""]
+            .filter(Boolean)
+            .join(" ");
+          const title = `${item.name}, leave ${formatClock(row.departureDate)}, ${formatMoney(row.total)}`;
+          return `<circle class="${classes}" cx="${formatSvgNumber(xForIndex(index))}" cy="${formatSvgNumber(
+            yForValue(row.total),
+          )}" r="${radius}" fill="${item.color}" stroke="${item.color}">
+            <title>${escapeHtml(title)}</title>
+          </circle>`;
+        })
+        .join("");
+      return `<g class="timing-route-series">
+        <path class="timing-route-line ${item.selected ? "selected" : ""}" d="${path}" stroke="${
+          item.color
+        }" stroke-width="${strokeWidth}"></path>
+        ${points}
+      </g>`;
+    })
+    .join("");
+
+  const currentX = formatSvgNumber(xForIndex(currentIndex));
+  const legend = series
+    .map((item) => {
+      const minRow = item.minRow || item.rows[0];
+      return `<div class="timing-legend-item ${item.selected ? "selected" : ""}">
+        <span class="timing-legend-swatch" style="--route-color: ${item.color}"></span>
+        <div>
+          <strong>${escapeHtml(item.name)}</strong>
+          <small>${formatMoney(minRow.total)} low at ${formatClock(minRow.departureDate)}</small>
+        </div>
+      </div>`;
+    })
+    .join("");
+
+  els.timingChart.innerHTML = `
+    <div class="timing-chart-summary">
+      <article>
+        <span>Lowest nearby</span>
+        <strong>${escapeHtml(best.series.name)}</strong>
+        <small>${formatClock(best.row.departureDate)} · ${formatMoney(best.row.total)}</small>
+      </article>
+      <article>
+        <span>Selected now</span>
+        <strong>${formatMoney(selectedCurrent.total)}</strong>
+        <small>${escapeHtml(selectedSeries.name)} · ${formatClock(selectedCurrent.departureDate)}</small>
+      </article>
+    </div>
+    <div class="timing-chart-shell">
+      <svg class="timing-chart-svg" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="timing-chart-title">
+        <title id="timing-chart-title">ERP cost by route and departure time</title>
+        ${grid}
+        <line class="timing-chart-axis" x1="${padding.left}" y1="${padding.top + plotHeight}" x2="${
+    width - padding.right
+  }" y2="${padding.top + plotHeight}"></line>
+        <line class="timing-current-line" x1="${currentX}" y1="${padding.top}" x2="${currentX}" y2="${
+    padding.top + plotHeight
+  }"></line>
+        ${lines}
+        ${xLabels}
+      </svg>
+    </div>
+    <div class="timing-chart-legend">${legend}</div>
+    <p class="sr-only">${escapeHtml(accessibleTimingSummary(series))}</p>
+  `;
+}
+
+function findBestTimingRow(rows, baseDeparture) {
+  return rows.reduce((best, row) => {
+    if (!best) {
+      return row;
+    }
+    const rowDistance = Math.abs(row.departureDate - baseDeparture);
+    const bestDistance = Math.abs(best.departureDate - baseDeparture);
+    if (row.total < best.total || (row.total === best.total && rowDistance < bestDistance)) {
+      return row;
+    }
+    return best;
+  }, null);
+}
+
+function findBestTimingCandidate(series, baseDeparture) {
+  return series.reduce((best, item) => {
+    const row = item.minRow || findBestTimingRow(item.rows, baseDeparture);
+    if (!best) {
+      return { series: item, row };
+    }
+    const rowDistance = Math.abs(row.departureDate - baseDeparture);
+    const bestDistance = Math.abs(best.row.departureDate - baseDeparture);
+    if (
+      row.total < best.row.total ||
+      (row.total === best.row.total && rowDistance < bestDistance) ||
+      (row.total === best.row.total && rowDistance === bestDistance && item.selected)
+    ) {
+      return { series: item, row };
+    }
+    return best;
+  }, null);
+}
+
+function stepPathForSeries(rows, xForIndex, yForValue) {
+  return rows
+    .map((row, index) => {
+      const x = formatSvgNumber(xForIndex(index));
+      const y = formatSvgNumber(yForValue(row.total));
+      return index === 0 ? `M ${x} ${y}` : `H ${x} V ${y}`;
+    })
+    .join(" ");
+}
+
+function isSameDeparture(dateA, dateB) {
+  return Math.abs(dateA - dateB) < 1000;
+}
+
+function formatSvgNumber(value) {
+  return Number(value).toFixed(2).replace(/\.?0+$/, "");
+}
+
+function formatCompactMoney(amount) {
+  return Number.isInteger(amount) ? `S$${amount}` : `S$${amount.toFixed(1)}`;
+}
+
+function accessibleTimingSummary(series) {
+  return series
+    .map((item) => {
+      const minRow = item.minRow || item.rows[0];
+      return `${item.name} reaches a low of ${formatMoney(minRow.total)} at ${formatClock(minRow.departureDate)}.`;
+    })
+    .join(" ");
 }
 
 function renderGantryList(entries) {
@@ -844,6 +1080,7 @@ function renderErrorState(message) {
   els.driveTime.textContent = "--";
   els.driveDistance.textContent = "--";
   els.matchedCount.textContent = "--";
+  els.timingChart.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
   els.timingBody.innerHTML = `<tr><td colspan="4" class="empty-row">${escapeHtml(message)}</td></tr>`;
   els.gantryList.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
   els.routeOptionsSection.hidden = true;
@@ -863,6 +1100,7 @@ function renderInitialResults() {
   els.driveDistance.textContent = "--";
   els.matchedCount.textContent = "--";
   els.comparisonNote.textContent = "Run an estimate to compare costs.";
+  els.timingChart.innerHTML = `<div class="empty-state">No route calculated yet.</div>`;
   els.timingBody.innerHTML = `<tr><td colspan="4" class="empty-row">No route calculated yet.</td></tr>`;
   els.gantryList.innerHTML = `<div class="empty-state">No route calculated yet.</div>`;
   els.routeOptionsSection.hidden = true;

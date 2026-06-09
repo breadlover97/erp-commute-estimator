@@ -2,7 +2,7 @@ const SINGAPORE_CENTER = [1.3521, 103.8198];
 const GANTRY_POINT_MATCH_THRESHOLD_METERS = 115;
 const GANTRY_LINE_MATCH_THRESHOLD_METERS = 70;
 const DIRECTION_TOLERANCE_DEGREES = 75;
-const DATA_VERSION = "2026-06-09-audit-v13";
+const DATA_VERSION = "2026-06-09-provider-v14";
 const ROUTE_SEARCH_START_MINUTES = 4 * 60 + 30;
 const ROUTE_SEARCH_END_MINUTES = 22 * 60 + 30;
 const ERP_RATE_TABLE_START_MINUTES = 7 * 60;
@@ -155,6 +155,7 @@ const els = {
   mapPanel: document.querySelector("#map-panel"),
   routeOptionsSection: document.querySelector("#route-options-section"),
   routeOptions: document.querySelector("#route-options"),
+  routeProvider: document.querySelector("#route-provider"),
   tripBreakdown: document.querySelector("#trip-breakdown"),
 };
 
@@ -431,6 +432,7 @@ function renderPlan() {
   const gantryCount = selectedLegs.reduce((sum, option) => sum + option.trip.entries.length, 0);
 
   renderRouteOptions();
+  renderRouteProvider(selectedLegs);
   renderRouteMap(selectedLegs);
   renderSummary(selectedLegs, total, gantryCount);
   renderTripBreakdown(selectedLegs);
@@ -477,7 +479,10 @@ function routeOptionsForLeg(legKey, options) {
       return `<button class="route-option tooltip-card ${isSelected ? "selected" : ""}" data-leg="${legKey}" data-index="${
         option.index
       }" data-tooltip="${escapeHtml(tooltip)}" type="button">
-        <span class="route-option-name">${routeOptionName(option)}</span>
+        <span class="route-option-topline">
+          <span class="route-option-name">${routeOptionName(option)}</span>
+          <span class="route-provider-chip">${escapeHtml(routingProviderLabel(option.route))}</span>
+        </span>
         <strong>${formatMoney(option.trip.total)}</strong>
         <small>${formatDuration(option.route.durationSeconds)} · ${formatDistance(option.route.totalMeters)} · ${
           option.trip.entries.length
@@ -486,6 +491,28 @@ function routeOptionsForLeg(legKey, options) {
     })
     .join("");
   return `${heading}<div class="route-option-row">${cards}</div>`;
+}
+
+function renderRouteProvider(selectedLegs) {
+  if (!selectedLegs.length) {
+    els.routeProvider.textContent = "";
+    return;
+  }
+
+  const selectedProviders = selectedLegs.map((option) => routingProviderLabel(option.route));
+  const uniqueProviders = [...new Set(selectedProviders)];
+  if (uniqueProviders.length === 1) {
+    els.routeProvider.textContent = `Routing: ${uniqueProviders[0]}`;
+    return;
+  }
+
+  els.routeProvider.textContent = `Routing: ${selectedLegs
+    .map((option) => `${option.legLabel}: ${routingProviderLabel(option.route)}`)
+    .join(" · ")}`;
+}
+
+function routingProviderLabel(route) {
+  return route?.providerLabel || "Fallback routing";
 }
 
 function routeOptionName(option) {
@@ -786,6 +813,7 @@ function renderErrorState(message) {
   els.gantryList.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
   els.routeOptionsSection.hidden = true;
   els.routeOptions.innerHTML = "";
+  els.routeProvider.textContent = "";
   els.tripBreakdown.hidden = true;
   els.tripBreakdown.innerHTML = "";
   els.recommendation.hidden = true;
@@ -803,6 +831,7 @@ function renderInitialResults() {
   els.gantryList.innerHTML = `<div class="empty-state">No route calculated yet.</div>`;
   els.routeOptionsSection.hidden = true;
   els.routeOptions.innerHTML = "";
+  els.routeProvider.textContent = "";
   els.tripBreakdown.hidden = true;
   els.tripBreakdown.innerHTML = "";
   els.recommendation.hidden = true;

@@ -688,6 +688,54 @@ select:focus {
   line-height: var(--leading-normal);
 }
 
+.recommendation-options {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.recommendation-option {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(7, 132, 95, 0.18);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.recommendation-option span {
+  color: var(--green-deep);
+  font-size: var(--text-xs);
+  font-weight: var(--font-bold);
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.recommendation-option strong {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--text-md);
+  line-height: var(--leading-snug);
+}
+
+.recommendation-option small {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  line-height: var(--leading-normal);
+}
+
+.recommendation-option.empty {
+  border-color: var(--border);
+  background: rgba(255, 255, 255, 0.66);
+}
+
+.recommendation-option.empty strong {
+  color: var(--muted);
+  font-weight: var(--font-semibold);
+}
+
 .results-section {
   display: grid;
   gap: 10px;

@@ -175,6 +175,7 @@ const els = {
   recommendation: document.querySelector("#recommendation"),
   recommendationTitle: document.querySelector("#recommendation-title"),
   recommendationCopy: document.querySelector("#recommendation-copy"),
+  recommendationOptions: document.querySelector("#recommendation-options"),
   sourceGenerated: document.querySelector("#source-generated"),
   sourceCopy: document.querySelector("#source-copy"),
   primaryButton: document.querySelector(".primary-button"),
@@ -1326,43 +1327,79 @@ function renderGantryList(entries) {
 }
 
 function renderRecommendation(selectedLegs) {
-  const outbound = selectedLegs[0];
   const currentTotal = selectedLegs.reduce((sum, option) => sum + option.trip.total, 0);
-  const suggestion = findBestSuggestion(selectedLegs);
+  clearRecommendationOptions();
 
-  if (!suggestion) {
+  if (currentTotal === 0) {
     els.recommendation.hidden = false;
-    els.recommendationTitle.textContent =
-      currentTotal === 0 ? "Your selected timing is already ERP-free" : "No lower-cost timing found nearby";
-    els.recommendationCopy.textContent =
-      currentTotal === 0
-        ? "The route has no estimated ERP charge at the selected timing."
-        : "The nearby search window did not find a lower ERP cost for this route.";
+    els.recommendationTitle.textContent = "Your selected timing is already ERP-free";
+    els.recommendationCopy.textContent = "The route has no estimated ERP charge at the selected timing.";
     return;
   }
 
-  const saving = currentTotal - suggestion.total;
+  const suggestions = findTimingSuggestions(selectedLegs);
   els.recommendation.hidden = false;
-  els.recommendationTitle.textContent =
+
+  if (!suggestions.before && !suggestions.after) {
+    els.recommendationTitle.textContent = "No lower-cost timing found nearby";
+    els.recommendationCopy.textContent = "The nearby search window did not find a lower ERP cost for this route.";
+    return;
+  }
+
+  const selectedTime = formatClock(selectedLegs[0].trip.departureDate);
+  els.recommendationTitle.textContent = "Try these lower-cost timings";
+  els.recommendationCopy.textContent = `Compared with your selected leave time of ${selectedTime}.`;
+  els.recommendationOptions.hidden = false;
+  els.recommendationOptions.innerHTML = [
+    renderRecommendationOption("Earlier", suggestions.before, "No lower-cost timing found before selected time."),
+    renderRecommendationOption("Later", suggestions.after, "No lower-cost timing found after selected time."),
+  ].join("");
+}
+
+function renderRecommendationOption(label, suggestion, emptyMessage) {
+  if (!suggestion) {
+    return `
+      <article class="recommendation-option empty">
+        <span>${escapeHtml(label)}</span>
+        <strong>${escapeHtml(emptyMessage)}</strong>
+      </article>
+    `;
+  }
+
+  const title =
     suggestion.total === 0
       ? `Leave ${formatClock(suggestion.departureDate)} to avoid ERP`
       : `Leave ${formatClock(suggestion.departureDate)} for ${formatMoney(suggestion.total)}`;
-  els.recommendationCopy.textContent = `Estimated arrival is ${formatClock(
-    addSeconds(suggestion.departureDate, outbound.route.durationSeconds),
-  )}. Estimated saving: ${formatMoney(saving)}.`;
+
+  return `
+    <article class="recommendation-option">
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(title)}</strong>
+      <small>Arrive ${escapeHtml(formatClock(suggestion.arrivalDate))} · Save ${escapeHtml(
+        formatMoney(suggestion.saving),
+      )}</small>
+    </article>
+  `;
 }
 
-function findBestSuggestion(selectedLegs) {
+function findTimingSuggestions(selectedLegs) {
   const outbound = selectedLegs[0];
   const returnLeg = selectedLegs[1];
   const baseDeparture = outbound.trip.departureDate;
   const dateString = toDateInputValue(baseDeparture);
   const startOfDay = new Date(`${dateString}T00:00:00`);
   const currentTotal = selectedLegs.reduce((sum, option) => sum + option.trip.total, 0);
-  let best = null;
+  const suggestions = {
+    before: null,
+    after: null,
+  };
 
   for (let minute = ROUTE_SEARCH_START_MINUTES; minute <= ROUTE_SEARCH_END_MINUTES; minute += 5) {
     const departure = addMinutes(startOfDay, minute);
+    if (departure.getTime() === baseDeparture.getTime()) {
+      continue;
+    }
+
     const outboundTrip = calculateTrip(
       outbound.route,
       outbound.matchedGantries,
@@ -1371,25 +1408,41 @@ function findBestSuggestion(selectedLegs) {
       outbound.legLabel,
     );
     const total = outboundTrip.total + (returnLeg?.trip.total || 0);
-    const candidate = {
-      departureDate: departure,
-      total,
-    };
-    if (!best) {
-      best = candidate;
+    if (total >= currentTotal) {
       continue;
     }
-    const bestDistance = Math.abs(best.departureDate - baseDeparture);
-    const candidateDistance = Math.abs(candidate.departureDate - baseDeparture);
-    if (candidate.total < best.total || (candidate.total === best.total && candidateDistance < bestDistance)) {
-      best = candidate;
+
+    const candidate = {
+      departureDate: departure,
+      arrivalDate: addSeconds(departure, outbound.route.durationSeconds),
+      total,
+      saving: roundMoney(currentTotal - total),
+    };
+
+    const bucket = departure < baseDeparture ? "before" : "after";
+    if (isBetterTimingSuggestion(candidate, suggestions[bucket], baseDeparture)) {
+      suggestions[bucket] = candidate;
     }
   }
 
-  if (!best || best.total >= currentTotal) {
-    return null;
+  return suggestions;
+}
+
+function isBetterTimingSuggestion(candidate, currentBest, baseDeparture) {
+  if (!currentBest) {
+    return true;
   }
-  return best;
+  const candidateDistance = Math.abs(candidate.departureDate - baseDeparture);
+  const bestDistance = Math.abs(currentBest.departureDate - baseDeparture);
+  return (
+    candidate.total < currentBest.total ||
+    (candidate.total === currentBest.total && candidateDistance < bestDistance)
+  );
+}
+
+function clearRecommendationOptions() {
+  els.recommendationOptions.hidden = true;
+  els.recommendationOptions.innerHTML = "";
 }
 
 function renderErrorState(message) {
@@ -1412,6 +1465,7 @@ function renderErrorState(message) {
   els.recommendation.hidden = true;
   els.recommendationTitle.textContent = "";
   els.recommendationCopy.textContent = "";
+  clearRecommendationOptions();
 }
 
 function renderInitialResults() {
@@ -1436,6 +1490,7 @@ function renderInitialResults() {
   els.recommendation.hidden = true;
   els.recommendationTitle.textContent = "";
   els.recommendationCopy.textContent = "";
+  clearRecommendationOptions();
 }
 
 function clearCurrentEstimate(message) {

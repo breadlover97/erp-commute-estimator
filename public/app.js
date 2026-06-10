@@ -1,6 +1,8 @@
 const SINGAPORE_CENTER = [1.3521, 103.8198];
 const GANTRY_POINT_MATCH_THRESHOLD_METERS = 115;
-const GANTRY_LINE_MATCH_THRESHOLD_METERS = 70;
+const UNPRICED_MARKER_MATCH_THRESHOLD_METERS = 35;
+const GANTRY_LINE_NEAR_MISS_THRESHOLD_METERS = 18;
+const GANTRY_LINE_INTERIOR_BUFFER_T = 0.12;
 const DIRECTION_TOLERANCE_DEGREES = 75;
 const COMPETING_GANTRY_PROGRESS_WINDOW_METERS = 45;
 const COMPETING_GANTRY_SPATIAL_WINDOW_METERS = 55;
@@ -2324,10 +2326,8 @@ function matchGantriesToRoute(route) {
   const matches = [];
   for (const gantry of state.erpData.gantries) {
     const closest = closestProgressToGantry(gantry, route);
-    const threshold =
-      closest.matchType === "line" ? GANTRY_LINE_MATCH_THRESHOLD_METERS : GANTRY_POINT_MATCH_THRESHOLD_METERS;
     if (
-      closest.distanceMeters <= threshold &&
+      gantryMatchIsCloseEnough(closest, gantry) &&
       routeDirectionMatchesGantry(closest.routeBearingDegrees, gantry.directionDegrees)
     ) {
       matches.push({
@@ -2342,6 +2342,27 @@ function matchGantriesToRoute(route) {
   }
 
   return dedupeCompetingGantryMatches(matches).sort((a, b) => a.progressMeters - b.progressMeters);
+}
+
+function gantryMatchIsCloseEnough(closest, gantry) {
+  if (closest.matchType === "line") {
+    return gantryLineMatchIsUsable(closest);
+  }
+  const markerThreshold = gantry.groupId
+    ? GANTRY_POINT_MATCH_THRESHOLD_METERS
+    : UNPRICED_MARKER_MATCH_THRESHOLD_METERS;
+  return closest.distanceMeters <= markerThreshold;
+}
+
+function gantryLineMatchIsUsable(closest) {
+  if (closest.intersects) {
+    return true;
+  }
+  return (
+    closest.distanceMeters <= GANTRY_LINE_NEAR_MISS_THRESHOLD_METERS &&
+    closest.lineT >= GANTRY_LINE_INTERIOR_BUFFER_T &&
+    closest.lineT <= 1 - GANTRY_LINE_INTERIOR_BUFFER_T
+  );
 }
 
 function closestProgressToGantry(gantry, route) {
@@ -2432,6 +2453,8 @@ function closestProgressToGantryLine(linePoints, routePoints, cumulativeMeters) 
           progressMeters: cumulativeMeters[routeIndex] + segmentMeters * closest.routeT,
           routeBearingDegrees: bearingDegrees(routeStart, routeEnd),
           matchType: "line",
+          lineT: closest.lineT,
+          intersects: closest.intersects,
         };
       }
     }
@@ -2445,18 +2468,22 @@ function closestSegmentDistance(a, b, c, d) {
   if (intersection !== null) {
     return {
       distanceMeters: 0,
-      routeT: intersection,
+      routeT: intersection.routeT,
+      lineT: intersection.lineT,
+      intersects: true,
     };
   }
 
+  const aToLine = pointToSegmentDistance(a, c, d);
+  const bToLine = pointToSegmentDistance(b, c, d);
   const candidates = [
-    { distanceMeters: pointToSegmentDistance(a, c, d).distanceMeters, routeT: 0 },
-    { distanceMeters: pointToSegmentDistance(b, c, d).distanceMeters, routeT: 1 },
+    { distanceMeters: aToLine.distanceMeters, routeT: 0, lineT: aToLine.t, intersects: false },
+    { distanceMeters: bToLine.distanceMeters, routeT: 1, lineT: bToLine.t, intersects: false },
   ];
   const cToRoute = pointToSegmentDistance(c, a, b);
   const dToRoute = pointToSegmentDistance(d, a, b);
-  candidates.push({ distanceMeters: cToRoute.distanceMeters, routeT: cToRoute.t });
-  candidates.push({ distanceMeters: dToRoute.distanceMeters, routeT: dToRoute.t });
+  candidates.push({ distanceMeters: cToRoute.distanceMeters, routeT: cToRoute.t, lineT: 0, intersects: false });
+  candidates.push({ distanceMeters: dToRoute.distanceMeters, routeT: dToRoute.t, lineT: 1, intersects: false });
   return candidates.reduce((best, item) => (item.distanceMeters < best.distanceMeters ? item : best));
 }
 
@@ -2471,7 +2498,10 @@ function segmentIntersectionParameter(a, b, c, d) {
   const t = cross(cMinusA, s) / denominator;
   const u = cross(cMinusA, r) / denominator;
   if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
-    return t;
+    return {
+      routeT: t,
+      lineT: u,
+    };
   }
   return null;
 }

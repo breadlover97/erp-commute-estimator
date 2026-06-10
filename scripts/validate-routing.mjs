@@ -4,7 +4,9 @@ import assert from "node:assert/strict";
 const data = JSON.parse(await readFile(new URL("../public/data/erp-data.json", import.meta.url), "utf8"));
 
 const GANTRY_POINT_MATCH_THRESHOLD_METERS = 115;
-const GANTRY_LINE_MATCH_THRESHOLD_METERS = 70;
+const UNPRICED_MARKER_MATCH_THRESHOLD_METERS = 35;
+const GANTRY_LINE_NEAR_MISS_THRESHOLD_METERS = 18;
+const GANTRY_LINE_INTERIOR_BUFFER_T = 0.12;
 const DIRECTION_TOLERANCE_DEGREES = 75;
 const COMPETING_GANTRY_PROGRESS_WINDOW_METERS = 45;
 const COMPETING_GANTRY_SPATIAL_WINDOW_METERS = 55;
@@ -94,16 +96,34 @@ assert.ok(
   "CTE after Braddell should not also charge the side-by-side slip-road gantry",
 );
 
+const victoriaEndpointRoute = syntheticRouteEndingNearLineEndpoint(data.gantries.find((item) => item.gantryNo === "1"));
+const victoriaEndpointMatch = matchGantriesToRoute(victoriaEndpointRoute).find(
+  (match) => match.gantry.gantryNo === "1",
+);
+assert.equal(
+  victoriaEndpointMatch,
+  undefined,
+  "Victoria Street should not match when a route ends near the gantry line endpoint without crossing it",
+);
+
+const bencoolenNearRoute = syntheticRouteNearMarker(data.gantries.find((item) => item.gantryNo === "9"), 80);
+const bencoolenNearMatch = matchGantriesToRoute(bencoolenNearRoute).find(
+  (match) => match.gantry.gantryNo === "9",
+);
+assert.equal(
+  bencoolenNearMatch,
+  undefined,
+  "Unpriced marker-only gantries should not match routes that pass nearby but not through the marker",
+);
+
 console.log("ERP route matching validation passed");
 
 function matchGantriesToRoute(route) {
   const matches = [];
   for (const gantry of data.gantries) {
     const closest = closestProgressToGantry(gantry, route);
-    const threshold =
-      closest.matchType === "line" ? GANTRY_LINE_MATCH_THRESHOLD_METERS : GANTRY_POINT_MATCH_THRESHOLD_METERS;
     if (
-      closest.distanceMeters <= threshold &&
+      gantryMatchIsCloseEnough(closest, gantry) &&
       routeDirectionMatchesGantry(closest.routeBearingDegrees, gantry.directionDegrees)
     ) {
       matches.push({
@@ -117,6 +137,27 @@ function matchGantriesToRoute(route) {
     }
   }
   return dedupeCompetingGantryMatches(matches).sort((a, b) => a.progressMeters - b.progressMeters);
+}
+
+function gantryMatchIsCloseEnough(closest, gantry) {
+  if (closest.matchType === "line") {
+    return gantryLineMatchIsUsable(closest);
+  }
+  const markerThreshold = gantry.groupId
+    ? GANTRY_POINT_MATCH_THRESHOLD_METERS
+    : UNPRICED_MARKER_MATCH_THRESHOLD_METERS;
+  return closest.distanceMeters <= markerThreshold;
+}
+
+function gantryLineMatchIsUsable(closest) {
+  if (closest.intersects) {
+    return true;
+  }
+  return (
+    closest.distanceMeters <= GANTRY_LINE_NEAR_MISS_THRESHOLD_METERS &&
+    closest.lineT >= GANTRY_LINE_INTERIOR_BUFFER_T &&
+    closest.lineT <= 1 - GANTRY_LINE_INTERIOR_BUFFER_T
+  );
 }
 
 function closestProgressToGantry(gantry, route) {
@@ -198,6 +239,8 @@ function closestProgressToGantryLine(linePoints, routePoints, cumulativeMeters) 
           progressMeters: cumulativeMeters[routeIndex] + segmentMeters * closest.routeT,
           routeBearingDegrees: bearingDegrees(routeStart, routeEnd),
           matchType: "line",
+          lineT: closest.lineT,
+          intersects: closest.intersects,
         };
       }
     }
@@ -211,18 +254,22 @@ function closestSegmentDistance(a, b, c, d) {
   if (intersection !== null) {
     return {
       distanceMeters: 0,
-      routeT: intersection,
+      routeT: intersection.routeT,
+      lineT: intersection.lineT,
+      intersects: true,
     };
   }
 
+  const aToLine = pointToSegmentDistance(a, c, d);
+  const bToLine = pointToSegmentDistance(b, c, d);
   const candidates = [
-    { distanceMeters: pointToSegmentDistance(a, c, d).distanceMeters, routeT: 0 },
-    { distanceMeters: pointToSegmentDistance(b, c, d).distanceMeters, routeT: 1 },
+    { distanceMeters: aToLine.distanceMeters, routeT: 0, lineT: aToLine.t, intersects: false },
+    { distanceMeters: bToLine.distanceMeters, routeT: 1, lineT: bToLine.t, intersects: false },
   ];
   const cToRoute = pointToSegmentDistance(c, a, b);
   const dToRoute = pointToSegmentDistance(d, a, b);
-  candidates.push({ distanceMeters: cToRoute.distanceMeters, routeT: cToRoute.t });
-  candidates.push({ distanceMeters: dToRoute.distanceMeters, routeT: dToRoute.t });
+  candidates.push({ distanceMeters: cToRoute.distanceMeters, routeT: cToRoute.t, lineT: 0, intersects: false });
+  candidates.push({ distanceMeters: dToRoute.distanceMeters, routeT: dToRoute.t, lineT: 1, intersects: false });
   return candidates.reduce((best, item) => (item.distanceMeters < best.distanceMeters ? item : best));
 }
 
@@ -237,7 +284,10 @@ function segmentIntersectionParameter(a, b, c, d) {
   const t = cross(cMinusA, s) / denominator;
   const u = cross(cMinusA, r) / denominator;
   if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
-    return t;
+    return {
+      routeT: t,
+      lineT: u,
+    };
   }
   return null;
 }
@@ -276,6 +326,35 @@ function syntheticRouteThrough(gantry, bearing) {
     cumulativeMeters,
     totalMeters: cumulativeMeters.at(-1),
     durationSeconds: 90,
+  };
+}
+
+function syntheticRouteEndingNearLineEndpoint(gantry) {
+  assert.ok(gantry?.line?.length > 1, "Synthetic line endpoint route requires gantry line geometry");
+  const endpoint = { lat: gantry.line[0][0], lng: gantry.line[0][1] };
+  const otherEndpoint = { lat: gantry.line[1][0], lng: gantry.line[1][1] };
+  const awayBearing = (bearingDegrees(endpoint, otherEndpoint) + 180) % 360;
+  const points = [destinationPoint(endpoint, awayBearing, 90), destinationPoint(endpoint, awayBearing, 8)];
+  const cumulativeMeters = buildCumulativeDistances(points);
+  return {
+    points,
+    cumulativeMeters,
+    totalMeters: cumulativeMeters.at(-1),
+    durationSeconds: 25,
+  };
+}
+
+function syntheticRouteNearMarker(gantry, offsetMeters) {
+  assert.ok(gantry?.center, "Synthetic marker route requires gantry center geometry");
+  const center = { lat: gantry.center[0], lng: gantry.center[1] };
+  const shifted = destinationPoint(center, 0, offsetMeters);
+  const points = [destinationPoint(shifted, 270, 120), destinationPoint(shifted, 90, 120)];
+  const cumulativeMeters = buildCumulativeDistances(points);
+  return {
+    points,
+    cumulativeMeters,
+    totalMeters: cumulativeMeters.at(-1),
+    durationSeconds: 50,
   };
 }
 

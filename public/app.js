@@ -870,16 +870,16 @@ function renderTimingRows(rows, baseDeparture, bodyElement = document.querySelec
 
 function timingHeatStyle(total, minCost, maxCost) {
   if (maxCost <= minCost) {
-    return "--heat-bg: #eef8f2; --heat-border: rgba(13, 131, 92, 0.26);";
+    return "--heat-bg: #ddf7eb; --heat-border: rgba(13, 131, 92, 0.34);";
   }
   const level = clamp((total - minCost) / (maxCost - minCost), 0, 1);
-  const start = [234, 248, 242];
-  const end = [255, 235, 230];
+  const start = [221, 247, 235];
+  const end = [255, 224, 216];
   const borderStart = [13, 131, 92];
   const borderEnd = [217, 75, 61];
   const bg = start.map((value, index) => Math.round(value + (end[index] - value) * level));
   const border = borderStart.map((value, index) => Math.round(value + (borderEnd[index] - value) * level));
-  return `--heat-bg: rgb(${bg.join(", ")}); --heat-border: rgba(${border.join(", ")}, 0.34);`;
+  return `--heat-bg: rgb(${bg.join(", ")}); --heat-border: rgba(${border.join(", ")}, 0.42);`;
 }
 
 function buildTimingComparison(selectedLegs) {

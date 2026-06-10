@@ -2691,15 +2691,18 @@ tbody tr.current-row {
   }
 
   .map-panel {
-    position: sticky;
+    position: fixed;
     top: 0;
-    min-height: 100dvh;
+    right: 0;
+    bottom: 0;
+    left: calc(var(--left-panel-width) + var(--panel-resizer-width));
+    min-height: 0;
     border-bottom: 0;
   }
 
   #map {
     height: 100dvh;
-    min-height: 620px;
+    min-height: 0;
   }
 }
 

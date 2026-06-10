@@ -16,6 +16,8 @@
   --red: #d94b3d;
   --shadow: 0 16px 40px rgba(15, 23, 42, 0.1);
   --shadow-soft: 0 8px 22px rgba(15, 23, 42, 0.07);
+  --left-panel-width: clamp(440px, 36vw, 540px);
+  --panel-resizer-width: 12px;
 }
 
 * {
@@ -95,16 +97,24 @@ select:focus-visible {
   z-index: 10;
   display: grid;
   gap: 14px;
+  min-width: 0;
   padding: 14px;
   border-bottom: 1px solid var(--line);
+  container: planner / inline-size;
 }
 
 .insights-panel {
   grid-area: insights;
   display: grid;
   gap: 12px;
+  min-width: 0;
   padding: 14px 14px 24px;
   background: var(--bg);
+  container: insights / inline-size;
+}
+
+.panel-resizer {
+  display: none;
 }
 
 .topbar {
@@ -2400,22 +2410,91 @@ tbody tr.current-row {
 
 @media (min-width: 980px) {
   .app-shell {
-    grid-template-columns: minmax(390px, 480px) minmax(0, 1fr);
+    grid-template-columns:
+      minmax(360px, var(--left-panel-width))
+      var(--panel-resizer-width)
+      minmax(0, 1fr);
     grid-template-areas:
-      "planner map"
-      "insights map";
+      "planner resizer map"
+      "insights resizer map";
     align-items: start;
+    transition: grid-template-columns 0.18s ease;
   }
 
   .planner-panel {
     padding: 24px 24px 12px;
-    border-right: 1px solid var(--line);
+    border-right: 0;
     border-bottom: 0;
   }
 
   .insights-panel {
     padding: 2px 24px 24px;
+    border-right: 0;
+  }
+
+  .panel-resizer {
+    position: sticky;
+    top: 0;
+    z-index: 18;
+    grid-area: resizer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--panel-resizer-width);
+    height: 100dvh;
     border-right: 1px solid var(--line);
+    border-left: 1px solid var(--line);
+    background:
+      linear-gradient(90deg, rgba(217, 224, 231, 0.78), rgba(255, 255, 255, 0.95)),
+      #f8fafc;
+    cursor: col-resize;
+    touch-action: none;
+    transition:
+      background 0.16s ease,
+      border-color 0.16s ease;
+  }
+
+  .panel-resizer span {
+    width: 4px;
+    height: 46px;
+    border-radius: 999px;
+    background: #aab6c3;
+    box-shadow:
+      0 -10px 0 -1px #c8d1dc,
+      0 10px 0 -1px #c8d1dc;
+    transition:
+      background 0.16s ease,
+      box-shadow 0.16s ease;
+  }
+
+  .panel-resizer:hover,
+  .panel-resizer:focus-visible,
+  body.is-resizing-panel .panel-resizer {
+    border-color: rgba(37, 99, 235, 0.32);
+    background: #eaf2ff;
+  }
+
+  .panel-resizer:hover span,
+  .panel-resizer:focus-visible span,
+  body.is-resizing-panel .panel-resizer span {
+    background: var(--accent);
+    box-shadow:
+      0 -10px 0 -1px rgba(37, 99, 235, 0.28),
+      0 10px 0 -1px rgba(37, 99, 235, 0.28);
+  }
+
+  .panel-resizer:focus-visible {
+    outline: 3px solid rgba(18, 103, 214, 0.24);
+    outline-offset: -3px;
+  }
+
+  body.is-resizing-panel {
+    cursor: col-resize;
+    user-select: none;
+  }
+
+  body.is-resizing-panel .app-shell {
+    transition: none;
   }
 
   h1 {
@@ -2470,7 +2549,72 @@ tbody tr.current-row {
 }
 
 @media (min-width: 1240px) {
-  .app-shell {
-    grid-template-columns: minmax(420px, 500px) minmax(0, 1fr);
+  :root {
+    --left-panel-width: clamp(480px, 36vw, 560px);
+  }
+}
+
+@container planner (max-width: 430px) {
+  .route-form {
+    gap: 10px;
+  }
+
+  .time-grid,
+  .adjuster-grid,
+  .form-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    gap: 7px;
+  }
+
+  .secondary-button {
+    min-height: 42px;
+  }
+
+  .route-card {
+    grid-template-columns: minmax(0, 1fr) 40px;
+    padding: 11px;
+  }
+
+  .icon-button {
+    width: 40px;
+    height: 40px;
+  }
+
+  .advanced-options summary small {
+    display: none;
+  }
+}
+
+@container insights (max-width: 430px) {
+  .section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .section-heading span,
+  .route-provider-indicator {
+    max-width: 100%;
+    text-align: left;
+  }
+
+  .route-option-tabs,
+  .trip-breakdown,
+  .timing-chart-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .route-option-topline {
+    align-items: flex-start;
+  }
+
+  .route-provider-chip {
+    max-width: 56%;
+  }
+
+  table {
+    min-width: 360px;
   }
 }

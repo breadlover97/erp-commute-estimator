@@ -20,6 +20,14 @@ const ROUTE_SEARCH_END_MINUTES = 22 * 60 + 30;
 const TIMING_COMPARISON_START_OFFSET_MINUTES = -60;
 const TIMING_COMPARISON_END_OFFSET_MINUTES = 180;
 const TIMING_COMPARISON_STEP_MINUTES = 15;
+const PANEL_WIDTH_STORAGE_KEY = "erpPlannerPanelWidth";
+const PANEL_RESIZE_BREAKPOINT_PX = 980;
+const PANEL_WIDTH_LIMITS = {
+  min: 360,
+  max: 640,
+  minMap: 460,
+  handle: 12,
+};
 const ROUTE_COLORS = {
   outbound: ["#1267d6", "#b26200", "#7a4fd3"],
   return: ["#0d835c", "#c44e52", "#26758f"],
@@ -139,6 +147,9 @@ const state = {
 };
 
 const els = {
+  appShell: document.querySelector(".app-shell"),
+  plannerPanel: document.querySelector(".planner-panel"),
+  panelResizer: document.querySelector("#panel-resizer"),
   form: document.querySelector("#route-form"),
   start: document.querySelector("#start-input"),
   destination: document.querySelector("#destination-input"),
@@ -195,6 +206,7 @@ async function init() {
   renderSourceMetadata();
   renderAllGantries();
   bindEvents();
+  initPanelResizer();
   renderTripMode();
   window.lucide?.createIcons();
 
@@ -300,6 +312,201 @@ function bindEvents() {
       closeErpDetail();
     }
   });
+}
+
+function initPanelResizer() {
+  if (!els.appShell || !els.plannerPanel || !els.panelResizer) {
+    return;
+  }
+
+  const storedWidth = readStoredPanelWidth();
+  if (storedWidth) {
+    setPanelWidth(storedWidth, { persist: false, refresh: false });
+  }
+  updatePanelResizerState();
+
+  els.panelResizer.addEventListener("pointerdown", startPanelResize);
+  els.panelResizer.addEventListener("keydown", handlePanelResizeKeydown);
+  els.panelResizer.addEventListener("dblclick", resetPanelWidth);
+  window.addEventListener("resize", () => {
+    updatePanelResizerState();
+    refreshMapLayout();
+  });
+}
+
+function startPanelResize(event) {
+  if (!isPanelResizeEnabled()) {
+    return;
+  }
+
+  event.preventDefault();
+  const shellLeft = els.appShell.getBoundingClientRect().left;
+  let latestWidth = getCurrentPanelWidth();
+  let pendingWidth = latestWidth;
+  let frameId = 0;
+
+  const commitWidth = () => {
+    frameId = 0;
+    latestWidth = setPanelWidth(pendingWidth, { persist: false });
+  };
+
+  const handlePointerMove = (moveEvent) => {
+    pendingWidth = moveEvent.clientX - shellLeft;
+    if (!frameId) {
+      frameId = window.requestAnimationFrame(commitWidth);
+    }
+  };
+
+  const stopResize = () => {
+    if (frameId) {
+      window.cancelAnimationFrame(frameId);
+      commitWidth();
+    }
+    setPanelWidth(latestWidth);
+    document.body.classList.remove("is-resizing-panel");
+    window.removeEventListener("pointermove", handlePointerMove);
+    window.removeEventListener("pointerup", stopResize);
+    window.removeEventListener("pointercancel", stopResize);
+    try {
+      els.panelResizer.releasePointerCapture(event.pointerId);
+    } catch {
+      // Pointer capture may already be released by the browser.
+    }
+  };
+
+  document.body.classList.add("is-resizing-panel");
+  try {
+    els.panelResizer.setPointerCapture(event.pointerId);
+  } catch {
+    // Continue with window-level pointer listeners if capture is unavailable.
+  }
+  window.addEventListener("pointermove", handlePointerMove);
+  window.addEventListener("pointerup", stopResize);
+  window.addEventListener("pointercancel", stopResize);
+}
+
+function handlePanelResizeKeydown(event) {
+  if (!isPanelResizeEnabled()) {
+    return;
+  }
+
+  const step = event.shiftKey ? 48 : 24;
+  const currentWidth = getCurrentPanelWidth();
+  let nextWidth = currentWidth;
+
+  if (event.key === "ArrowLeft") {
+    nextWidth = currentWidth - step;
+  } else if (event.key === "ArrowRight") {
+    nextWidth = currentWidth + step;
+  } else if (event.key === "Home") {
+    nextWidth = getPanelWidthBounds().min;
+  } else if (event.key === "End") {
+    nextWidth = getPanelWidthBounds().max;
+  } else {
+    return;
+  }
+
+  event.preventDefault();
+  setPanelWidth(nextWidth);
+}
+
+function resetPanelWidth() {
+  document.documentElement.style.removeProperty("--left-panel-width");
+  try {
+    window.localStorage.removeItem(PANEL_WIDTH_STORAGE_KEY);
+  } catch {
+    // localStorage may be unavailable in strict browser modes.
+  }
+
+  const syncDefaultWidth = () => {
+    updatePanelResizerState();
+    refreshMapLayout();
+  };
+  window.requestAnimationFrame(syncDefaultWidth);
+  window.setTimeout(syncDefaultWidth, 240);
+}
+
+function isPanelResizeEnabled() {
+  return window.matchMedia(`(min-width: ${PANEL_RESIZE_BREAKPOINT_PX}px)`).matches;
+}
+
+function getPanelWidthBounds() {
+  const viewportWidth = document.documentElement.clientWidth || window.innerWidth;
+  const maxByViewport = Math.max(
+    320,
+    viewportWidth - PANEL_WIDTH_LIMITS.minMap - PANEL_WIDTH_LIMITS.handle,
+  );
+  const min = Math.min(PANEL_WIDTH_LIMITS.min, maxByViewport);
+  const max = Math.max(min, Math.min(PANEL_WIDTH_LIMITS.max, maxByViewport));
+  return { min, max };
+}
+
+function getCurrentPanelWidth() {
+  return els.plannerPanel?.getBoundingClientRect().width || PANEL_WIDTH_LIMITS.min;
+}
+
+function setPanelWidth(width, options = {}) {
+  const { persist = true, refresh = true } = options;
+  if (!Number.isFinite(width)) {
+    return getCurrentPanelWidth();
+  }
+
+  const { min, max } = getPanelWidthBounds();
+  const nextWidth = Math.round(Math.min(Math.max(width, min), max));
+  document.documentElement.style.setProperty("--left-panel-width", `${nextWidth}px`);
+  els.panelResizer.setAttribute("aria-valuemin", String(Math.round(min)));
+  els.panelResizer.setAttribute("aria-valuemax", String(Math.round(max)));
+  els.panelResizer.setAttribute("aria-valuenow", String(nextWidth));
+  els.panelResizer.setAttribute("aria-valuetext", `${nextWidth}px controls panel width`);
+
+  if (persist) {
+    try {
+      window.localStorage.setItem(PANEL_WIDTH_STORAGE_KEY, String(nextWidth));
+    } catch {
+      // localStorage may be unavailable in strict browser modes.
+    }
+  }
+
+  if (refresh) {
+    refreshMapLayout();
+  }
+  return nextWidth;
+}
+
+function updatePanelResizerState() {
+  if (!els.panelResizer) {
+    return;
+  }
+
+  const enabled = isPanelResizeEnabled();
+  const { min, max } = getPanelWidthBounds();
+  els.panelResizer.setAttribute("aria-disabled", enabled ? "false" : "true");
+  els.panelResizer.setAttribute("aria-valuemin", String(Math.round(min)));
+  els.panelResizer.setAttribute("aria-valuemax", String(Math.round(max)));
+
+  if (!enabled) {
+    return;
+  }
+
+  const currentWidth = getCurrentPanelWidth();
+  if (currentWidth > max || currentWidth < min) {
+    setPanelWidth(currentWidth, { persist: false });
+    return;
+  }
+  els.panelResizer.setAttribute("aria-valuenow", String(Math.round(currentWidth)));
+  els.panelResizer.setAttribute(
+    "aria-valuetext",
+    `${Math.round(currentWidth)}px controls panel width`,
+  );
+}
+
+function readStoredPanelWidth() {
+  try {
+    const storedWidth = Number(window.localStorage.getItem(PANEL_WIDTH_STORAGE_KEY));
+    return Number.isFinite(storedWidth) && storedWidth > 0 ? storedWidth : null;
+  } catch {
+    return null;
+  }
 }
 
 function bindAddressField(type) {

@@ -1725,9 +1725,10 @@ tbody tr.current-row {
   left: 12px;
   display: grid;
   grid-template-columns: minmax(0, auto) minmax(0, 1fr);
-  gap: 10px;
+  gap: 14px;
   align-items: center;
-  padding: 12px;
+  min-height: 78px;
+  padding: 15px 16px;
   background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(12px);
 }
@@ -1736,16 +1737,16 @@ tbody tr.current-row {
 .map-result-dock small {
   display: block;
   color: var(--muted);
-  font-size: 0.72rem;
-  font-weight: 780;
+  font-size: 0.8rem;
+  font-weight: 830;
   line-height: 1.25;
 }
 
 .map-result-dock strong {
   display: block;
-  margin-top: 3px;
+  margin-top: 4px;
   color: var(--green);
-  font-size: 1.55rem;
+  font-size: 2rem;
   line-height: 1;
 }
 
@@ -1754,7 +1755,7 @@ tbody tr.current-row {
 }
 
 .map-result-dock small + small {
-  margin-top: 4px;
+  margin-top: 5px;
   color: var(--accent-deep);
 }
 
@@ -2219,7 +2220,18 @@ tbody tr.current-row {
     right: auto;
     bottom: 16px;
     left: 16px;
-    width: min(420px, calc(100% - 32px));
+    width: min(520px, calc(100% - 32px));
+    min-height: 92px;
+    padding: 18px 20px;
+  }
+
+  .map-result-dock span,
+  .map-result-dock small {
+    font-size: 0.88rem;
+  }
+
+  .map-result-dock strong {
+    font-size: 2.35rem;
   }
 
   .map-controls {

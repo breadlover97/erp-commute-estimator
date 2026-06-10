@@ -62,6 +62,8 @@ details:not([open]) > :not(summary) {
 html,
 body {
   min-height: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 html {
@@ -83,6 +85,7 @@ body {
 button,
 input,
 select {
+  min-width: 0;
   font: inherit;
 }
 
@@ -286,6 +289,7 @@ h2 {
 input,
 select {
   width: 100%;
+  max-width: 100%;
   min-height: 44px;
   border: 1px solid var(--line-strong);
   border-radius: 7px;
@@ -293,6 +297,24 @@ select {
   background: #ffffff;
   color: var(--ink);
   outline: none;
+}
+
+input[type="date"],
+input[type="time"] {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+input[type="date"]::-webkit-date-and-time-value,
+input[type="time"]::-webkit-date-and-time-value {
+  min-width: 0;
+  text-align: left;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  flex: 0 0 auto;
+  margin-left: 4px;
 }
 
 select {
@@ -2383,6 +2405,67 @@ tbody tr.current-row {
 
   .empty-row::before {
     content: "";
+  }
+}
+
+@media (max-width: 480px) {
+  .planner-panel {
+    padding: 12px 10px;
+  }
+
+  .route-form {
+    gap: 10px;
+  }
+
+  .route-card,
+  .trip-controls,
+  .return-controls {
+    padding: 10px;
+  }
+
+  .time-grid,
+  .adjuster-grid,
+  .form-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .time-stepper {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .step-action {
+    gap: 4px;
+    padding: 5px 6px;
+  }
+
+  .step-action span {
+    text-align: center;
+  }
+}
+
+@media (max-width: 340px) {
+  .planner-panel {
+    padding-right: 8px;
+    padding-left: 8px;
+  }
+
+  .route-card,
+  .trip-controls,
+  .return-controls {
+    padding: 9px;
+  }
+
+  .time-stepper {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .step-action:first-child {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .step-action {
+    min-height: 40px;
   }
 }
 

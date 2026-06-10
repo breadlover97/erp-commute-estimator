@@ -1600,6 +1600,10 @@ tbody tr.current-row {
   bottom: 0;
 }
 
+.map-panel.has-route-result .leaflet-bottom {
+  bottom: 102px;
+}
+
 .leaflet-left {
   left: 0;
 }
@@ -1751,11 +1755,11 @@ tbody tr.current-row {
   top: 12px;
   right: auto;
   bottom: auto;
-  left: 12px;
-  max-width: min(320px, calc(100% - 132px));
-  padding: 9px 11px;
+  left: 52px;
+  max-width: min(300px, calc(100% - 160px));
+  padding: 8px 10px;
   color: #344054;
-  font-size: 0.8rem;
+  font-size: 0.76rem;
   font-weight: 760;
   line-height: 1.35;
   backdrop-filter: blur(10px);
@@ -2189,6 +2193,22 @@ tbody tr.current-row {
     max-width: 56%;
   }
 
+  .route-option-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .route-option-tab:first-child:nth-last-child(3) {
+    grid-column: 1 / -1;
+  }
+
+  .route-option {
+    padding: 11px 12px;
+  }
+
+  .route-option-tab .route-option-name {
+    font-size: 0.78rem;
+  }
+
   .time-grid {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
@@ -2242,14 +2262,14 @@ tbody tr.current-row {
 
   tbody {
     display: grid;
-    gap: 8px;
+    gap: 7px;
   }
 
   tbody tr {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-    padding: 12px;
+    grid-template-columns: 1fr 1fr 1fr 0.72fr;
+    gap: 8px;
+    padding: 9px 10px;
     border: 1px solid var(--heat-border, var(--line));
     border-radius: 8px;
     background: var(--heat-bg, var(--panel));
@@ -2274,21 +2294,29 @@ tbody tr.current-row {
     padding: 0;
     border-bottom: 0;
     color: #263139;
-    font-size: 0.9rem;
+    font-size: 0.82rem;
+    line-height: 1.22;
   }
 
   td::before {
     content: attr(data-label);
     display: block;
-    margin-bottom: 3px;
+    margin-bottom: 2px;
     color: var(--muted);
-    font-size: 0.72rem;
+    font-size: 0.62rem;
     font-weight: 800;
     text-transform: uppercase;
   }
 
   td.money {
-    font-size: 1.05rem;
+    font-size: 0.94rem;
+  }
+
+  .selected-time-badge {
+    display: table;
+    margin: 4px 0 0;
+    padding: 2px 6px;
+    font-size: 0.6rem;
   }
 
   .erp-rate-table {
@@ -2354,6 +2382,10 @@ tbody tr.current-row {
     right: auto;
     max-width: 560px;
     font-size: 0.86rem;
+  }
+
+  .map-panel.has-route-result .leaflet-bottom {
+    bottom: 124px;
   }
 
   .map-result-dock {

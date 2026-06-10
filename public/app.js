@@ -459,8 +459,8 @@ function renderPlan() {
 
   renderRouteOptions();
   renderRouteProvider(selectedLegs);
-  renderRouteMap(selectedLegs);
   renderMapResultDock(selectedLegs, total, gantryCount);
+  renderRouteMap(selectedLegs);
   renderTripBreakdown(selectedLegs);
   renderTimingComparison(buildTimingComparison(selectedLegs), selectedLegs[0].trip.departureDate);
   renderGantryList(selectedLegs.flatMap((option) => option.trip.entries));
@@ -468,9 +468,7 @@ function renderPlan() {
   window.lucide?.createIcons();
 
   setStatus(
-    `Selected ${state.currentPlan.tripMode === "return" ? "return" : "one-way"} route matched ${gantryCount} ERP location${
-      gantryCount === 1 ? "" : "s"
-    }. Vehicle: ${VEHICLE_TYPES[state.currentPlan.vehicleType].label}.`,
+    `${state.currentPlan.tripMode === "return" ? "Return" : "One-way"} route: ${gantryCount} ERP matched.`,
   );
 }
 
@@ -627,6 +625,7 @@ function routeOptionTooltip(option) {
 function renderMapResultDock(selectedLegs, total, gantryCount) {
   if (!selectedLegs.length) {
     els.mapResultDock.hidden = true;
+    els.mapPanel.classList.remove("has-route-result");
     return;
   }
 
@@ -634,6 +633,7 @@ function renderMapResultDock(selectedLegs, total, gantryCount) {
   const distanceMeters = selectedLegs.reduce((sum, option) => sum + option.route.totalMeters, 0);
   const providers = [...new Set(selectedLegs.map((option) => routingProviderLabel(option.route)))];
   els.mapResultDock.hidden = false;
+  els.mapPanel.classList.add("has-route-result");
   els.mapDockTotal.textContent = formatMoney(total);
   els.mapDockMeta.textContent = `${formatDuration(durationSeconds)} · ${formatDistance(distanceMeters)} · ${gantryCount} ERP`;
   els.mapDockProvider.textContent = providers.length === 1 ? providers[0] : providers.join(" · ");
@@ -1221,6 +1221,7 @@ function renderErrorState(message) {
   els.routeOptions.innerHTML = "";
   els.routeProvider.textContent = "";
   els.mapResultDock.hidden = true;
+  els.mapPanel.classList.remove("has-route-result");
   els.tripBreakdown.hidden = true;
   els.tripBreakdown.innerHTML = "";
   els.recommendation.hidden = true;
@@ -1244,6 +1245,7 @@ function renderInitialResults() {
   els.routeOptions.innerHTML = "";
   els.routeProvider.textContent = "";
   els.mapResultDock.hidden = true;
+  els.mapPanel.classList.remove("has-route-result");
   els.tripBreakdown.hidden = true;
   els.tripBreakdown.innerHTML = "";
   els.recommendation.hidden = true;
@@ -1611,12 +1613,13 @@ function renderAddressSuggestions(type, suggestions) {
     return;
   }
   container.innerHTML = suggestions
-    .map(
-      (suggestion, index) => `<button type="button" class="suggestion-option" data-index="${index}">
-        <strong>${escapeHtml(shortAddress(suggestion.label))}</strong>
-        <small>${escapeHtml(suggestion.label)}</small>
-      </button>`,
-    )
+    .map((suggestion, index) => {
+      const address = addressSuggestionParts(suggestion.label);
+      return `<button type="button" class="suggestion-option" data-index="${index}">
+        <strong>${escapeHtml(address.title)}</strong>
+        ${address.detail ? `<small>${escapeHtml(address.detail)}</small>` : ""}
+      </button>`;
+    })
     .join("");
   container.querySelectorAll(".suggestion-option").forEach((button) => {
     button.addEventListener("click", () => {
@@ -1648,6 +1651,18 @@ function renderAddressConfirmation(type) {
 
 function shortAddress(label) {
   return label.split(",").slice(0, 3).join(",").trim();
+}
+
+function addressSuggestionParts(label) {
+  const parts = label
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const titleParts = parts.slice(0, 3);
+  return {
+    title: titleParts.join(", ") || label,
+    detail: parts.slice(titleParts.length).join(", "),
+  };
 }
 
 async function fetchDrivingRoutes(startPoint, endPoint) {
@@ -2427,10 +2442,22 @@ function fitCurrentRoute() {
   const bounds = selectedLegs.reduce((combined, option) => {
     const routeBounds = L.latLngBounds(option.route.points.map((point) => [point.lat, point.lng]));
     return combined ? combined.extend(routeBounds) : routeBounds;
-  }, null);
+  }, L.latLngBounds([
+    [state.currentPlan.startPoint.lat, state.currentPlan.startPoint.lng],
+    [state.currentPlan.endPoint.lat, state.currentPlan.endPoint.lng],
+  ]));
   if (bounds?.isValid()) {
-    state.map.fitBounds(bounds.pad(0.14));
+    state.map.fitBounds(bounds.pad(0.08), routeFitOptions());
   }
+}
+
+function routeFitOptions() {
+  const isCompact = window.matchMedia("(max-width: 760px)").matches;
+  const dockHeight = els.mapResultDock.hidden ? 0 : els.mapResultDock.getBoundingClientRect().height;
+  return {
+    paddingTopLeft: [isCompact ? 48 : 72, isCompact ? 112 : 90],
+    paddingBottomRight: [isCompact ? 28 : 72, Math.ceil(dockHeight) + (isCompact ? 34 : 42)],
+  };
 }
 
 function handleSwap() {

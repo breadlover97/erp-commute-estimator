@@ -226,15 +226,36 @@ function bindEvents() {
     closeErpDetail();
     syncReturnDateIfBeforeDeparture();
     renderAllGantries();
+    clearCurrentEstimate("Timing changed. Estimate again.");
   });
   els.time.addEventListener("change", () => {
     closeErpDetail();
     syncReturnDateIfBeforeDeparture();
     renderAllGantries();
+    clearCurrentEstimate("Timing changed. Estimate again.");
+  });
+  els.returnDate.addEventListener("change", () => {
+    closeErpDetail();
+    renderAllGantries();
+    clearCurrentEstimate("Return timing changed. Estimate again.");
+  });
+  els.returnTime.addEventListener("change", () => {
+    closeErpDetail();
+    renderAllGantries();
+    clearCurrentEstimate("Return timing changed. Estimate again.");
   });
 
   document.querySelectorAll("input[name='tripMode']").forEach((input) => {
-    input.addEventListener("change", renderTripMode);
+    input.addEventListener("change", () => {
+      renderTripMode();
+      clearCurrentEstimate("Trip type changed. Estimate again.");
+    });
+  });
+
+  document.querySelectorAll("input[name='timeMode']").forEach((input) => {
+    input.addEventListener("change", () => {
+      clearCurrentEstimate("Time mode changed. Estimate again.");
+    });
   });
 
   bindAddressField("start");
@@ -247,6 +268,7 @@ function bindEvents() {
       closeErpDetail();
       syncReturnDateIfBeforeDeparture();
       renderAllGantries();
+      clearCurrentEstimate("Timing changed. Estimate again.");
     });
   });
 
@@ -257,6 +279,7 @@ function bindEvents() {
       closeErpDetail();
       syncReturnDateIfBeforeDeparture();
       renderAllGantries();
+      clearCurrentEstimate("Timing changed. Estimate again.");
     });
   });
 
@@ -286,6 +309,7 @@ function bindAddressField(type) {
     if (confirmed && confirmed.inputValue !== input.value.trim()) {
       state.address[type] = null;
       renderAddressConfirmation(type);
+      clearCurrentEstimate("Address changed. Estimate again.");
     }
 
     window.clearTimeout(state.suggestionTimers[type]);
@@ -1251,6 +1275,25 @@ function renderInitialResults() {
   els.recommendation.hidden = true;
   els.recommendationTitle.textContent = "";
   els.recommendationCopy.textContent = "";
+}
+
+function clearCurrentEstimate(message) {
+  if (!state.currentPlan) {
+    return;
+  }
+  state.routeRequestId += 1;
+  closeErpDetail();
+  state.currentPlan = null;
+  state.selectedRoutes = {
+    outbound: 0,
+    return: 0,
+  };
+  state.routeSelectionToRestore = null;
+  clearRouteLayers();
+  renderInitialResults();
+  setLoading(false);
+  setStatus(message);
+  window.history.replaceState(null, "", `${window.location.origin}${window.location.pathname}`);
 }
 
 function initMap() {
@@ -2471,6 +2514,7 @@ function handleSwap() {
   state.address.destination = oldAddress ? { ...oldAddress, inputValue: els.destination.value.trim() } : null;
   renderAddressConfirmation("start");
   renderAddressConfirmation("destination");
+  clearCurrentEstimate("Route swapped. Estimate again.");
   els.start.focus();
 }
 

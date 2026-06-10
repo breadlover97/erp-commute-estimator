@@ -301,13 +301,24 @@ select {
 
 input[type="date"],
 input[type="time"] {
+  display: block;
+  box-sizing: border-box;
+  inline-size: 100%;
+  width: 100%;
   min-inline-size: 0;
   max-inline-size: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 input[type="date"]::-webkit-date-and-time-value,
 input[type="time"]::-webkit-date-and-time-value {
+  display: block;
+  width: 100%;
   min-width: 0;
+  padding: 0;
   text-align: left;
 }
 
@@ -315,6 +326,11 @@ input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="time"]::-webkit-calendar-picker-indicator {
   flex: 0 0 auto;
   margin-left: 4px;
+}
+
+.time-grid > .field {
+  max-width: 100%;
+  overflow: hidden;
 }
 
 select {

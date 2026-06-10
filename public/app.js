@@ -158,6 +158,7 @@ const els = {
   startConfirmation: document.querySelector("#start-confirmation"),
   destinationConfirmation: document.querySelector("#destination-confirmation"),
   swap: document.querySelector("#swap-button"),
+  returnTrip: document.querySelector("#return-trip-checkbox"),
   date: document.querySelector("#date-input"),
   time: document.querySelector("#time-input"),
   returnControls: document.querySelector("#return-controls"),
@@ -234,6 +235,10 @@ function bindEvents() {
   els.share.addEventListener("click", copyShareUrl);
   els.reset.addEventListener("click", resetEstimator);
   els.erpDetailClose.addEventListener("click", closeErpDetail);
+  els.returnTrip.addEventListener("change", () => {
+    renderTripMode();
+    clearCurrentEstimate("Trip type changed. Estimate again.");
+  });
   els.date.addEventListener("change", () => {
     closeErpDetail();
     syncReturnDateIfBeforeDeparture();
@@ -255,13 +260,6 @@ function bindEvents() {
     closeErpDetail();
     renderAllGantries();
     clearCurrentEstimate("Return timing changed. Estimate again.");
-  });
-
-  document.querySelectorAll("input[name='tripMode']").forEach((input) => {
-    input.addEventListener("change", () => {
-      renderTripMode();
-      clearCurrentEstimate("Trip type changed. Estimate again.");
-    });
   });
 
   document.querySelectorAll("input[name='timeMode']").forEach((input) => {
@@ -2651,7 +2649,7 @@ function resetEstimator() {
   renderAddressConfirmation("start");
   renderAddressConfirmation("destination");
 
-  setRadioValue("tripMode", "one-way");
+  els.returnTrip.checked = false;
   setRadioValue("timeMode", "depart");
   els.vehicleType.value = "car";
   setDefaultSingaporeDateTime();
@@ -2722,7 +2720,7 @@ function renderTripMode() {
 }
 
 function getTripMode() {
-  return new FormData(els.form).get("tripMode") || "one-way";
+  return els.returnTrip.checked ? "return" : "one-way";
 }
 
 function getVehicleType() {
@@ -2859,7 +2857,7 @@ function hydrateFromUrl() {
   els.showAllGantries.checked = params.get("allErp") !== "0";
   state.showAllGantries = els.showAllGantries.checked;
   setRadioValue("timeMode", params.get("mode"));
-  setRadioValue("tripMode", params.get("trip"));
+  els.returnTrip.checked = params.get("trip") === "return" || params.has("returnDate") || params.has("returnTime");
 
   hydratePointFromParams("start", params, "s");
   hydratePointFromParams("destination", params, "d");

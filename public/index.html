@@ -16,7 +16,7 @@
       integrity="sha256-p4NxAoJBhIINfQKJvI5v3XYPS0obTRR9BMYgqNJFlIk="
       crossorigin=""
     />
-    <link rel="stylesheet" href="./styles.css?v=2026-06-10-type-v42" />
+    <link rel="stylesheet" href="./styles.css?v=2026-06-10-settings-v43" />
   </head>
   <body>
     <main class="app-shell">
@@ -30,7 +30,7 @@
 
         <form id="route-form" class="route-form">
           <div class="route-card" aria-label="Route endpoints">
-            <label class="field route-field">
+            <label class="field route-field start-field">
               <span>Start</span>
               <input
                 id="start-input"
@@ -52,7 +52,7 @@
               <i data-lucide="arrow-up-down"></i>
             </button>
 
-            <label class="field route-field">
+            <label class="field route-field destination-field">
               <span>Destination</span>
               <input
                 id="destination-input"
@@ -69,24 +69,15 @@
                 aria-label="Destination suggestions"
               ></div>
             </label>
-          </div>
 
-          <details class="advanced-options">
-            <summary>
-              <span>Trip settings</span>
-              <small>Passenger car by default</small>
-              <i data-lucide="chevron-down"></i>
-            </summary>
-            <label class="field">
-              <span>Vehicle type</span>
-              <select id="vehicle-type" name="vehicleType">
-                <option value="car">Passenger car / taxi / light goods</option>
-                <option value="motorcycle">Motorcycle</option>
-                <option value="heavy">Heavy goods / small bus</option>
-                <option value="very-heavy">Very heavy goods / big bus</option>
-              </select>
+            <label class="return-trip-toggle" for="return-trip-checkbox">
+              <input id="return-trip-checkbox" name="returnTrip" type="checkbox" />
+              <span>
+                <strong>Return trip</strong>
+                <small>Also estimate the drive back from your destination.</small>
+              </span>
             </label>
-          </details>
+          </div>
 
           <div class="trip-controls" aria-label="Outbound timing">
             <div class="mode-control" aria-label="Time mode">
@@ -269,17 +260,16 @@
           </summary>
           <div class="map-controls-content">
             <div class="map-settings-group">
-              <span>Trip type</span>
-              <div class="mode-control trip-type-control" aria-label="Trip type">
-                <label>
-                  <input form="route-form" type="radio" name="tripMode" value="one-way" checked />
-                  <span>One-way</span>
-                </label>
-                <label>
-                  <input form="route-form" type="radio" name="tripMode" value="return" />
-                  <span>Return</span>
-                </label>
-              </div>
+              <span>Trip settings</span>
+              <label class="map-settings-field">
+                <span>Vehicle type</span>
+                <select id="vehicle-type" name="vehicleType" form="route-form">
+                  <option value="car">Passenger car / taxi / light goods</option>
+                  <option value="motorcycle">Motorcycle</option>
+                  <option value="heavy">Heavy goods / small bus</option>
+                  <option value="very-heavy">Very heavy goods / big bus</option>
+                </select>
+              </label>
             </div>
             <label>
               <span>Map style</span>
@@ -422,6 +412,6 @@
       crossorigin=""
     ></script>
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
-    <script src="./app.js?v=2026-06-10-credits-v41" type="module"></script>
+    <script src="./app.js?v=2026-06-10-settings-v43" type="module"></script>
   </body>
 </html>

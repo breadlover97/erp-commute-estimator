@@ -599,50 +599,12 @@ select:focus {
   box-shadow: none;
 }
 
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.metric-card {
-  min-height: 76px;
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--panel);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
-}
-
-.metric-card span,
 .recommendation span,
 .section-heading span {
   display: block;
   color: var(--muted);
   font-size: 0.76rem;
   font-weight: 760;
-}
-
-.metric-card strong {
-  display: block;
-  margin-top: 8px;
-  overflow-wrap: anywhere;
-  font-size: 1.32rem;
-  line-height: 1;
-}
-
-.metric-card.highlight {
-  grid-column: 1 / -1;
-  min-height: 92px;
-  border-color: rgba(7, 132, 95, 0.28);
-  background:
-    linear-gradient(135deg, rgba(7, 132, 95, 0.13), rgba(37, 99, 235, 0.08)),
-    #ffffff;
-}
-
-.metric-card.highlight strong {
-  color: var(--green);
-  font-size: 2rem;
 }
 
 .recommendation {
@@ -2325,7 +2287,6 @@ tbody tr.current-row {
   }
 }
 
-.metric-card,
 .recommendation,
 .gantry-item,
 .route-option-card,

@@ -4,7 +4,7 @@ const GANTRY_LINE_MATCH_THRESHOLD_METERS = 70;
 const DIRECTION_TOLERANCE_DEGREES = 75;
 const COMPETING_GANTRY_PROGRESS_WINDOW_METERS = 45;
 const COMPETING_GANTRY_SPATIAL_WINDOW_METERS = 55;
-const DATA_VERSION = "2026-06-10-production-ux-v23";
+const DATA_VERSION = "2026-06-10-remove-summary-v25";
 const SINGAPORE_MAP_BOUNDS = [
   [1.11, 103.55],
   [1.5, 104.15],
@@ -158,10 +158,6 @@ const els = {
   fitRoute: document.querySelector("#fit-route-button"),
   share: document.querySelector("#share-button"),
   reset: document.querySelector("#reset-button"),
-  totalCost: document.querySelector("#total-cost"),
-  driveTime: document.querySelector("#drive-time"),
-  driveDistance: document.querySelector("#drive-distance"),
-  matchedCount: document.querySelector("#matched-count"),
   gantryList: document.querySelector("#gantry-list"),
   status: document.querySelector("#status-bar"),
   recommendation: document.querySelector("#recommendation"),
@@ -464,7 +460,6 @@ function renderPlan() {
   renderRouteOptions();
   renderRouteProvider(selectedLegs);
   renderRouteMap(selectedLegs);
-  renderSummary(selectedLegs, total, gantryCount);
   renderMapResultDock(selectedLegs, total, gantryCount);
   renderTripBreakdown(selectedLegs);
   renderTimingComparison(buildTimingComparison(selectedLegs), selectedLegs[0].trip.departureDate);
@@ -606,15 +601,6 @@ function routeOptionTooltip(option) {
   )}, ${option.trip.entries.length} matched ERP location${
     option.trip.entries.length === 1 ? "" : "s"
   }, ${charged} charged at this timing.`;
-}
-
-function renderSummary(selectedLegs, total, gantryCount) {
-  const durationSeconds = selectedLegs.reduce((sum, option) => sum + option.route.durationSeconds, 0);
-  const distanceMeters = selectedLegs.reduce((sum, option) => sum + option.route.totalMeters, 0);
-  els.totalCost.textContent = formatMoney(total);
-  els.driveTime.textContent = formatDuration(durationSeconds);
-  els.driveDistance.textContent = formatDistance(distanceMeters);
-  els.matchedCount.textContent = String(gantryCount);
 }
 
 function renderMapResultDock(selectedLegs, total, gantryCount) {
@@ -1168,10 +1154,6 @@ function findBestSuggestion(selectedLegs) {
 function renderErrorState(message) {
   closeErpDetail();
   const timingEls = getTimingElements();
-  els.totalCost.textContent = formatMoney(0);
-  els.driveTime.textContent = "--";
-  els.driveDistance.textContent = "--";
-  els.matchedCount.textContent = "--";
   if (timingEls.chart) {
     timingEls.chart.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
   }
@@ -1192,10 +1174,6 @@ function renderErrorState(message) {
 
 function renderInitialResults() {
   const timingEls = getTimingElements();
-  els.totalCost.textContent = formatMoney(0);
-  els.driveTime.textContent = "--";
-  els.driveDistance.textContent = "--";
-  els.matchedCount.textContent = "--";
   if (timingEls.note) {
     timingEls.note.textContent = "Run an estimate to compare costs.";
   }

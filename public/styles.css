@@ -1943,13 +1943,16 @@ tbody tr.current-row {
   margin: 9px 10px 10px;
   border: 1px solid #c1d6d4;
   border-radius: 8px;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   background: #f8fbfa;
 }
 
 .erp-rate-table {
-  width: 100%;
+  width: min(100%, 268px);
+  min-width: 0;
   border-collapse: collapse;
+  table-layout: fixed;
   color: #111b20;
   font-size: 0.8rem;
   line-height: 1.2;
@@ -1976,10 +1979,10 @@ tbody tr.current-row {
 }
 
 .erp-rate-table td:last-child {
-  width: 62px;
+  width: 78px;
   color: #172027;
   font-weight: 850;
-  text-align: right;
+  text-align: left;
   white-space: nowrap;
 }
 
@@ -2040,7 +2043,7 @@ tbody tr.current-row {
   }
 
   .erp-rate-table td:last-child {
-    width: 58px;
+    width: 78px;
   }
 
   .primary-button {
@@ -2183,6 +2186,41 @@ tbody tr.current-row {
 
   td.money {
     font-size: 1.05rem;
+  }
+
+  .erp-rate-table {
+    display: table;
+    width: min(100%, 268px);
+    min-width: 0;
+    table-layout: fixed;
+  }
+
+  .erp-rate-table tbody {
+    display: table-row-group;
+  }
+
+  .erp-rate-table tr {
+    display: table-row;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .erp-rate-table td {
+    display: table-cell;
+    width: auto;
+    padding: 7px 9px;
+    border-bottom: 1px solid #d4e5e3;
+    font-size: inherit;
+  }
+
+  .erp-rate-table td::before {
+    content: none;
+  }
+
+  .erp-rate-table td:last-child {
+    width: 78px;
   }
 
   .empty-row {

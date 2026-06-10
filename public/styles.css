@@ -2167,6 +2167,38 @@ tbody tr.current-row {
 }
 
 @media (max-width: 760px) {
+  .map-controls {
+    top: 12px;
+    right: 10px;
+    left: auto;
+    max-width: min(250px, calc(100% - 76px));
+  }
+
+  .map-controls[open] {
+    left: 10px;
+    width: auto;
+    max-width: calc(100% - 20px);
+  }
+
+  .map-controls summary {
+    min-height: 44px;
+    padding: 0 13px;
+    white-space: nowrap;
+  }
+
+  .status-bar {
+    top: 82px;
+    right: 10px;
+    left: 10px;
+    max-width: none;
+    min-height: 44px;
+    padding: 9px 12px;
+  }
+
+  .map-controls[open] ~ .status-bar {
+    display: none;
+  }
+
   .erp-detail-panel {
     position: fixed;
     z-index: 1200;

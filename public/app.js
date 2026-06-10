@@ -1019,21 +1019,6 @@ function renderTimingChart(routeSeries, baseDeparture, chartElement = document.q
     .join("");
 
   const currentX = formatSvgNumber(xForIndex(currentIndex));
-  const legend =
-    series.length > 1
-      ? `<div class="timing-chart-legend">${series
-          .map((item) => {
-            const minRow = item.minRow || item.rows[0];
-            return `<div class="timing-legend-item ${item.selected ? "selected" : ""}">
-              <span class="timing-legend-swatch" style="--route-color: ${item.color}"></span>
-              <div>
-                <strong>${escapeHtml(item.name)}</strong>
-                <small>${formatMoney(minRow.total)} low at ${formatClock(minRow.departureDate)}</small>
-              </div>
-            </div>`;
-          })
-          .join("")}</div>`
-      : "";
 
   chartElement.innerHTML = `
     <div class="timing-chart-summary">
@@ -1062,7 +1047,6 @@ function renderTimingChart(routeSeries, baseDeparture, chartElement = document.q
         ${xLabels}
       </svg>
     </div>
-    ${legend}
     <p class="sr-only">${escapeHtml(accessibleTimingSummary(series))}</p>
   `;
 }

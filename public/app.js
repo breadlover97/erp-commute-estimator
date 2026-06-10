@@ -1170,9 +1170,6 @@ function renderTimingChart(routeSeries, baseDeparture, chartElement = document.q
   const yForValue = (value) => padding.top + plotHeight - (value / yMax) * plotHeight;
   const yTicks = [...new Set([0, yMax / 2, yMax])];
   const xTickIndexes = [...new Set([0, currentIndex, rowCount - 1])];
-  const best = findBestTimingCandidate(series, baseDeparture);
-  const selectedSeries = series.find((item) => item.selected) || series[0];
-  const selectedCurrent = selectedSeries.currentRow || selectedSeries.rows[currentIndex] || selectedSeries.rows[0];
 
   const grid = yTicks
     .map((tick) => {
@@ -1226,18 +1223,6 @@ function renderTimingChart(routeSeries, baseDeparture, chartElement = document.q
   const currentX = formatSvgNumber(xForIndex(currentIndex));
 
   chartElement.innerHTML = `
-    <div class="timing-chart-summary">
-      <article>
-        <span>Lowest in window</span>
-        <strong>${formatMoney(best.row.total)}</strong>
-        <small>Leave ${formatClock(best.row.departureDate)}</small>
-      </article>
-      <article>
-        <span>Selected now</span>
-        <strong>${formatMoney(selectedCurrent.total)}</strong>
-        <small>${escapeHtml(selectedSeries.name)} · ${formatClock(selectedCurrent.departureDate)}</small>
-      </article>
-    </div>
     <div class="timing-chart-shell">
       <svg class="timing-chart-svg" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="timing-chart-title">
         <title id="timing-chart-title">ERP cost by route and departure time</title>
@@ -1271,25 +1256,6 @@ function findBestTimingRow(rows, baseDeparture) {
     const bestDistance = Math.abs(best.departureDate - baseDeparture);
     if (row.total < best.total || (row.total === best.total && rowDistance < bestDistance)) {
       return row;
-    }
-    return best;
-  }, null);
-}
-
-function findBestTimingCandidate(series, baseDeparture) {
-  return series.reduce((best, item) => {
-    const row = item.minRow || findBestTimingRow(item.rows, baseDeparture);
-    if (!best) {
-      return { series: item, row };
-    }
-    const rowDistance = Math.abs(row.departureDate - baseDeparture);
-    const bestDistance = Math.abs(best.row.departureDate - baseDeparture);
-    if (
-      row.total < best.row.total ||
-      (row.total === best.row.total && rowDistance < bestDistance) ||
-      (row.total === best.row.total && rowDistance === bestDistance && item.selected)
-    ) {
-      return { series: item, row };
     }
     return best;
   }, null);

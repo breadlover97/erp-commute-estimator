@@ -1405,6 +1405,10 @@ function erpDetailTemplate(detail) {
     </div>
     <div class="erp-rate-table-wrap">
       <table class="erp-rate-table">
+        <colgroup>
+          <col />
+          <col class="erp-rate-amount-col" />
+        </colgroup>
         <tbody>${rows}</tbody>
       </table>
     </div>

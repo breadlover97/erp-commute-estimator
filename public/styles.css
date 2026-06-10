@@ -1968,7 +1968,7 @@ tbody tr.current-row {
 
 .erp-detail-stats {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
   gap: 8px;
 }
 
@@ -2005,16 +2005,17 @@ tbody tr.current-row {
 
 .erp-rate-table-wrap {
   max-height: min(330px, 54vh);
-  margin: 9px 10px 10px;
+  margin: 9px 0 10px;
   border: 1px solid #c1d6d4;
   border-radius: 8px;
   overflow-x: hidden;
   overflow-y: auto;
+  scrollbar-gutter: stable;
   background: #f8fbfa;
 }
 
 .erp-rate-table {
-  width: min(100%, 268px);
+  width: 100%;
   min-width: 0;
   border-collapse: collapse;
   table-layout: fixed;
@@ -2023,10 +2024,19 @@ tbody tr.current-row {
   line-height: 1.2;
 }
 
+.erp-rate-amount-col {
+  width: 30%;
+}
+
 .erp-rate-table td {
-  padding: 6px 9px;
+  padding: 7px 10px;
   border-bottom: 1px solid #d4e5e3;
   background: #eefafa;
+}
+
+.erp-rate-table td:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .erp-rate-table tr:nth-child(even) td {
@@ -2044,10 +2054,10 @@ tbody tr.current-row {
 }
 
 .erp-rate-table td:last-child {
-  width: 78px;
+  width: 30%;
   color: #172027;
   font-weight: 850;
-  text-align: left;
+  text-align: right;
   white-space: nowrap;
 }
 
@@ -2086,14 +2096,6 @@ tbody tr.current-row {
     padding: 14px 14px calc(18px + env(safe-area-inset-bottom));
   }
 
-  .erp-detail-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .erp-detail-stats article:last-child {
-    grid-column: 1 / -1;
-  }
-
   .erp-detail-stats span,
   .erp-detail-stats strong {
     white-space: normal;
@@ -2108,7 +2110,11 @@ tbody tr.current-row {
   }
 
   .erp-rate-table td:last-child {
-    width: 78px;
+    width: 30%;
+  }
+
+  .erp-rate-amount-col {
+    width: 30%;
   }
 
   .primary-button {
@@ -2278,7 +2284,7 @@ tbody tr.current-row {
 
   .erp-rate-table {
     display: table;
-    width: min(100%, 268px);
+    width: 100%;
     min-width: 0;
     table-layout: fixed;
   }
@@ -2298,7 +2304,7 @@ tbody tr.current-row {
   .erp-rate-table td {
     display: table-cell;
     width: auto;
-    padding: 7px 9px;
+    padding: 7px 10px;
     border-bottom: 1px solid #d4e5e3;
     font-size: inherit;
   }
@@ -2308,7 +2314,11 @@ tbody tr.current-row {
   }
 
   .erp-rate-table td:last-child {
-    width: 78px;
+    width: 30%;
+  }
+
+  .erp-rate-amount-col {
+    width: 30%;
   }
 
   .empty-row {

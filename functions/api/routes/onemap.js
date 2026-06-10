@@ -1,6 +1,16 @@
 const ONEMAP_AUTH_ENDPOINT = "https://www.onemap.gov.sg/api/auth/post/getToken";
 const ONEMAP_ROUTE_ENDPOINT = "https://www.onemap.gov.sg/api/public/routingsvc/route";
 const TOKEN_REFRESH_BUFFER_MS = 5 * 60 * 1000;
+const JSON_RESPONSE_HEADERS = {
+  "Content-Type": "application/json; charset=utf-8",
+  "Cache-Control": "no-store",
+  "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'; base-uri 'none'",
+  "Cross-Origin-Resource-Policy": "same-origin",
+  "X-Content-Type-Options": "nosniff",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Permissions-Policy": "geolocation=()",
+  Vary: "Sec-Fetch-Site",
+};
 const SINGAPORE_BOUNDS = {
   minLat: 1.13,
   maxLat: 1.49,
@@ -12,6 +22,16 @@ let cachedOneMapToken = null;
 let cachedOneMapTokenExpiresAtMs = 0;
 
 export async function onRequestGet(context) {
+  if (isCrossSiteBrowserRequest(context.request)) {
+    return jsonResponse(
+      {
+        error: "Cross-site requests are not allowed for this routing proxy.",
+        code: "cross_site_request_blocked",
+      },
+      403,
+    );
+  }
+
   const requestUrl = new URL(context.request.url);
   const start = parseCoordinatePair(requestUrl.searchParams.get("start"));
   const end = parseCoordinatePair(requestUrl.searchParams.get("end"));
@@ -152,6 +172,10 @@ function clearCachedOneMapToken() {
   cachedOneMapTokenExpiresAtMs = 0;
 }
 
+function isCrossSiteBrowserRequest(request) {
+  return request.headers.get("Sec-Fetch-Site") === "cross-site";
+}
+
 function parseCoordinatePair(value) {
   if (!value) {
     return null;
@@ -184,9 +208,6 @@ function summarizeOneMapError(payload) {
 function jsonResponse(payload, status) {
   return new Response(JSON.stringify(payload), {
     status,
-    headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      "Cache-Control": "no-store",
-    },
+    headers: JSON_RESPONSE_HEADERS,
   });
 }

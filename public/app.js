@@ -677,7 +677,7 @@ function renderRouteMap(selectedLegs) {
     fillOpacity: 1,
     weight: 2,
   })
-    .bindPopup(`<strong>Start</strong><br>${escapeHtml(state.currentPlan.startPoint.label)}`)
+    .bindPopup(pointPopupTemplate("Start", state.currentPlan.startPoint.label), pointPopupOptions())
     .addTo(state.pointLayer);
 
   L.circleMarker([state.currentPlan.endPoint.lat, state.currentPlan.endPoint.lng], {
@@ -687,7 +687,7 @@ function renderRouteMap(selectedLegs) {
     fillOpacity: 1,
     weight: 2,
   })
-    .bindPopup(`<strong>Destination</strong><br>${escapeHtml(state.currentPlan.endPoint.label)}`)
+    .bindPopup(pointPopupTemplate("Destination", state.currentPlan.endPoint.label), pointPopupOptions())
     .addTo(state.pointLayer);
 
   selectedLegs.forEach((option) => {
@@ -696,6 +696,41 @@ function renderRouteMap(selectedLegs) {
 
   fitCurrentRoute();
   refreshMapLayout();
+}
+
+function pointPopupOptions() {
+  return {
+    autoPan: true,
+    autoPanPadding: [18, 18],
+    className: "endpoint-popup-shell",
+    maxWidth: 240,
+    minWidth: 180,
+  };
+}
+
+function pointPopupTemplate(label, address) {
+  const { title, detail } = splitPointAddress(address);
+  return `<div class="endpoint-popup">
+    <span>${escapeHtml(label)}</span>
+    <strong>${escapeHtml(title)}</strong>
+    ${detail ? `<small>${escapeHtml(detail)}</small>` : ""}
+  </div>`;
+}
+
+function splitPointAddress(address) {
+  const fullAddress = String(address || "");
+  const parts = fullAddress
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (!parts.length) {
+    return { title: "Selected point", detail: "" };
+  }
+  const titlePartCount = parts[0] && /^\d+[A-Za-z]?$/.test(parts[0]) && parts[1] ? 2 : 1;
+  return {
+    title: parts.slice(0, titlePartCount).join(", "),
+    detail: parts.slice(titlePartCount).join(", "),
+  };
 }
 
 function drawRouteOption(option, color, isSelected) {

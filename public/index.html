@@ -6,7 +6,7 @@
     <title>ERP Commute Estimator</title>
     <meta
       name="description"
-      content="Estimate Singapore ERP charges for a driving commute with route matching, gantry details and timing comparisons."
+      content="Estimate ERP charges for a driving commute in Singapore with route matching, gantry details and timing comparisons."
     />
     <link rel="icon" href="./favicon.svg?v=2026-06-08-favicon-v1" type="image/svg+xml" />
     <meta name="theme-color" content="#f7f8fa" />
@@ -16,14 +16,13 @@
       integrity="sha256-p4NxAoJBhIINfQKJvI5v3XYPS0obTRR9BMYgqNJFlIk="
       crossorigin=""
     />
-    <link rel="stylesheet" href="./styles.css?v=2026-06-10-cleanup-v40" />
+    <link rel="stylesheet" href="./styles.css?v=2026-06-10-credits-v41" />
   </head>
   <body>
     <main class="app-shell">
       <section class="planner-panel" aria-label="ERP commute planner">
         <header class="topbar">
           <div>
-            <p class="eyebrow">Singapore ERP</p>
             <h1>ERP cost estimator</h1>
             <p class="topbar-copy">Enter a route and time to compare ERP charges before you leave.</p>
           </div>
@@ -404,6 +403,16 @@
             Estimates are for passenger cars, taxis and light goods vehicles. The route match is based on public route geometry, official ERP marker coordinates and direction checks.
           </p>
         </details>
+
+        <footer class="site-credits" aria-label="Disclaimer and credits">
+          <strong>Disclaimer and credits</strong>
+          <p>
+            ERP estimates are for planning only and may differ from actual charges. Routing and gantry matching depend on third-party map data, public routing services and official source data availability.
+          </p>
+          <p>
+            Copyright 2026 Ngim Tai Zhi. All rights reserved. No part of this site may be copied, reproduced, distributed or republished without prior written permission.
+          </p>
+        </footer>
       </section>
     </main>
 
@@ -413,6 +422,6 @@
       crossorigin=""
     ></script>
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
-    <script src="./app.js?v=2026-06-10-cleanup-v40" type="module"></script>
+    <script src="./app.js?v=2026-06-10-credits-v41" type="module"></script>
   </body>
 </html>

@@ -124,14 +124,6 @@ select:focus-visible {
   gap: 14px;
 }
 
-.eyebrow {
-  margin: 0 0 4px;
-  color: var(--accent-deep);
-  font-size: 0.7rem;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
 h1,
 h2,
 p {
@@ -1352,6 +1344,21 @@ tbody tr.current-row {
   color: #536069;
   font-size: 0.84rem;
   line-height: 1.45;
+}
+
+.site-credits {
+  display: grid;
+  gap: 6px;
+  padding: 2px 2px 0;
+  color: #667085;
+  font-size: 0.74rem;
+  line-height: 1.45;
+}
+
+.site-credits strong {
+  color: #475467;
+  font-size: 0.76rem;
+  font-weight: 850;
 }
 
 .map-panel {

@@ -1,4 +1,4 @@
-# ERP Commute Estimator
+# ERP Calculator
 
 A static web app for estimating Singapore ERP charges for a driving commute.
 

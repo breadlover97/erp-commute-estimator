@@ -278,7 +278,11 @@ select:focus {
 
 .trip-controls {
   display: grid;
-  gap: 11px;
+  gap: 9px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fafc;
 }
 
 .mode-control {
@@ -370,16 +374,22 @@ select:focus {
 .time-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 10px;
+  gap: 8px;
 }
 
 .return-controls {
   display: grid;
-  gap: 10px;
-  padding: 12px;
+  gap: 9px;
+  padding: 11px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.72);
+  background: #f8fafc;
+}
+
+.return-heading {
+  display: grid;
+  justify-content: stretch;
+  padding-bottom: 2px;
 }
 
 .compact-heading h2 {
@@ -387,12 +397,18 @@ select:focus {
 }
 
 .compact-heading span {
+  max-width: 16rem;
   font-size: 0.73rem;
+}
+
+.return-heading span {
+  max-width: none;
+  text-align: left;
 }
 
 .adjuster-grid {
   display: grid;
-  grid-template-columns: minmax(118px, 0.58fr) minmax(0, 1.42fr);
+  grid-template-columns: minmax(108px, 0.52fr) minmax(0, 1.48fr);
   gap: 8px;
 }
 
@@ -403,16 +419,13 @@ select:focus {
 }
 
 .adjuster-block > span {
-  color: var(--muted);
-  font-size: 0.72rem;
-  font-weight: 820;
-  line-height: 1.2;
+  display: none;
 }
 
 .date-stepper,
 .time-stepper {
   display: grid;
-  min-height: 42px;
+  min-height: 40px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #ffffff;
@@ -420,7 +433,7 @@ select:focus {
 }
 
 .date-stepper {
-  grid-template-columns: 38px minmax(0, 1fr) 38px;
+  grid-template-columns: 36px minmax(0, 1fr) 36px;
 }
 
 .date-stepper strong {
@@ -428,7 +441,7 @@ select:focus {
   align-items: center;
   justify-content: center;
   color: #344054;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 860;
 }
 
@@ -451,7 +464,7 @@ select:focus {
 }
 
 .icon-step {
-  min-height: 40px;
+  min-height: 38px;
 }
 
 .icon-step:first-child,
@@ -460,9 +473,9 @@ select:focus {
 }
 
 .step-action {
-  gap: 7px;
-  min-height: 40px;
-  padding: 6px 9px;
+  gap: 6px;
+  min-height: 38px;
+  padding: 5px 8px;
 }
 
 .icon-step:hover,
@@ -480,14 +493,14 @@ select:focus {
 
 .step-action strong {
   color: inherit;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 860;
   line-height: 1.1;
 }
 
 .step-action small {
   color: var(--muted);
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   font-weight: 780;
   line-height: 1.1;
 }

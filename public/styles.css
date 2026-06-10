@@ -566,7 +566,7 @@ select:focus {
 
 .form-actions {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
 }
 
@@ -1414,7 +1414,7 @@ tbody tr.current-row {
   display: grid;
   gap: 8px;
   width: fit-content;
-  max-width: min(320px, calc(100% - 24px));
+  max-width: min(340px, calc(100% - 24px));
   border: 1px solid rgba(25, 28, 31, 0.12);
   border-radius: 8px;
   padding: 0;
@@ -1424,7 +1424,7 @@ tbody tr.current-row {
 }
 
 .map-controls[open] {
-  width: min(320px, calc(100% - 24px));
+  width: min(340px, calc(100% - 24px));
 }
 
 .map-controls summary {
@@ -1458,6 +1458,18 @@ tbody tr.current-row {
   padding: 0 10px 10px;
 }
 
+.map-settings-group {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.map-settings-group > span {
+  color: #344054;
+  font-size: 0.76rem;
+  font-weight: 850;
+}
+
 .map-controls label {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -1467,6 +1479,19 @@ tbody tr.current-row {
   color: #344054;
   font-size: 0.76rem;
   font-weight: 850;
+}
+
+.map-controls .mode-control {
+  width: 100%;
+}
+
+.map-controls .mode-control label {
+  display: block;
+  grid-template-columns: none;
+  gap: 0;
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
 }
 
 .map-controls select {
@@ -1479,6 +1504,11 @@ tbody tr.current-row {
 }
 
 .fit-route-control {
+  min-height: 38px;
+  width: 100%;
+}
+
+.map-share-control {
   min-height: 38px;
   width: 100%;
 }

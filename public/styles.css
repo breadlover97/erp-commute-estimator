@@ -1321,49 +1321,6 @@ tbody tr.current-row {
   color: #b33d30;
 }
 
-.source-section {
-  background: var(--panel);
-}
-
-.source-section summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 13px;
-  list-style: none;
-  cursor: pointer;
-}
-
-.source-section summary::-webkit-details-marker {
-  display: none;
-}
-
-.source-section summary strong {
-  display: block;
-  font-size: 0.95rem;
-}
-
-.source-section summary small {
-  display: block;
-  margin-top: 3px;
-  color: var(--muted);
-  font-size: 0.76rem;
-  line-height: 1.35;
-}
-
-.source-section summary svg {
-  flex: 0 0 auto;
-  width: 18px;
-  height: 18px;
-  color: #516068;
-  transition: transform 0.18s ease;
-}
-
-.source-section[open] summary svg {
-  transform: rotate(180deg);
-}
-
 .source-list {
   display: flex;
   flex-wrap: wrap;

@@ -498,30 +498,51 @@ function routeOptionsForLeg(legKey, options) {
     return "";
   }
 
-  const heading = `<div class="route-option-group-title">${legKey === "outbound" ? "Outbound" : "Return"}</div>`;
-  const cards = options
+  const legLabel = legKey === "outbound" ? "Outbound" : "Return";
+  const selectedOption =
+    options.find((option) => state.selectedRoutes[legKey] === option.index) || options[0];
+  const buttons = options
     .map((option) => {
       const isSelected = state.selectedRoutes[legKey] === option.index;
       const tooltip = routeOptionTooltip(option);
       const routeColor = routeColorForOption(option);
-      return `<article class="route-option-card ${isSelected ? "selected" : ""}" style="--route-color: ${routeColor}">
-        <button class="route-option tooltip-card ${
-          isSelected ? "selected" : ""
-        }" data-leg="${legKey}" data-index="${option.index}" data-tooltip="${escapeHtml(tooltip)}" type="button">
-          <span class="route-option-topline">
-            <span class="route-option-name"><i class="route-color-dot" aria-hidden="true"></i>${routeOptionName(option)}</span>
-            <span class="route-provider-chip">${escapeHtml(routingProviderLabel(option.route))}</span>
-          </span>
+      return `<button class="route-option route-option-tab tooltip-card ${
+        isSelected ? "selected" : ""
+      }" style="--route-color: ${routeColor}" data-leg="${legKey}" data-index="${option.index}" data-tooltip="${escapeHtml(
+        tooltip,
+      )}" type="button" aria-pressed="${isSelected}">
+          <span class="route-option-name"><i class="route-color-dot" aria-hidden="true"></i>${routeOptionName(option)}</span>
           <strong>${formatMoney(option.trip.total)}</strong>
           <small>${formatDuration(option.route.durationSeconds)} · ${formatDistance(option.route.totalMeters)} · ${
             option.trip.entries.length
           } ERP</small>
-        </button>
-        ${isSelected && legKey === "outbound" ? selectedRouteTimingTemplate() : ""}
-      </article>`;
+        </button>`;
     })
     .join("");
-  return `${heading}<div class="route-option-row">${cards}</div>`;
+  return `<section class="route-option-leg" aria-label="${legLabel} route choices">
+    <div class="route-option-group-title">${legLabel}</div>
+    <div class="route-option-tabs" aria-label="${legLabel} route options">${buttons}</div>
+    ${selectedRouteCardTemplate(selectedOption, legKey)}
+  </section>`;
+}
+
+function selectedRouteCardTemplate(option, legKey) {
+  const routeColor = routeColorForOption(option);
+  return `<article class="selected-route-card" style="--route-color: ${routeColor}">
+    <div class="selected-route-summary">
+      <div>
+        <span class="route-option-topline">
+          <span class="route-option-name"><i class="route-color-dot" aria-hidden="true"></i>${routeOptionName(option)}</span>
+          <span class="route-provider-chip">${escapeHtml(routingProviderLabel(option.route))}</span>
+        </span>
+        <strong>${formatMoney(option.trip.total)}</strong>
+        <small>${formatDuration(option.route.durationSeconds)} · ${formatDistance(option.route.totalMeters)} · ${
+          option.trip.entries.length
+        } ERP</small>
+      </div>
+    </div>
+    ${legKey === "outbound" ? selectedRouteTimingTemplate() : ""}
+  </article>`;
 }
 
 function selectedRouteTimingTemplate() {

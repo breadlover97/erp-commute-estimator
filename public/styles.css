@@ -655,23 +655,26 @@ select:focus {
 }
 
 .route-options-section {
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 36;
   margin: -4px -6px 0;
-  padding: 6px 6px 10px;
-  max-height: min(40dvh, 360px);
-  overflow: auto;
+  padding: 6px 6px 12px;
+  overflow: visible;
   border-bottom: 1px solid rgba(217, 224, 231, 0.72);
   background: rgba(245, 247, 250, 0.96);
   backdrop-filter: blur(14px);
-  overscroll-behavior: contain;
   animation: fade-up 0.24s ease both;
 }
 
 .route-options {
   display: grid;
-  gap: 10px;
+  gap: 12px;
+}
+
+.route-option-leg {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
 }
 
 .route-option-group-title {
@@ -698,14 +701,17 @@ select:focus {
   text-align: right;
 }
 
-.route-option-row {
+.route-option-tabs {
   display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
   gap: 8px;
 }
 
-.route-option-card {
+.route-option-tab,
+.selected-route-card {
   position: relative;
   display: grid;
+  min-width: 0;
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -717,7 +723,7 @@ select:focus {
     box-shadow 0.16s ease;
 }
 
-.route-option-card::before {
+.selected-route-card::before {
   content: "";
   position: absolute;
   inset: 0 auto 0 0;
@@ -727,32 +733,25 @@ select:focus {
   pointer-events: none;
 }
 
-.route-option-card:hover,
-.route-option-card.selected {
+.route-option-tab:hover,
+.route-option-tab.selected,
+.selected-route-card {
   border-color: var(--route-color, var(--accent));
   box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
 }
 
-.route-option-card.selected {
-  grid-column: 1 / -1;
+.route-option-tab.selected {
   background: var(--accent-soft);
   box-shadow:
-    inset 4px 0 0 var(--route-color, var(--accent)),
+    inset 0 3px 0 var(--route-color, var(--accent)),
     0 8px 18px rgba(15, 23, 42, 0.08);
-}
-
-.route-option-card.selected::before {
-  opacity: 1;
 }
 
 .route-option {
   display: grid;
-  gap: 6px;
-  width: 100%;
-  border: 0;
-  border-radius: 0;
-  padding: 12px;
-  background: transparent;
+  gap: 5px;
+  border-radius: 8px;
+  padding: 10px;
   color: var(--ink);
   text-align: left;
   transition:
@@ -762,6 +761,12 @@ select:focus {
 
 .route-option:hover {
   background: rgba(37, 99, 235, 0.04);
+}
+
+.selected-route-summary {
+  display: grid;
+  gap: 6px;
+  padding: 13px 14px;
 }
 
 .route-option-topline {
@@ -774,7 +779,7 @@ select:focus {
 
 .route-option-name {
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 7px;
   min-width: 0;
   color: var(--muted);
@@ -782,8 +787,14 @@ select:focus {
   font-weight: 850;
 }
 
+.route-option-tab .route-option-name {
+  font-size: 0.72rem;
+  line-height: 1.2;
+}
+
 .route-color-dot {
   flex: 0 0 auto;
+  margin-top: 0.18em;
   width: 10px;
   height: 10px;
   border-radius: 999px;
@@ -814,12 +825,29 @@ select:focus {
 }
 
 .route-option strong {
-  font-size: 1.22rem;
+  font-size: 1.08rem;
+  line-height: 1.1;
 }
 
 .route-option small {
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
+  line-height: 1.25;
+}
+
+.selected-route-summary strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 1.42rem;
+  line-height: 1.05;
+}
+
+.selected-route-summary small {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
 }
 
 .route-option-timing {
@@ -2241,8 +2269,8 @@ tbody tr.current-row {
     max-width: min(320px, calc(100% - 32px));
   }
 
-  .route-option-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .route-option-tabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -2264,11 +2292,6 @@ tbody tr.current-row {
   .insights-panel {
     padding: 2px 24px 24px;
     border-right: 1px solid var(--line);
-  }
-
-  .route-options-section {
-    top: 0;
-    max-height: min(42dvh, 430px);
   }
 
   h1 {
@@ -2301,7 +2324,8 @@ tbody tr.current-row {
 
 .recommendation,
 .gantry-item,
-.route-option-card,
+.route-option-tab,
+.selected-route-card,
 .trip-breakdown article {
   animation: fade-up 0.22s ease both;
 }

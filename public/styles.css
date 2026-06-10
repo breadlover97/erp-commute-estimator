@@ -1442,6 +1442,10 @@ tbody tr.current-row {
   backdrop-filter: blur(10px);
 }
 
+.map-controls[open] {
+  width: min(320px, calc(100% - 24px));
+}
+
 .map-controls summary {
   display: inline-flex;
   align-items: center;
@@ -1468,15 +1472,17 @@ tbody tr.current-row {
 .map-controls-content {
   display: grid;
   gap: 10px;
-  min-width: 238px;
+  width: 100%;
+  min-width: 0;
   padding: 0 10px 10px;
 }
 
 .map-controls label {
-  display: inline-flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
   gap: 7px;
+  min-width: 0;
   color: #344054;
   font-size: 0.76rem;
   font-weight: 850;
@@ -1484,7 +1490,8 @@ tbody tr.current-row {
 
 .map-controls select {
   min-height: 34px;
-  width: 150px;
+  width: 100%;
+  min-width: 0;
   padding-top: 6px;
   padding-bottom: 6px;
   font-size: 0.78rem;
@@ -1498,6 +1505,11 @@ tbody tr.current-row {
 .toggle-row input {
   width: 16px;
   min-height: 16px;
+}
+
+.toggle-row span {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 #map {
@@ -1684,6 +1696,7 @@ tbody tr.current-row {
   position: static;
   width: 100%;
   max-width: none;
+  grid-template-columns: repeat(auto-fit, minmax(74px, 1fr));
   border: 0;
   border-top: 1px solid var(--line);
   border-radius: 0;
@@ -1696,7 +1709,9 @@ tbody tr.current-row {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  white-space: nowrap;
+  min-width: 0;
+  line-height: 1.2;
+  white-space: normal;
 }
 
 .legend-line {
@@ -2232,7 +2247,7 @@ tbody tr.current-row {
   }
 
   .map-controls .map-legend {
-    grid-template-columns: repeat(5, auto);
+    grid-template-columns: repeat(auto-fit, minmax(74px, 1fr));
     font-size: 0.78rem;
   }
 

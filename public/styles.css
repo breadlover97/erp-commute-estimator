@@ -1115,6 +1115,12 @@ select:focus {
   font-weight: var(--font-semibold);
 }
 
+.timing-chart-axis-label {
+  fill: #48545b;
+  font-size: var(--text-2xs);
+  font-weight: var(--font-bold);
+}
+
 .timing-chart-axis {
   stroke: #b8c3ce;
   stroke-width: 1.2;

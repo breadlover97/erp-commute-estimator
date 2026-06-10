@@ -1156,8 +1156,8 @@ function renderTimingChart(routeSeries, baseDeparture, chartElement = document.q
   const maxCost = Math.max(...allRows.map((row) => row.total), 0);
   const yMax = Math.max(1, Math.ceil(maxCost / 2) * 2);
   const width = 380;
-  const height = 220;
-  const padding = { top: 18, right: 16, bottom: 34, left: 50 };
+  const height = 238;
+  const padding = { top: 22, right: 16, bottom: 52, left: 60 };
   const plotWidth = width - padding.left - padding.right;
   const plotHeight = height - padding.top - padding.bottom;
   const rowCount = series[0].rows.length;
@@ -1188,7 +1188,7 @@ function renderTimingChart(routeSeries, baseDeparture, chartElement = document.q
     .map((index) => {
       const x = formatSvgNumber(xForIndex(index));
       const anchor = index === 0 ? "start" : index === rowCount - 1 ? "end" : "middle";
-      return `<text class="timing-chart-x-label" x="${x}" y="${height - 8}" text-anchor="${anchor}">${formatClock(
+      return `<text class="timing-chart-x-label" x="${x}" y="${height - 24}" text-anchor="${anchor}">${formatClock(
         series[0].rows[index].departureDate,
       )}</text>`;
     })
@@ -1250,6 +1250,12 @@ function renderTimingChart(routeSeries, baseDeparture, chartElement = document.q
   }"></line>
         ${lines}
         ${xLabels}
+        <text class="timing-chart-axis-label timing-chart-y-axis-label" x="16" y="${
+          padding.top + plotHeight / 2
+        }" text-anchor="middle" transform="rotate(-90 16 ${padding.top + plotHeight / 2})">ERP cost</text>
+        <text class="timing-chart-axis-label timing-chart-x-axis-label" x="${
+          padding.left + plotWidth / 2
+        }" y="${height - 7}" text-anchor="middle">Departure time</text>
       </svg>
     </div>
     <p class="sr-only">${escapeHtml(accessibleTimingSummary(series))}</p>

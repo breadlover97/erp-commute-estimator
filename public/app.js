@@ -9,12 +9,6 @@ const SINGAPORE_MAP_BOUNDS = [
   [1.11, 103.55],
   [1.5, 104.15],
 ];
-const DEFAULT_START_POINT = {
-  inputValue: "838 Yishun St 81 Singapore 760838",
-  lat: 1.41642178701227,
-  lng: 103.833559766776,
-  label: "838 YISHUN STREET 81 SINGAPORE 760838",
-};
 const ROUTE_SEARCH_START_MINUTES = 4 * 60 + 30;
 const ROUTE_SEARCH_END_MINUTES = 22 * 60 + 30;
 const TIMING_COMPARISON_START_OFFSET_MINUTES = -60;
@@ -203,7 +197,6 @@ async function init() {
   setReturnOffset(8);
   initMap();
   hydrateFromUrl();
-  applyDefaultStartAddress();
   state.erpData = await fetchJson(`./data/erp-data.json?v=${DATA_VERSION}`);
   renderSourceMetadata();
   renderAllGantries();
@@ -2672,7 +2665,6 @@ function resetEstimator() {
   els.destination.value = "";
   els.startSuggestions.innerHTML = "";
   els.destinationSuggestions.innerHTML = "";
-  applyDefaultStartAddress();
   renderAddressConfirmation("start");
   renderAddressConfirmation("destination");
 
@@ -2907,13 +2899,6 @@ function hydratePointFromParams(type, params, prefix) {
   if (Number.isFinite(lat) && Number.isFinite(lng) && label) {
     setConfirmedAddress(type, { lat, lng, label });
   }
-}
-
-function applyDefaultStartAddress() {
-  if (state.address.start || els.start.value.trim()) {
-    return;
-  }
-  setConfirmedAddress("start", DEFAULT_START_POINT, DEFAULT_START_POINT.inputValue);
 }
 
 function setRadioValue(name, value) {

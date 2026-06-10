@@ -2167,6 +2167,12 @@ tbody tr.current-row {
 }
 
 @media (max-width: 760px) {
+  .map-panel {
+    overflow: visible;
+    border-bottom: 0;
+    background: var(--bg);
+  }
+
   .map-controls {
     top: 12px;
     right: 10px;
@@ -2187,16 +2193,36 @@ tbody tr.current-row {
   }
 
   .status-bar {
-    top: 82px;
-    right: 10px;
-    left: 10px;
-    max-width: none;
-    min-height: 44px;
-    padding: 9px 12px;
+    display: none;
   }
 
-  .map-controls[open] ~ .status-bar {
-    display: none;
+  .map-panel.has-route-result .leaflet-bottom {
+    bottom: 0;
+  }
+
+  .map-result-dock {
+    position: static;
+    grid-template-columns: minmax(0, 1fr) auto;
+    min-height: 0;
+    margin: 10px 10px 12px;
+    padding: 12px 13px;
+    background: var(--panel);
+    box-shadow: var(--shadow-soft);
+    backdrop-filter: none;
+  }
+
+  .map-result-dock span,
+  .map-result-dock small {
+    font-size: var(--text-xs);
+  }
+
+  .map-result-dock strong {
+    font-size: var(--text-2xl);
+  }
+
+  .map-result-dock small {
+    text-align: right;
+    white-space: nowrap;
   }
 
   .erp-detail-panel {

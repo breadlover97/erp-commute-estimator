@@ -4657,7 +4657,7 @@ body.is-loading .status-bar svg {
 .erp-rate-table th:first-child,
 .erp-rate-table td:first-child {
   padding-right: 10px;
-  text-align: right;
+  text-align: left;
   white-space: nowrap;
 }
 

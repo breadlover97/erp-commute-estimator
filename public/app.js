@@ -1769,7 +1769,7 @@ function erpDetailTemplate(detail) {
       <table class="erp-rate-table">
         <caption class="sr-only">ERP time bands and costs</caption>
         <colgroup>
-          <col />
+          <col class="erp-rate-time-col" />
           <col class="erp-rate-amount-col" />
         </colgroup>
         <thead>

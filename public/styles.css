@@ -4104,8 +4104,20 @@ body.is-loading .status-bar svg {
 
 .recommendation-copy-block {
   display: grid;
+  width: 100%;
+  min-width: 0;
   justify-items: start;
   gap: 4px;
+}
+
+.recommendation-options {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  width: 100%;
+}
+
+.recommendation-option {
+  width: 100%;
+  min-width: 0;
 }
 
 .recommendation strong {
@@ -4601,16 +4613,26 @@ body.is-loading .status-bar svg {
 }
 
 .erp-rate-table-wrap {
+  width: min(100%, 292px);
+  margin-inline: auto;
   border-color: var(--line);
   border-radius: 11px;
   background: var(--panel-soft);
 }
 
 .erp-rate-table {
-  width: min(100%, 238px);
+  width: 100%;
   min-width: 0;
-  margin-inline: auto;
+  margin: 0;
   table-layout: fixed;
+}
+
+.erp-rate-time-col {
+  width: 68%;
+}
+
+.erp-rate-amount-col {
+  width: 32%;
 }
 
 .erp-rate-table thead {
@@ -4634,7 +4656,6 @@ body.is-loading .status-bar svg {
 
 .erp-rate-table th:first-child,
 .erp-rate-table td:first-child {
-  width: 148px;
   padding-right: 10px;
   text-align: right;
   white-space: nowrap;
@@ -4642,7 +4663,6 @@ body.is-loading .status-bar svg {
 
 .erp-rate-table th:last-child,
 .erp-rate-table td:last-child {
-  width: 90px;
   padding-left: 10px;
   text-align: left;
 }
@@ -5169,6 +5189,10 @@ body.is-loading .status-bar svg {
 
   .route-option-row {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .route-option-tabs {
+    grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
   }
 
   .overlay-scrim {

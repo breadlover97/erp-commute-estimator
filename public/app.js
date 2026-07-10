@@ -6,7 +6,7 @@ const GANTRY_LINE_INTERIOR_BUFFER_T = 0.12;
 const DIRECTION_TOLERANCE_DEGREES = 75;
 const COMPETING_GANTRY_PROGRESS_WINDOW_METERS = 45;
 const COMPETING_GANTRY_SPATIAL_WINDOW_METERS = 55;
-const DATA_VERSION = "2026-06-08-erp-data-v1";
+const DATA_VERSION = "2026-07-10-redesign-v6";
 const SINGAPORE_MAP_BOUNDS = [
   [1.11, 103.55],
   [1.5, 104.15],
@@ -37,7 +37,7 @@ const ROUTING_TIMEOUTS = {
   fossgisOsrm: 6500,
   osrmDemo: 6500,
 };
-const SINGAPORE_PUBLIC_HOLIDAYS_2026 = new Set([
+const SINGAPORE_PUBLIC_HOLIDAYS = new Set([
   "2026-01-01",
   "2026-02-17",
   "2026-02-18",
@@ -52,29 +52,51 @@ const SINGAPORE_PUBLIC_HOLIDAYS_2026 = new Set([
   "2026-11-08",
   "2026-11-09",
   "2026-12-25",
+  "2027-01-01",
+  "2027-02-06",
+  "2027-02-07",
+  "2027-02-08",
+  "2027-03-10",
+  "2027-03-26",
+  "2027-05-01",
+  "2027-05-17",
+  "2027-05-20",
+  "2027-08-09",
+  "2027-10-28",
+  "2027-12-25",
 ]);
-const ERP_EVE_CUTOFF_DATES_2026 = new Set([
+const ERP_EVE_CUTOFF_DATES = new Set([
   "2026-02-16",
   "2026-03-20",
   "2026-11-07",
   "2026-12-24",
+  "2026-12-31",
+  "2027-02-05",
+  "2027-03-09",
+  "2027-10-27",
+  "2027-12-24",
+  "2027-12-31",
 ]);
 
 const VEHICLE_TYPES = {
   motorcycle: {
     label: "Motorcycle",
+    shortLabel: "Motorcycle",
     multiplier: 0.5,
   },
   car: {
     label: "Passenger car / taxi / light goods",
+    shortLabel: "Passenger car",
     multiplier: 1,
   },
   heavy: {
     label: "Heavy goods / small bus",
+    shortLabel: "Heavy vehicle",
     multiplier: 1.5,
   },
   "very-heavy": {
     label: "Very heavy goods / big bus",
+    shortLabel: "Very heavy vehicle",
     multiplier: 2,
   },
 };
@@ -137,15 +159,32 @@ const state = {
   routeSelectionToRestore: null,
   showAllGantries: true,
   suggestionTimers: {},
+  addressSuggestions: {
+    start: [],
+    destination: [],
+  },
+  activeSuggestionIndex: {
+    start: -1,
+    destination: -1,
+  },
+  suggestionRequestId: {
+    start: 0,
+    destination: 0,
+  },
   autoEstimateOnReady: false,
   routeRequestId: 0,
   selectedErpDetail: null,
+  resultState: "empty",
+  isLoading: false,
+  lastFocusedElement: null,
+  toastTimer: null,
 };
 
 const els = {
-  appShell: document.querySelector(".app-shell"),
+  appShell: document.querySelector("#app-shell, .app-shell"),
   plannerPanel: document.querySelector(".planner-panel"),
   panelResizer: document.querySelector("#panel-resizer"),
+  siteFooter: document.querySelector(".site-footer"),
   form: document.querySelector("#route-form"),
   start: document.querySelector("#start-input"),
   destination: document.querySelector("#destination-input"),
@@ -168,6 +207,7 @@ const els = {
   reset: document.querySelector("#reset-button"),
   gantryList: document.querySelector("#gantry-list"),
   status: document.querySelector("#status-bar"),
+  statusCopy: document.querySelector("#status-copy"),
   recommendation: document.querySelector("#recommendation"),
   recommendationTitle: document.querySelector("#recommendation-title"),
   recommendationCopy: document.querySelector("#recommendation-copy"),
@@ -187,6 +227,16 @@ const els = {
   erpDetailPanel: document.querySelector("#erp-detail-panel"),
   erpDetailContent: document.querySelector("#erp-detail-content"),
   erpDetailClose: document.querySelector("#erp-detail-close"),
+  overlayScrim: document.querySelector("#overlay-scrim"),
+  resultsStateCard: document.querySelector("#results-state-card"),
+  resultsStateIcon: document.querySelector("#results-state-icon"),
+  resultsStateTitle: document.querySelector("#results-state-title"),
+  resultsStateCopy: document.querySelector("#results-state-copy"),
+  resultsContent: document.querySelector("#results-content"),
+  staleNotice: document.querySelector("#stale-notice"),
+  timeSectionCopy: document.querySelector("#time-section-copy"),
+  toast: document.querySelector("#toast"),
+  toastCopy: document.querySelector("#toast-copy"),
 };
 
 init().catch((error) => {
@@ -205,6 +255,8 @@ async function init() {
   bindEvents();
   initPanelResizer();
   renderTripMode();
+  renderTimeMode();
+  renderInitialResults();
   window.lucide?.createIcons();
 
   if (state.autoEstimateOnReady) {
@@ -218,6 +270,10 @@ function bindEvents() {
   els.vehicleType.addEventListener("change", () => {
     closeErpDetail();
     renderAllGantries();
+    if (state.isLoading) {
+      clearCurrentEstimate("Vehicle changed. Estimate again.");
+      return;
+    }
     if (state.currentPlan) {
       recalculatePlanForVehicle();
     }
@@ -231,6 +287,7 @@ function bindEvents() {
   els.share.addEventListener("click", copyShareUrl);
   els.reset.addEventListener("click", resetEstimator);
   els.erpDetailClose.addEventListener("click", closeErpDetail);
+  els.overlayScrim.addEventListener("click", closeErpDetail);
   els.returnTrip.addEventListener("change", () => {
     renderTripMode();
     clearCurrentEstimate("Trip type changed. Estimate again.");
@@ -260,6 +317,7 @@ function bindEvents() {
 
   document.querySelectorAll("input[name='timeMode']").forEach((input) => {
     input.addEventListener("change", () => {
+      renderTimeMode();
       clearCurrentEstimate("Time mode changed. Estimate again.");
     });
   });
@@ -299,11 +357,24 @@ function bindEvents() {
     if (tooltipCard && window.matchMedia("(hover: none)").matches) {
       tooltipCard.classList.toggle("show-tooltip");
     }
+    if (!event.target.closest(".route-field")) {
+      closeAddressSuggestions("start");
+      closeAddressSuggestions("destination");
+    }
   });
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
-      closeErpDetail();
+      if (state.selectedErpDetail) {
+        closeErpDetail();
+      } else {
+        closeAddressSuggestions("start");
+        closeAddressSuggestions("destination");
+      }
+      return;
+    }
+    if (event.key === "Tab" && state.selectedErpDetail) {
+      trapDetailFocus(event);
     }
   });
 }
@@ -517,18 +588,30 @@ function bindAddressField(type) {
     state.suggestionTimers[type] = window.setTimeout(async () => {
       const query = input.value.trim();
       if (query.length < 3) {
-        renderAddressSuggestions(type, []);
+        closeAddressSuggestions(type);
         return;
       }
+      const suggestionRequestId = ++state.suggestionRequestId[type];
       try {
         renderAddressSuggestions(type, null);
         const suggestions = await fetchAddressSuggestions(query, 5);
-        renderAddressSuggestions(type, suggestions);
+        if (input.value.trim() !== query || state.suggestionRequestId[type] !== suggestionRequestId) {
+          return;
+        }
+        renderAddressSuggestions(
+          type,
+          suggestions,
+          suggestions.length ? "" : "No matching Singapore address found.",
+        );
       } catch {
-        renderAddressSuggestions(type, []);
+        if (input.value.trim() !== query || state.suggestionRequestId[type] !== suggestionRequestId) {
+          return;
+        }
+        renderAddressSuggestions(type, [], "Address search is unavailable. Try again.");
       }
     }, 350);
   });
+  input.addEventListener("keydown", (event) => handleSuggestionKeydown(type, event));
 }
 
 async function handleRouteSubmit(event) {
@@ -536,6 +619,10 @@ async function handleRouteSubmit(event) {
   const requestId = ++state.routeRequestId;
   setLoading(true);
   closeErpDetail();
+  for (const type of ["start", "destination"]) {
+    window.clearTimeout(state.suggestionTimers[type]);
+    closeAddressSuggestions(type);
+  }
   clearRouteLayers();
   setStatus("Confirming addresses and finding route options...");
 
@@ -544,11 +631,16 @@ async function handleRouteSubmit(event) {
     const endPoint = await requireConfirmedAddress("destination");
     const vehicleType = getVehicleType();
     const tripMode = getTripMode();
-    const outboundDeparture = getSelectedDateTime();
+    const timeMode = getTimeMode();
+    const selectedDateTime = getSelectedDateTime();
     const returnDeparture = tripMode === "return" ? getReturnDateTime() : null;
 
-    if (tripMode === "return" && returnDeparture <= outboundDeparture) {
-      throw new Error("Choose a return time after the outbound departure.");
+    if (tripMode === "return" && returnDeparture <= selectedDateTime) {
+      throw new Error(
+        timeMode === "arrive"
+          ? "Choose a return time after the outbound arrival."
+          : "Choose a return time after the outbound departure.",
+      );
     }
 
     const [outboundRoutes, returnRoutes] = await Promise.all([
@@ -560,7 +652,8 @@ async function handleRouteSubmit(event) {
       legKey: "outbound",
       legLabel: "Outbound",
       routes: outboundRoutes,
-      departureDate: outboundDeparture,
+      selectedDateTime,
+      timeMode,
       vehicleType,
     });
     const returnLeg =
@@ -569,7 +662,8 @@ async function handleRouteSubmit(event) {
             legKey: "return",
             legLabel: "Return",
             routes: returnRoutes,
-            departureDate: returnDeparture,
+            selectedDateTime: returnDeparture,
+            timeMode: "depart",
             vehicleType,
           })
         : [];
@@ -584,16 +678,27 @@ async function handleRouteSubmit(event) {
       outbound: routeIndexOrDefault(routeSelectionToRestore?.outbound, outbound.length),
       return: routeIndexOrDefault(routeSelectionToRestore?.return, returnLeg.length),
     };
+    const selectedOutbound = outbound[state.selectedRoutes.outbound];
+    if (
+      tripMode === "return" &&
+      selectedOutbound &&
+      returnDeparture <= selectedOutbound.trip.arrivalDate
+    ) {
+      throw new Error(
+        `Choose a return time after the outbound arrival at ${formatClock(selectedOutbound.trip.arrivalDate)}.`,
+      );
+    }
     state.currentPlan = {
       startPoint,
       endPoint,
       tripMode,
+      timeMode,
       vehicleType,
       outbound,
       return: returnLeg,
     };
 
-    renderPlan();
+    renderPlan({ fresh: true });
     focusMapAfterEstimate();
     replaceUrlWithShareState();
   } catch (error) {
@@ -609,11 +714,15 @@ async function handleRouteSubmit(event) {
   }
 }
 
-function buildLegOptions({ legKey, legLabel, routes, departureDate, vehicleType }) {
+function buildLegOptions({ legKey, legLabel, routes, selectedDateTime, timeMode, vehicleType }) {
   const options = routes
     .slice(0, MAX_ROUTE_OPTIONS)
     .map((route) => {
       const matchedGantries = matchGantriesToRoute(route);
+      const departureDate =
+        timeMode === "arrive"
+          ? addSeconds(selectedDateTime, -route.durationSeconds)
+          : selectedDateTime;
       const trip = calculateTrip(route, matchedGantries, departureDate, vehicleType, legLabel);
       return {
         legKey,
@@ -674,13 +783,18 @@ function recalculatePlanForVehicle() {
     return: routeIndexOrDefault(state.selectedRoutes.return, state.currentPlan.return.length),
   };
   renderPlan();
-  replaceUrlWithShareState();
+  if (state.resultState === "ready") {
+    replaceUrlWithShareState();
+  }
 }
 
-function renderPlan() {
+function renderPlan({ fresh = false } = {}) {
   const selectedLegs = getSelectedLegs();
   const total = selectedLegs.reduce((sum, option) => sum + option.trip.total, 0);
   const gantryCount = selectedLegs.reduce((sum, option) => sum + option.trip.entries.length, 0);
+
+  const nextResultState = fresh ? "ready" : state.resultState === "stale" ? "stale" : "ready";
+  setResultState(nextResultState);
 
   renderRouteOptions();
   renderRouteProvider(selectedLegs);
@@ -692,9 +806,15 @@ function renderPlan() {
   renderRecommendation(selectedLegs);
   window.lucide?.createIcons();
 
-  setStatus(
-    `${state.currentPlan.tripMode === "return" ? "Return" : "One-way"} route: ${gantryCount} ERP matched.`,
-  );
+  if (nextResultState === "stale") {
+    setStatus("Trip details changed. Update the estimate to refresh the route and cost.");
+  } else {
+    setStatus(
+      `${state.currentPlan.tripMode === "return" ? "Return trip" : "Route"} ready · ${gantryCount} ERP point${
+        gantryCount === 1 ? "" : "s"
+      } · ${VEHICLE_TYPES[state.currentPlan.vehicleType].shortLabel}`,
+    );
+  }
 }
 
 function renderRouteOptions() {
@@ -711,7 +831,9 @@ function renderRouteOptions() {
     button.addEventListener("click", () => {
       state.selectedRoutes[button.dataset.leg] = Number(button.dataset.index);
       renderPlan();
-      replaceUrlWithShareState();
+      if (state.resultState === "ready") {
+        replaceUrlWithShareState();
+      }
     });
   });
 }
@@ -727,13 +849,16 @@ function routeOptionsForLeg(legKey, options) {
   const buttons = options
     .map((option) => {
       const isSelected = state.selectedRoutes[legKey] === option.index;
+      const overlapsReturn = legKey === "outbound" && outboundRouteOverlapsReturn(option);
       const tooltip = routeOptionTooltip(option);
       const routeColor = routeColorForOption(option);
       return `<button class="route-option route-option-tab tooltip-card ${
         isSelected ? "selected" : ""
       }" style="--route-color: ${routeColor}" data-leg="${legKey}" data-index="${option.index}" data-tooltip="${escapeHtml(
         tooltip,
-      )}" type="button" aria-pressed="${isSelected}">
+      )}" type="button" aria-pressed="${isSelected}" ${
+        overlapsReturn ? 'disabled aria-disabled="true"' : ""
+      }>
           <span class="route-option-name"><i class="route-color-dot" aria-hidden="true"></i>${routeOptionName(option)}</span>
           <strong>${formatMoney(option.trip.total)}</strong>
           <small>${formatDuration(option.route.durationSeconds)} · ${formatDistance(option.route.totalMeters)} · ${
@@ -766,6 +891,14 @@ function selectedRouteCardTemplate(option, legKey) {
     </div>
     ${legKey === "outbound" ? selectedRouteTimingTemplate() : ""}
   </article>`;
+}
+
+function outboundRouteOverlapsReturn(option) {
+  if (state.currentPlan?.tripMode !== "return") {
+    return false;
+  }
+  const selectedReturn = state.currentPlan.return[state.selectedRoutes.return] || state.currentPlan.return[0];
+  return Boolean(selectedReturn && option.trip.arrivalDate >= selectedReturn.trip.departureDate);
 }
 
 function selectedRouteTimingTemplate() {
@@ -1442,6 +1575,7 @@ function clearRecommendationOptions() {
 
 function renderErrorState(message) {
   closeErpDetail();
+  setResultState("error", message);
   const timingEls = getTimingElements();
   if (timingEls.chart) {
     timingEls.chart.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
@@ -1464,6 +1598,7 @@ function renderErrorState(message) {
 }
 
 function renderInitialResults() {
+  setResultState("empty");
   const timingEls = getTimingElements();
   if (timingEls.note) {
     timingEls.note.textContent = "Run an estimate to compare costs.";
@@ -1489,7 +1624,7 @@ function renderInitialResults() {
 }
 
 function clearCurrentEstimate(message) {
-  if (!state.currentPlan) {
+  if (!state.currentPlan && !state.isLoading) {
     return;
   }
   state.routeRequestId += 1;
@@ -1632,10 +1767,17 @@ function erpDetailTemplate(detail) {
     </div>
     <div class="erp-rate-table-wrap">
       <table class="erp-rate-table">
+        <caption class="sr-only">ERP time bands and costs</caption>
         <colgroup>
           <col />
           <col class="erp-rate-amount-col" />
         </colgroup>
+        <thead>
+          <tr>
+            <th scope="col">Time band</th>
+            <th scope="col">ERP cost</th>
+          </tr>
+        </thead>
         <tbody>${rows}</tbody>
       </table>
     </div>
@@ -1782,18 +1924,65 @@ function bindGantryInfo(layer, detail) {
 }
 
 function openErpDetail(detail) {
+  state.lastFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   state.selectedErpDetail = detail;
   els.erpDetailContent.innerHTML = erpDetailTemplate(detail);
+  els.overlayScrim.hidden = false;
   els.erpDetailPanel.hidden = false;
   els.erpDetailPanel.classList.add("open");
+  document.body.classList.add("sheet-open");
+  setBackgroundInert(true);
   window.lucide?.createIcons();
+  els.erpDetailClose.focus({ preventScroll: true });
 }
 
 function closeErpDetail() {
+  const focusTarget = state.lastFocusedElement;
   state.selectedErpDetail = null;
+  state.lastFocusedElement = null;
+  els.overlayScrim.hidden = true;
   els.erpDetailPanel.hidden = true;
   els.erpDetailPanel.classList.remove("open");
   els.erpDetailContent.innerHTML = "";
+  document.body.classList.remove("sheet-open");
+  setBackgroundInert(false);
+  if (focusTarget?.isConnected) {
+    focusTarget.focus({ preventScroll: true });
+  }
+}
+
+function trapDetailFocus(event) {
+  const focusable = [...els.erpDetailPanel.querySelectorAll("button, [href], input, select, [tabindex]")].filter(
+    (element) => !element.disabled && element.getAttribute("tabindex") !== "-1",
+  );
+  if (!focusable.length) {
+    event.preventDefault();
+    els.erpDetailPanel.focus();
+    return;
+  }
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (document.activeElement === els.erpDetailPanel) {
+    event.preventDefault();
+    (event.shiftKey ? last : first).focus();
+  } else if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+}
+
+function setBackgroundInert(isInert) {
+  [els.appShell, els.siteFooter].filter(Boolean).forEach((element) => {
+    element.toggleAttribute("inert", isInert);
+    if (isInert) {
+      element.setAttribute("aria-hidden", "true");
+    } else {
+      element.removeAttribute("aria-hidden");
+    }
+  });
 }
 
 async function requireConfirmedAddress(type) {
@@ -1860,20 +2049,33 @@ function parseCoordinateInput(value) {
   };
 }
 
-function renderAddressSuggestions(type, suggestions) {
+function renderAddressSuggestions(type, suggestions, emptyMessage = "") {
   const container = type === "start" ? els.startSuggestions : els.destinationSuggestions;
+  const input = els[type];
   if (suggestions === null) {
-    container.innerHTML = `<div class="suggestion-muted">Searching...</div>`;
+    state.addressSuggestions[type] = [];
+    state.activeSuggestionIndex[type] = -1;
+    input.setAttribute("aria-expanded", "true");
+    input.setAttribute("aria-busy", "true");
+    container.innerHTML = `<div class="suggestion-muted">Searching addresses…</div>`;
     return;
   }
+  input.removeAttribute("aria-busy");
+  state.addressSuggestions[type] = suggestions;
+  state.activeSuggestionIndex[type] = -1;
   if (!suggestions.length) {
-    container.innerHTML = "";
+    input.setAttribute("aria-expanded", emptyMessage ? "true" : "false");
+    input.removeAttribute("aria-activedescendant");
+    container.innerHTML = emptyMessage
+      ? `<div class="suggestion-muted">${escapeHtml(emptyMessage)}</div>`
+      : "";
     return;
   }
+  input.setAttribute("aria-expanded", "true");
   container.innerHTML = suggestions
     .map((suggestion, index) => {
       const address = addressSuggestionParts(suggestion.label);
-      return `<button type="button" class="suggestion-option" data-index="${index}">
+      return `<button type="button" class="suggestion-option" id="${type}-suggestion-${index}" role="option" aria-selected="false" tabindex="-1" data-index="${index}">
         <strong>${escapeHtml(address.title)}</strong>
         ${address.detail ? `<small>${escapeHtml(address.detail)}</small>` : ""}
       </button>`;
@@ -1881,10 +2083,78 @@ function renderAddressSuggestions(type, suggestions) {
     .join("");
   container.querySelectorAll(".suggestion-option").forEach((button) => {
     button.addEventListener("click", () => {
-      setConfirmedAddress(type, suggestions[Number(button.dataset.index)]);
-      container.innerHTML = "";
+      selectAddressSuggestion(type, Number(button.dataset.index));
     });
   });
+}
+
+function handleSuggestionKeydown(type, event) {
+  const suggestions = state.addressSuggestions[type];
+  if (!suggestions.length) {
+    if (event.key === "Escape") {
+      closeAddressSuggestions(type);
+    }
+    return;
+  }
+  if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+    event.preventDefault();
+    const direction = event.key === "ArrowDown" ? 1 : -1;
+    const current = state.activeSuggestionIndex[type];
+    const next = current < 0 ? (direction > 0 ? 0 : suggestions.length - 1) : current + direction;
+    state.activeSuggestionIndex[type] = (next + suggestions.length) % suggestions.length;
+    updateSuggestionSelection(type);
+    return;
+  }
+  if (event.key === "Enter" && state.activeSuggestionIndex[type] >= 0) {
+    event.preventDefault();
+    selectAddressSuggestion(type, state.activeSuggestionIndex[type]);
+    return;
+  }
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeAddressSuggestions(type);
+  }
+}
+
+function updateSuggestionSelection(type) {
+  const container = type === "start" ? els.startSuggestions : els.destinationSuggestions;
+  const input = els[type];
+  const activeIndex = state.activeSuggestionIndex[type];
+  container.querySelectorAll(".suggestion-option").forEach((button) => {
+    const isActive = Number(button.dataset.index) === activeIndex;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-selected", String(isActive));
+    if (isActive) {
+      button.scrollIntoView({ block: "nearest" });
+    }
+  });
+  if (activeIndex >= 0) {
+    input.setAttribute("aria-activedescendant", `${type}-suggestion-${activeIndex}`);
+  } else {
+    input.removeAttribute("aria-activedescendant");
+  }
+}
+
+function selectAddressSuggestion(type, index) {
+  const suggestion = state.addressSuggestions[type][index];
+  if (!suggestion) {
+    return;
+  }
+  setConfirmedAddress(type, suggestion);
+  closeAddressSuggestions(type);
+  els[type].focus();
+}
+
+function closeAddressSuggestions(type) {
+  const container = type === "start" ? els.startSuggestions : els.destinationSuggestions;
+  const input = els[type];
+  state.addressSuggestions[type] = [];
+  state.activeSuggestionIndex[type] = -1;
+  state.suggestionRequestId[type] += 1;
+  container.innerHTML = "";
+  input.setAttribute("aria-expanded", "false");
+  input.removeAttribute("aria-activedescendant");
+  input.removeAttribute("aria-busy");
 }
 
 function setConfirmedAddress(type, point, inputValue = null) {
@@ -1904,7 +2174,7 @@ function setConfirmedAddress(type, point, inputValue = null) {
 function renderAddressConfirmation(type) {
   const confirmation = type === "start" ? els.startConfirmation : els.destinationConfirmation;
   const point = state.address[type];
-  confirmation.textContent = point ? `Using: ${shortAddress(point.label)}` : "";
+  confirmation.textContent = point ? shortAddress(point.label) : "";
 }
 
 function shortAddress(label) {
@@ -2685,6 +2955,8 @@ function resetEstimator() {
   state.routeSelectionToRestore = null;
   state.autoEstimateOnReady = false;
   state.showAllGantries = true;
+  state.addressSuggestions = { start: [], destination: [] };
+  state.activeSuggestionIndex = { start: -1, destination: -1 };
 
   for (const timer of Object.values(state.suggestionTimers)) {
     window.clearTimeout(timer);
@@ -2693,8 +2965,8 @@ function resetEstimator() {
 
   els.start.value = "";
   els.destination.value = "";
-  els.startSuggestions.innerHTML = "";
-  els.destinationSuggestions.innerHTML = "";
+  closeAddressSuggestions("start");
+  closeAddressSuggestions("destination");
   renderAddressConfirmation("start");
   renderAddressConfirmation("destination");
 
@@ -2704,6 +2976,7 @@ function resetEstimator() {
   setDefaultSingaporeDateTime();
   setReturnOffset(8);
   renderTripMode();
+  renderTimeMode();
 
   els.showAllGantries.checked = true;
   setMapSource("osm");
@@ -2712,7 +2985,7 @@ function resetEstimator() {
   fitCurrentRoute();
   renderInitialResults();
   setLoading(false);
-  setStatus("Enter a start point, destination and timing.");
+  setStatus("Add a start point and destination to get started.");
 
   window.history.replaceState(null, "", `${window.location.origin}${window.location.pathname}`);
   els.start.focus();
@@ -2746,6 +3019,8 @@ function routeFitOptions() {
 }
 
 function handleSwap() {
+  closeAddressSuggestions("start");
+  closeAddressSuggestions("destination");
   const oldStart = els.start.value;
   els.start.value = els.destination.value;
   els.destination.value = oldStart;
@@ -2768,8 +3043,19 @@ function renderTripMode() {
   }
 }
 
+function renderTimeMode() {
+  const isArriveBy = getTimeMode() === "arrive";
+  els.timeSectionCopy.textContent = isArriveBy
+    ? "Tell us when you need to reach your destination."
+    : "Tell us when you plan to set off.";
+}
+
 function getTripMode() {
   return els.returnTrip.checked ? "return" : "one-way";
+}
+
+function getTimeMode() {
+  return new FormData(els.form).get("timeMode") || "depart";
 }
 
 function getVehicleType() {
@@ -2829,8 +3115,10 @@ async function copyShareUrl() {
   try {
     await navigator.clipboard.writeText(url);
     setStatus("Share URL copied to clipboard.");
+    showToast("Share link copied");
   } catch {
     setStatus("Share URL is ready in the address bar.");
+    showToast("Share link added to the address bar");
   }
 }
 
@@ -2950,8 +3238,16 @@ function renderSourceMetadata() {
         timeZone: "Asia/Singapore",
       })
     : "unknown date";
+  const rateEffectiveDate = state.erpData.meta.rateEffectiveFrom
+    ? new Date(`${state.erpData.meta.rateEffectiveFrom}T00:00:00+08:00`).toLocaleDateString("en-SG", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        timeZone: "Asia/Singapore",
+      })
+    : "unknown date";
   const pricedCount = state.erpData.gantries.filter((gantry) => gantry.isPriced).length;
-  els.sourceGenerated.textContent = `Generated ${generatedDate}; ${pricedCount} priced gantry geometries indexed.`;
+  els.sourceGenerated.textContent = `Rates effective ${rateEffectiveDate}; refreshed ${generatedDate}; ${pricedCount} priced gantries indexed.`;
   els.sourceCopy.textContent = `${state.erpData.meta.notes.join(
     " ",
   )} Vehicle types use the official base-rate multipliers. Route geometry uses OneMap drive routing when configured, with OpenStreetMap-based fallback providers.`;
@@ -2965,6 +3261,7 @@ function focusMapAfterEstimate() {
   const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
   requestAnimationFrame(() => {
     els.mapPanel.scrollIntoView({ behavior, block: "start" });
+    els.mapPanel.focus({ preventScroll: true });
     refreshMapLayout();
     window.setTimeout(refreshMapLayout, 450);
   });
@@ -3093,11 +3390,11 @@ function isWeekday(dateString) {
 function isZeroErpDate(dateString) {
   const [year, month, day] = dateString.split("-").map(Number);
   const dayOfWeek = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
-  return dayOfWeek === 0 || SINGAPORE_PUBLIC_HOLIDAYS_2026.has(dateString);
+  return dayOfWeek === 0 || SINGAPORE_PUBLIC_HOLIDAYS.has(dateString);
 }
 
 function isMajorHolidayEveCutoff(dateString, minutes) {
-  return ERP_EVE_CUTOFF_DATES_2026.has(dateString) && minutes >= 13 * 60;
+  return ERP_EVE_CUTOFF_DATES.has(dateString) && minutes >= 13 * 60;
 }
 
 function addSeconds(date, seconds) {
@@ -3180,16 +3477,78 @@ async function fetchJson(url, options = {}) {
   return response.json();
 }
 
+function setResultState(nextState, message = "") {
+  state.resultState = nextState;
+  els.appShell.dataset.resultState = nextState;
+  const hasResults = nextState === "ready" || nextState === "stale";
+  els.resultsStateCard.hidden = hasResults;
+  els.resultsContent.hidden = !hasResults;
+  els.staleNotice.hidden = nextState !== "stale";
+  els.share.disabled = nextState !== "ready";
+
+  if (nextState === "error") {
+    state.currentPlan = null;
+    els.resultsStateIcon.innerHTML = `<i data-lucide="triangle-alert"></i>`;
+    els.resultsStateTitle.textContent = "We could not estimate this trip";
+    els.resultsStateCopy.textContent = message || "Check the route details and try again.";
+  } else if (nextState === "empty") {
+    els.resultsStateIcon.innerHTML = `<i data-lucide="route"></i>`;
+    els.resultsStateTitle.textContent = "Your estimate will appear here";
+    els.resultsStateCopy.textContent = "Complete your route and timing, then tap Estimate ERP.";
+  }
+  window.lucide?.createIcons();
+}
+
+function markResultsStale() {
+  if (state.isLoading) {
+    state.routeRequestId += 1;
+    setLoading(false);
+    if (state.currentPlan) {
+      setResultState("stale");
+      setStatus("Trip details changed. Update the estimate to refresh the route and cost.");
+    } else {
+      setResultState("empty");
+      setStatus("Trip details changed. Estimate again when you are ready.");
+    }
+    return;
+  }
+  if (!state.currentPlan || (state.resultState !== "ready" && state.resultState !== "stale")) {
+    return;
+  }
+  setResultState("stale");
+  setStatus("Trip details changed. Update the estimate to refresh the route and cost.");
+  setLoading(false);
+}
+
 function setStatus(message) {
-  els.status.textContent = message;
+  els.statusCopy.textContent = message;
 }
 
 function setLoading(isLoading) {
+  state.isLoading = isLoading;
+  document.body.classList.toggle("is-loading", isLoading);
+  els.form.setAttribute("aria-busy", String(isLoading));
   els.primaryButton.disabled = isLoading;
+  const idleLabel =
+    state.resultState === "stale"
+      ? "Update estimate"
+      : state.resultState === "error"
+        ? "Try again"
+        : "Estimate ERP";
   els.primaryButton.innerHTML = isLoading
     ? `<i data-lucide="loader-2"></i> Estimating`
-    : `<i data-lucide="route"></i> Estimate ERP`;
+    : `<i data-lucide="route"></i> ${idleLabel}`;
   window.lucide?.createIcons();
+}
+
+function showToast(message) {
+  window.clearTimeout(state.toastTimer);
+  els.toastCopy.textContent = message;
+  els.toast.hidden = false;
+  window.lucide?.createIcons();
+  state.toastTimer = window.setTimeout(() => {
+    els.toast.hidden = true;
+  }, 2600);
 }
 
 function clamp(value, min, max) {

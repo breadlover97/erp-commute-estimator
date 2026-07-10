@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 const data = JSON.parse(await readFile(new URL("../public/data/erp-data.json", import.meta.url), "utf8"));
 
 const groupIds = new Set(data.groups.map((group) => group.id));
-const publicHolidays2026 = new Set([
+const publicHolidays = new Set([
   "2026-01-01",
   "2026-02-17",
   "2026-02-18",
@@ -19,13 +19,37 @@ const publicHolidays2026 = new Set([
   "2026-11-08",
   "2026-11-09",
   "2026-12-25",
+  "2027-01-01",
+  "2027-02-06",
+  "2027-02-07",
+  "2027-02-08",
+  "2027-03-10",
+  "2027-03-26",
+  "2027-05-01",
+  "2027-05-17",
+  "2027-05-20",
+  "2027-08-09",
+  "2027-10-28",
+  "2027-12-25",
 ]);
-const eveCutoffDates2026 = new Set(["2026-02-16", "2026-03-20", "2026-11-07", "2026-12-24"]);
+const eveCutoffDates = new Set([
+  "2026-02-16",
+  "2026-03-20",
+  "2026-11-07",
+  "2026-12-24",
+  "2026-12-31",
+  "2027-02-05",
+  "2027-03-09",
+  "2027-10-27",
+  "2027-12-24",
+  "2027-12-31",
+]);
 
 assert.equal(data.meta.vehicleClass, "Passenger cars, taxis and light goods vehicles");
 assert.ok(data.gantries.length >= 70, "Expected official ERP gantry markers");
 assert.ok(data.baseRates.length >= 180, "Expected extracted weekday base rates");
-assert.ok(data.adjustments.length >= 20, "Expected June 2026 adjustments");
+assert.ok(data.adjustments.length >= 25, "Expected dated 2026 historical adjustments");
+assert.equal(data.meta.rateEffectiveFrom, "2026-06-29");
 
 for (const rate of data.baseRates) {
   assert.ok(groupIds.has(rate.groupId), `Unknown base-rate group ${rate.groupId}`);
@@ -92,10 +116,19 @@ const officialCurrentRateCases = [
   ["46,67", "18:45", 4, "Northbound CTE current 18:30-19:00"],
   ["46,67", "19:15", 3, "Northbound CTE current 19:00-19:30"],
   ["46,67", "19:45", 1, "Northbound CTE current 19:30-20:00"],
-  ["32,45", "07:15", 0, "PIE Kallang/Bendemeer current 07:00-07:30"],
-  ["32,45", "07:45", 1, "PIE Kallang/Bendemeer current 07:30-08:00"],
-  ["32,45", "08:15", 1, "PIE Kallang/Bendemeer current 08:00-08:30"],
-  ["32,45", "08:45", 3, "PIE Kallang/Bendemeer current 08:30-09:00"],
+  ["52,53,74", "07:02", 0.5, "AYE after Jurong current opening shoulder"],
+  ["52,53,74", "07:15", 1, "AYE after Jurong current 07:00-07:30"],
+  ["52,53,74", "07:32", 3, "AYE after Jurong current peak shoulder"],
+  ["52,53,74", "07:45", 5, "AYE after Jurong current 07:30-08:00"],
+  ["52,53,74", "07:57", 3.5, "AYE after Jurong current closing shoulder"],
+  ["32,45", "07:02", 0.5, "PIE Kallang/Bendemeer current opening shoulder"],
+  ["32,45", "07:15", 1, "PIE Kallang/Bendemeer current 07:00-07:30"],
+  ["32,45", "07:32", 1.5, "PIE Kallang/Bendemeer current first shoulder"],
+  ["32,45", "07:45", 2, "PIE Kallang/Bendemeer current 07:30-08:00"],
+  ["32,45", "08:15", 2, "PIE Kallang/Bendemeer current 08:00-08:30"],
+  ["32,45", "08:32", 3, "PIE Kallang/Bendemeer current second shoulder"],
+  ["32,45", "08:45", 4, "PIE Kallang/Bendemeer current 08:30-09:00"],
+  ["32,45", "08:57", 3, "PIE Kallang/Bendemeer current closing shoulder"],
 ];
 
 for (const [groupId, clock, amount, label] of officialCurrentRateCases) {
@@ -108,11 +141,17 @@ assert.equal(rateFor("35", "2026-06-08", "08:15"), 2);
 assert.equal(rateFor("35", "2026-06-08", "08:45"), 2);
 assert.equal(rateFor("46,67", "2026-06-08", "19:45"), 0);
 assert.equal(rateFor("52,53,74", "2026-06-30", "07:45"), 5);
+assert.equal(rateFor("52,53,74", "2026-06-26", "07:15"), 0);
+assert.equal(rateFor("52,53,74", "2026-06-26", "07:45"), 4);
+assert.equal(rateFor("32,45", "2026-06-26", "07:45"), 1);
+assert.equal(rateFor("32,45", "2026-06-26", "08:45"), 3);
 assert.equal(rateFor("65", "2026-03-24", "07:45"), 1);
 assert.equal(rateFor("50", "2026-06-07", "08:45"), 0);
 assert.equal(rateFor("50", "2026-06-01", "08:45"), 0);
 assert.equal(baseRateFor("46,67", "18:15"), 4);
 assert.equal(rateFor("46,67", "2026-12-24", "18:15"), 0);
+assert.equal(rateFor("46,67", "2026-12-31", "18:15"), 0);
+assert.equal(rateFor("50", "2027-03-10", "08:45"), 0);
 
 console.log("ERP data validation passed");
 
@@ -175,9 +214,9 @@ function isWeekday(dateString) {
 function isZeroErpDate(dateString) {
   const [year, month, day] = dateString.split("-").map(Number);
   const dayOfWeek = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
-  return dayOfWeek === 0 || publicHolidays2026.has(dateString);
+  return dayOfWeek === 0 || publicHolidays.has(dateString);
 }
 
 function isMajorHolidayEveCutoff(dateString, minutes) {
-  return eveCutoffDates2026.has(dateString) && minutes >= 13 * 60;
+  return eveCutoffDates.has(dateString) && minutes >= 13 * 60;
 }

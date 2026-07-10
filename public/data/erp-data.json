@@ -1,22 +1,26 @@
 {
   "meta": {
-    "generatedAt": "2026-06-08T13:21:14.426649+00:00",
+    "generatedAt": "2026-07-10T04:10:54.294722+00:00",
     "vehicleClass": "Passenger cars, taxis and light goods vehicles",
-    "baseRateSource": "OneMotoring ERP Rates PDF, with effect from 23 Mar 2026",
-    "latestAdjustmentSource": "LTA news release, Revised ERP Rates from 2 June 2026, published 25 May 2026",
+    "baseRateSource": "OneMotoring ERP Rates PDF, with effect from 29 Jun 2026",
+    "latestAdjustmentSource": "LTA news release, Revised ERP Rates from 2 June 2026, published 25 May 2026 (including increases from 29 June 2026)",
     "gantrySource": "OneMotoring ERP KML marker layer, with data.gov.sg LTA Gantry GeoJSON line geometry where available",
+    "rateEffectiveFrom": "2026-06-29",
+    "gantryRetrievedOn": "2026-07-10",
+    "holidayCoverageThrough": "2027-12-31",
     "sourceLinks": {
-      "oneMotoringErpRatesPdf": "https://onemotoring.lta.gov.sg/content/dam/onemotoring/Driving/ERP/ERP%20Rates.pdf",
-      "oneMotoringJune2026RatesPdf": "https://onemotoring.lta.gov.sg/content/dam/onemotoring/Driving/ERP/ERP_rates_tables/2026.05.28-ERP%20Rates%20%28Eff.%202%20Jun%202026%20-%2028%20Jun%202026%29.pdf",
+      "oneMotoringErpRatesPdf": "https://onemotoring.lta.gov.sg/content/dam/onemotoring/Driving/ERP/ERP_rates_tables/20260626-1PCU_ERP_Rates_Report.20260623170433.pdf",
+      "oneMotoringMarch2026RatesPdf": "https://onemotoring.lta.gov.sg/content/dam/onemotoring/Driving/ERP/ERP%20Rates.pdf",
       "ltaJune2026Revision": "https://www.lta.gov.sg/content/ltagov/en/newsroom/2026/5/news-releases/revised-erp-rates-2-jun-26.html",
       "oneMotoringErpGuide": "https://onemotoring.lta.gov.sg/content/onemotoring/home/driving/ERP/ERP.html",
       "oneMotoringErpKml": "https://onemotoring.lta.gov.sg/mapapp/kml/erp-kml/erp-kml-0.kml",
-      "ltaGantryGeoJson": "https://data.gov.sg/collections/lta-gantry/view",
-      "momPublicHolidays2026": "https://www.mom.gov.sg/newsroom/press-releases/2025/0616-public-holidays-for-2026"
+      "ltaGantryGeoJson": "https://data.gov.sg/datasets/d_753090823cc9920ac41efaa6530c5893/view",
+      "momPublicHolidays2026": "https://www.mom.gov.sg/newsroom/press-releases/2025/0616-public-holidays-for-2026",
+      "momPublicHolidays2027": "https://www.mom.gov.sg/newsroom/press-releases/2026/0618-public-holidays-for-2027"
     },
     "notes": [
       "Weekday expressway rates are modelled for passenger cars, taxis and light goods vehicles.",
-      "Sundays, 2026 Singapore public holidays, and post-1pm eves of major public holidays are treated as zero ERP.",
+      "Sundays, 2026 and 2027 Singapore public holidays, and post-1pm eves of major public holidays are treated as zero ERP.",
       "Where LTA defines a set of gantries, the app charges at most once for the set.",
       "Route matching uses proximity plus direction checks against official ERP marker coordinates and should be treated as an estimate."
     ]
@@ -1962,6 +1966,12 @@
   ],
   "baseRates": [
     {
+      "groupId": "52,53,74",
+      "start": "07:00",
+      "end": "07:05",
+      "amount": 0.5
+    },
+    {
       "groupId": "35",
       "start": "07:00",
       "end": "07:05",
@@ -1974,6 +1984,18 @@
       "amount": 0.5
     },
     {
+      "groupId": "32,45",
+      "start": "07:00",
+      "end": "07:05",
+      "amount": 0.5
+    },
+    {
+      "groupId": "52,53,74",
+      "start": "07:05",
+      "end": "07:25",
+      "amount": 1.0
+    },
+    {
       "groupId": "35",
       "start": "07:05",
       "end": "07:25",
@@ -1986,6 +2008,18 @@
       "amount": 1.0
     },
     {
+      "groupId": "32,45",
+      "start": "07:05",
+      "end": "07:25",
+      "amount": 1.0
+    },
+    {
+      "groupId": "52,53,74",
+      "start": "07:25",
+      "end": "07:30",
+      "amount": 1.0
+    },
+    {
       "groupId": "35",
       "start": "07:25",
       "end": "07:30",
@@ -1993,6 +2027,12 @@
     },
     {
       "groupId": "50",
+      "start": "07:25",
+      "end": "07:30",
+      "amount": 1.0
+    },
+    {
+      "groupId": "32,45",
       "start": "07:25",
       "end": "07:30",
       "amount": 1.0
@@ -2001,7 +2041,7 @@
       "groupId": "52,53,74",
       "start": "07:30",
       "end": "07:35",
-      "amount": 2.0
+      "amount": 3.0
     },
     {
       "groupId": "31,33,34",
@@ -2031,7 +2071,7 @@
       "groupId": "32,45",
       "start": "07:30",
       "end": "07:35",
-      "amount": 0.5
+      "amount": 1.5
     },
     {
       "groupId": "37,38",
@@ -2055,7 +2095,7 @@
       "groupId": "52,53,74",
       "start": "07:35",
       "end": "07:55",
-      "amount": 4.0
+      "amount": 5.0
     },
     {
       "groupId": "31,33,34",
@@ -2085,7 +2125,7 @@
       "groupId": "32,45",
       "start": "07:35",
       "end": "07:55",
-      "amount": 1.0
+      "amount": 2.0
     },
     {
       "groupId": "37,38",
@@ -2109,7 +2149,7 @@
       "groupId": "52,53,74",
       "start": "07:55",
       "end": "08:00",
-      "amount": 3.0
+      "amount": 3.5
     },
     {
       "groupId": "31,33,34",
@@ -2139,7 +2179,7 @@
       "groupId": "32,45",
       "start": "07:55",
       "end": "08:00",
-      "amount": 1.0
+      "amount": 2.0
     },
     {
       "groupId": "37,38",
@@ -2199,7 +2239,7 @@
       "groupId": "32,45",
       "start": "08:00",
       "end": "08:05",
-      "amount": 1.0
+      "amount": 2.0
     },
     {
       "groupId": "37,38",
@@ -2259,7 +2299,7 @@
       "groupId": "32,45",
       "start": "08:05",
       "end": "08:25",
-      "amount": 1.0
+      "amount": 2.0
     },
     {
       "groupId": "37,38",
@@ -2319,7 +2359,7 @@
       "groupId": "32,45",
       "start": "08:25",
       "end": "08:30",
-      "amount": 1.0
+      "amount": 2.0
     },
     {
       "groupId": "37,38",
@@ -2379,7 +2419,7 @@
       "groupId": "32,45",
       "start": "08:30",
       "end": "08:35",
-      "amount": 2.0
+      "amount": 3.0
     },
     {
       "groupId": "37,38",
@@ -2439,7 +2479,7 @@
       "groupId": "32,45",
       "start": "08:35",
       "end": "08:55",
-      "amount": 3.0
+      "amount": 4.0
     },
     {
       "groupId": "37,38",
@@ -2499,7 +2539,7 @@
       "groupId": "32,45",
       "start": "08:55",
       "end": "09:00",
-      "amount": 2.5
+      "amount": 3.0
     },
     {
       "groupId": "37,38",
@@ -3263,46 +3303,91 @@
       "groupId": "52,53,74",
       "start": "07:00",
       "end": "07:30",
-      "amount": 1,
-      "fromDate": "2026-06-29",
-      "toDate": null,
-      "reason": "ERP increase from 29 June 2026"
+      "amount": 0,
+      "fromDate": "2026-03-23",
+      "toDate": "2026-06-28",
+      "reason": "Prevailing rate before 29 June 2026"
     },
     {
       "groupId": "52,53,74",
       "start": "07:30",
+      "end": "07:35",
+      "amount": 2,
+      "fromDate": "2026-03-23",
+      "toDate": "2026-06-28",
+      "reason": "Prevailing rate before 29 June 2026"
+    },
+    {
+      "groupId": "52,53,74",
+      "start": "07:35",
+      "end": "07:55",
+      "amount": 4,
+      "fromDate": "2026-03-23",
+      "toDate": "2026-06-28",
+      "reason": "Prevailing rate before 29 June 2026"
+    },
+    {
+      "groupId": "52,53,74",
+      "start": "07:55",
       "end": "08:00",
-      "amount": 5,
-      "fromDate": "2026-06-29",
-      "toDate": null,
-      "reason": "ERP increase from 29 June 2026"
+      "amount": 3,
+      "fromDate": "2026-03-23",
+      "toDate": "2026-06-28",
+      "reason": "Prevailing rate before 29 June 2026"
     },
     {
       "groupId": "32,45",
       "start": "07:00",
       "end": "07:30",
-      "amount": 1,
-      "fromDate": "2026-06-29",
-      "toDate": null,
-      "reason": "ERP increase from 29 June 2026"
+      "amount": 0,
+      "fromDate": "2026-03-23",
+      "toDate": "2026-06-28",
+      "reason": "Prevailing rate before 29 June 2026"
     },
     {
       "groupId": "32,45",
       "start": "07:30",
+      "end": "07:35",
+      "amount": 0.5,
+      "fromDate": "2026-03-23",
+      "toDate": "2026-06-28",
+      "reason": "Prevailing rate before 29 June 2026"
+    },
+    {
+      "groupId": "32,45",
+      "start": "07:35",
       "end": "08:30",
-      "amount": 2,
-      "fromDate": "2026-06-29",
-      "toDate": null,
-      "reason": "ERP increase from 29 June 2026"
+      "amount": 1,
+      "fromDate": "2026-03-23",
+      "toDate": "2026-06-28",
+      "reason": "Prevailing rate before 29 June 2026"
     },
     {
       "groupId": "32,45",
       "start": "08:30",
+      "end": "08:35",
+      "amount": 2,
+      "fromDate": "2026-03-23",
+      "toDate": "2026-06-28",
+      "reason": "Prevailing rate before 29 June 2026"
+    },
+    {
+      "groupId": "32,45",
+      "start": "08:35",
+      "end": "08:55",
+      "amount": 3,
+      "fromDate": "2026-03-23",
+      "toDate": "2026-06-28",
+      "reason": "Prevailing rate before 29 June 2026"
+    },
+    {
+      "groupId": "32,45",
+      "start": "08:55",
       "end": "09:00",
-      "amount": 4,
-      "fromDate": "2026-06-29",
-      "toDate": null,
-      "reason": "ERP increase from 29 June 2026"
+      "amount": 2.5,
+      "fromDate": "2026-03-23",
+      "toDate": "2026-06-28",
+      "reason": "Prevailing rate before 29 June 2026"
     }
   ]
 }

@@ -3,12 +3,12 @@ import {
   createConfirmedAddress,
   isSingaporePostalCode,
   normalizeOneMapAddressResults,
-} from "./address-search.js?v=2026-07-13-full-address-v1";
+} from "./address-search.js?v=2026-07-13-full-address-v2";
 import {
   buildGoogleMapsNavigationUrl,
   buildWazeNavigationUrl,
   navigationEndpointsForLeg,
-} from "./navigation-links.js?v=2026-07-13-route-fidelity-v2";
+} from "./navigation-links.js?v=2026-07-13-route-fidelity-v3";
 
 const SINGAPORE_CENTER = [1.3521, 103.8198];
 const GANTRY_POINT_MATCH_THRESHOLD_METERS = 115;

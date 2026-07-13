@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "npm run validate",
-    "check": "node --check public/app.js && node --check public/address-search.js && node --check public/navigation-links.js && node --check functions/api/addresses/onemap.js && node --check functions/api/routes/onemap.js && node --check scripts/fetch-gantries.mjs && node --check scripts/validate-data.mjs && node --check scripts/validate-routing.mjs && node --check scripts/validate-calculations.mjs && node --check scripts/validate-address-search.mjs && node --check scripts/validate-navigation.mjs && npm run validate",
+    "check": "node --check public/app-2026-07-13-address-route-v2.js && node --check public/address-search.js && node --check public/navigation-links.js && node --check functions/api/addresses/onemap.js && node --check functions/api/routes/onemap.js && node --check scripts/fetch-gantries.mjs && node --check scripts/validate-data.mjs && node --check scripts/validate-routing.mjs && node --check scripts/validate-calculations.mjs && node --check scripts/validate-address-search.mjs && node --check scripts/validate-navigation.mjs && npm run validate",
     "serve": "python3 -m http.server 4173 --directory public",
     "validate": "node scripts/validate-data.mjs && node scripts/validate-routing.mjs && node scripts/validate-calculations.mjs && node scripts/validate-address-search.mjs && node scripts/validate-navigation.mjs",
     "validate:data": "node scripts/validate-data.mjs",

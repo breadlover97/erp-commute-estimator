@@ -1,8 +1,14 @@
 import {
+  confirmedAddressFromSharedParams,
+  createConfirmedAddress,
+  isSingaporePostalCode,
+  normalizeOneMapAddressResults,
+} from "./address-search.js?v=2026-07-13-full-address-v1";
+import {
   buildGoogleMapsNavigationUrl,
   buildWazeNavigationUrl,
   navigationEndpointsForLeg,
-} from "./navigation-links.js?v=2026-07-13-navigation-v1";
+} from "./navigation-links.js?v=2026-07-13-route-fidelity-v2";
 
 const SINGAPORE_CENTER = [1.3521, 103.8198];
 const GANTRY_POINT_MATCH_THRESHOLD_METERS = 115;
@@ -908,10 +914,14 @@ function selectedRouteNavigationTemplate(option, legKey) {
     state.currentPlan.endPoint,
     legKey,
   );
+  const alternativeRoutePoints = state.currentPlan[legKey]
+    .filter((routeOption) => routeOption.id !== option.id)
+    .map((routeOption) => routeOption.route.points);
   const googleMapsUrl = buildGoogleMapsNavigationUrl({
     origin,
     destination,
     routePoints: option.route.points,
+    alternativeRoutePoints,
   });
   const wazeUrl = buildWazeNavigationUrl(destination);
   const navigationIsEnabled = state.resultState === "ready";
@@ -929,7 +939,7 @@ function selectedRouteNavigationTemplate(option, legKey) {
   return `<section class="route-navigation" aria-label="Continue selected ${legLabel} route in a navigation app">
     <div class="route-navigation-copy">
       <strong>Continue navigation</strong>
-      <small>Open this ${legLabel} trip. The navigation app may recalculate the route.</small>
+      <small>Google Maps uses route guide points; Waze navigates to the destination. Both may recalculate.</small>
     </div>
     <div class="route-navigation-actions">
       <a class="route-navigation-link google-maps-link" ${googleMapsDestinationAttribute} target="_blank" rel="noopener noreferrer" aria-label="Open selected ${legLabel} route in Google Maps (opens in a new tab)"${disabledAttributes}>
@@ -2067,6 +2077,19 @@ async function fetchAddressSuggestions(query, limit = 5) {
   if (coordinatePoint) {
     return [coordinatePoint];
   }
+  if (isSingaporePostalCode(query)) {
+    try {
+      const oneMapUrl = new URL("/api/addresses/onemap", window.location.origin);
+      oneMapUrl.searchParams.set("q", query);
+      const oneMapPayload = await fetchJson(oneMapUrl.toString(), { timeoutMs: 5500 });
+      const oneMapSuggestions = normalizeOneMapAddressResults(oneMapPayload, query, limit);
+      if (oneMapSuggestions.length) {
+        return oneMapSuggestions;
+      }
+    } catch {
+      // Nominatim remains a fallback when OneMap search is unavailable.
+    }
+  }
   const searchQuery = /singapore/i.test(query) ? query : `${query}, Singapore`;
   const url = new URL("https://nominatim.openstreetmap.org/search");
   url.search = new URLSearchParams({
@@ -2212,26 +2235,22 @@ function closeAddressSuggestions(type) {
 
 function setConfirmedAddress(type, point, inputValue = null) {
   const input = els[type];
-  if (inputValue !== null) {
-    input.value = inputValue;
-  }
-  state.address[type] = {
-    lat: point.lat,
-    lng: point.lng,
-    label: point.label,
-    inputValue: input.value.trim(),
-  };
+  const confirmedAddress = createConfirmedAddress(point, inputValue);
+  input.value = confirmedAddress.inputValue;
+  input.title = confirmedAddress.label;
+  state.address[type] = confirmedAddress;
   renderAddressConfirmation(type);
 }
 
 function renderAddressConfirmation(type) {
   const confirmation = type === "start" ? els.startConfirmation : els.destinationConfirmation;
   const point = state.address[type];
-  confirmation.textContent = point ? shortAddress(point.label) : "";
-}
-
-function shortAddress(label) {
-  return label.split(",").slice(0, 3).join(",").trim();
+  confirmation.textContent = point ? point.label : "";
+  if (point) {
+    els[type].title = point.label;
+  } else {
+    els[type].removeAttribute("title");
+  }
 }
 
 function addressSuggestionParts(label) {
@@ -3264,11 +3283,9 @@ function routeIndexOrDefault(value, optionCount) {
 }
 
 function hydratePointFromParams(type, params, prefix) {
-  const lat = Number(params.get(`${prefix}lat`));
-  const lng = Number(params.get(`${prefix}lng`));
-  const label = params.get(`${prefix}label`);
-  if (Number.isFinite(lat) && Number.isFinite(lng) && label) {
-    setConfirmedAddress(type, { lat, lng, label });
+  const point = confirmedAddressFromSharedParams(params, prefix);
+  if (point) {
+    setConfirmedAddress(type, point);
   }
 }
 

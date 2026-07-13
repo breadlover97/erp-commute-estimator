@@ -4,7 +4,7 @@ A static web app for estimating Singapore ERP charges for a driving commute.
 
 ## What It Does
 
-- Searches a start point and destination in Singapore.
+- Searches a start point and destination in Singapore, with full OneMap addresses for postal-code matches.
 - Confirms address suggestions before routing, including postal-code searches.
 - Draws ranked driving route alternatives on an interactive Leaflet map.
 - Shows official OneMotoring ERP marker locations.
@@ -26,6 +26,7 @@ A static web app for estimating Singapore ERP charges for a driving commute.
 - Previous rates: OneMotoring ERP rate table, with effect from 23 Mar 2026, retained as the source for exact pre-29 Jun shoulder rates.
 - Historical June adjustments: LTA news release, `Revised ERP Rates from 2 June 2026`, published 25 May 2026.
 - Public holidays: MOM 2026 and 2027 Singapore public holidays.
+- Address search: OneMap Search through the server-side proxy, with Nominatim fallback.
 - Route geometry: OneMap drive routing when configured, with OpenStreetMap/FOSSGIS OSRM, Valhalla and OSRM demo fallback providers.
 
 The checked-in app data is in `public/data/erp-data.json`.
@@ -38,7 +39,7 @@ The checked-in app data is in `public/data/erp-data.json`.
 - Public demo routing services are rate-limited and do not include live traffic. OneMap is Singapore-specific, but still depends on OneMap service availability, token access and quota limits.
 - ERP directionality is estimated from the route geometry and gantry position, not from an authoritative lane-level routing engine.
 - Shared commute URLs include the entered address labels and route coordinates. Only share a link when you are comfortable sharing those locations.
-- Navigation apps recalculate routes. Google Maps receives the route endpoints and up to three sampled waypoints, while Waze receives the destination, so the route may differ from the selected estimate.
+- Navigation apps recalculate routes. Google Maps receives the route endpoints and up to three route-shaping waypoints, while Waze receives the destination, so an exact match cannot be guaranteed.
 - The validation script includes regression cases for common opposite-direction false positives, but live route geometry still depends on the public routing provider.
 
 ## Local Commands
@@ -51,11 +52,11 @@ npm run serve
 
 Open `http://localhost:4173`.
 
-## OneMap Routing
+## OneMap Services
 
-The OneMap routing proxy lives at `functions/api/routes/onemap.js`, which Cloudflare Pages deploys as `/api/routes/onemap`.
+The OneMap routing and address-search proxies live at `functions/api/routes/onemap.js` and `functions/api/addresses/onemap.js`. Cloudflare Pages deploys them as `/api/routes/onemap` and `/api/addresses/onemap`.
 
-Set the OneMap login credentials as Cloudflare Pages secrets named `ONEMAP_EMAIL` and `ONEMAP_PASSWORD`. The proxy exchanges them for a OneMap access token server-side and refreshes it before expiry. `ONEMAP_API_TOKEN` is still supported as a fallback, but direct tokens expire after about 3 days.
+Set the OneMap login credentials as Cloudflare Pages secrets named `ONEMAP_EMAIL` and `ONEMAP_PASSWORD`. The proxy exchanges them for a OneMap access token server-side and refreshes it before expiry. `ONEMAP_API_TOKEN` is still supported as a fallback, but direct tokens expire after about 3 days. Exact postal-code results are cached at the edge to reduce repeated OneMap requests.
 
 For local Wrangler testing, copy `.dev.vars.example` to `.dev.vars` and fill in the credentials. The checked-in `.dev.vars.example` is only a template; do not commit real secrets.
 
@@ -77,7 +78,7 @@ Cloudflare Pages can serve the static `public/` directory directly.
 - Build command: `npm run build`
 - Output directory: `public`
 - Functions directory: `functions`
-- Required production secrets for OneMap routing: `ONEMAP_EMAIL`, `ONEMAP_PASSWORD`
+- Required production secrets for OneMap routing and address search: `ONEMAP_EMAIL`, `ONEMAP_PASSWORD`
 
 ```bash
 wrangler pages deploy public --project-name erp-commute-estimator --branch main

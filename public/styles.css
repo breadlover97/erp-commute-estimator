@@ -975,6 +975,92 @@ select:focus {
   line-height: var(--leading-normal);
 }
 
+.route-navigation {
+  display: grid;
+  gap: 9px;
+  margin: 0 13px 13px;
+  border-top: 1px solid var(--line);
+  padding-top: 11px;
+}
+
+.route-navigation-copy {
+  display: grid;
+  gap: 2px;
+}
+
+.route-navigation-copy strong {
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 720;
+  line-height: 1.35;
+}
+
+.route-navigation-copy small {
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1.4;
+}
+
+.route-navigation-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.route-navigation-link {
+  display: grid;
+  grid-template-columns: 17px minmax(0, 1fr) 13px;
+  gap: 7px;
+  align-items: center;
+  min-height: 44px;
+  min-width: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 11px;
+  padding: 0 10px;
+  background: #ffffff;
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-decoration: none;
+  transition:
+    transform 160ms var(--ease-out),
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms var(--ease-out);
+}
+
+.route-navigation-link:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--route-color, var(--accent)) 52%, var(--line));
+  background: color-mix(in srgb, var(--route-color, var(--accent)) 5%, #ffffff);
+  box-shadow: var(--shadow-1);
+  color: var(--accent-deep);
+}
+
+.route-navigation-link[aria-disabled="true"] {
+  pointer-events: none;
+  opacity: 0.45;
+  box-shadow: none;
+}
+
+.route-navigation-link > svg {
+  width: 17px;
+  height: 17px;
+  color: var(--route-color, var(--accent));
+}
+
+.route-navigation-link .route-navigation-external {
+  width: 13px;
+  height: 13px;
+  color: var(--muted);
+}
+
+.route-navigation-link span {
+  min-width: 0;
+}
+
 .route-option-timing {
   display: grid;
   gap: 10px;
@@ -2800,6 +2886,10 @@ tbody tr.current-row {
 
   .route-provider-chip {
     max-width: 56%;
+  }
+
+  .route-navigation-actions {
+    grid-template-columns: 1fr;
   }
 
   table {

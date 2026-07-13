@@ -15,6 +15,7 @@ A static web app for estimating Singapore ERP charges for a driving commute.
 - Compares ERP cost across nearby departure times and route alternatives.
 - Suggests a lower-cost or ERP-free departure time where one is found.
 - Creates a shareable commute URL.
+- Offers a Google Maps or Waze navigation handoff for each selected outbound or return leg.
 - Uses a mobile-first planner, responsive route map and accessible result states.
 
 ## Data Sources
@@ -37,6 +38,7 @@ The checked-in app data is in `public/data/erp-data.json`.
 - Public demo routing services are rate-limited and do not include live traffic. OneMap is Singapore-specific, but still depends on OneMap service availability, token access and quota limits.
 - ERP directionality is estimated from the route geometry and gantry position, not from an authoritative lane-level routing engine.
 - Shared commute URLs include the entered address labels and route coordinates. Only share a link when you are comfortable sharing those locations.
+- Navigation apps recalculate routes. Google Maps receives the route endpoints and up to three sampled waypoints, while Waze receives the destination, so the route may differ from the selected estimate.
 - The validation script includes regression cases for common opposite-direction false positives, but live route geometry still depends on the public routing provider.
 
 ## Local Commands

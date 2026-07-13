@@ -1,3 +1,9 @@
+import {
+  buildGoogleMapsNavigationUrl,
+  buildWazeNavigationUrl,
+  navigationEndpointsForLeg,
+} from "./navigation-links.js?v=2026-07-13-navigation-v1";
+
 const SINGAPORE_CENTER = [1.3521, 103.8198];
 const GANTRY_POINT_MATCH_THRESHOLD_METERS = 115;
 const UNPRICED_MARKER_MATCH_THRESHOLD_METERS = 35;
@@ -889,8 +895,55 @@ function selectedRouteCardTemplate(option, legKey) {
         } ERP</small>
       </div>
     </div>
+    ${selectedRouteNavigationTemplate(option, legKey)}
     ${legKey === "outbound" ? selectedRouteTimingTemplate() : ""}
   </article>`;
+}
+
+function selectedRouteNavigationTemplate(option, legKey) {
+  const isReturn = legKey === "return";
+  const legLabel = isReturn ? "return" : "outbound";
+  const { origin, destination } = navigationEndpointsForLeg(
+    state.currentPlan.startPoint,
+    state.currentPlan.endPoint,
+    legKey,
+  );
+  const googleMapsUrl = buildGoogleMapsNavigationUrl({
+    origin,
+    destination,
+    routePoints: option.route.points,
+  });
+  const wazeUrl = buildWazeNavigationUrl(destination);
+  const navigationIsEnabled = state.resultState === "ready";
+  const disabledAttributes =
+    navigationIsEnabled
+      ? ""
+      : ' aria-disabled="true" tabindex="-1" title="Update the estimate to continue navigation."';
+  const googleMapsDestinationAttribute = `${
+    navigationIsEnabled ? "href" : "data-navigation-href"
+  }="${escapeHtml(googleMapsUrl)}"`;
+  const wazeDestinationAttribute = `${navigationIsEnabled ? "href" : "data-navigation-href"}="${escapeHtml(
+    wazeUrl,
+  )}"`;
+
+  return `<section class="route-navigation" aria-label="Continue selected ${legLabel} route in a navigation app">
+    <div class="route-navigation-copy">
+      <strong>Continue navigation</strong>
+      <small>Open this ${legLabel} trip. The navigation app may recalculate the route.</small>
+    </div>
+    <div class="route-navigation-actions">
+      <a class="route-navigation-link google-maps-link" ${googleMapsDestinationAttribute} target="_blank" rel="noopener noreferrer" aria-label="Open selected ${legLabel} route in Google Maps (opens in a new tab)"${disabledAttributes}>
+        <i data-lucide="map" aria-hidden="true"></i>
+        <span>Google Maps</span>
+        <i class="route-navigation-external" data-lucide="external-link" aria-hidden="true"></i>
+      </a>
+      <a class="route-navigation-link waze-link" ${wazeDestinationAttribute} target="_blank" rel="noopener noreferrer" aria-label="Navigate to the ${legLabel} destination with Waze (opens in a new tab)"${disabledAttributes}>
+        <i data-lucide="navigation" aria-hidden="true"></i>
+        <span>Waze</span>
+        <i class="route-navigation-external" data-lucide="external-link" aria-hidden="true"></i>
+      </a>
+    </div>
+  </section>`;
 }
 
 function outboundRouteOverlapsReturn(option) {
@@ -3485,6 +3538,7 @@ function setResultState(nextState, message = "") {
   els.resultsContent.hidden = !hasResults;
   els.staleNotice.hidden = nextState !== "stale";
   els.share.disabled = nextState !== "ready";
+  syncNavigationAvailability(nextState === "ready");
 
   if (nextState === "error") {
     state.currentPlan = null;
@@ -3497,6 +3551,29 @@ function setResultState(nextState, message = "") {
     els.resultsStateCopy.textContent = "Complete your route and timing, then tap Estimate ERP.";
   }
   window.lucide?.createIcons();
+}
+
+function syncNavigationAvailability(isEnabled) {
+  els.routeOptions.querySelectorAll(".route-navigation-link").forEach((link) => {
+    if (isEnabled) {
+      if (link.dataset.navigationHref) {
+        link.setAttribute("href", link.dataset.navigationHref);
+        link.removeAttribute("data-navigation-href");
+      }
+      link.removeAttribute("aria-disabled");
+      link.removeAttribute("tabindex");
+      link.removeAttribute("title");
+      return;
+    }
+    const href = link.getAttribute("href");
+    if (href) {
+      link.dataset.navigationHref = href;
+      link.removeAttribute("href");
+    }
+    link.setAttribute("aria-disabled", "true");
+    link.setAttribute("tabindex", "-1");
+    link.setAttribute("title", "Update the estimate to continue navigation.");
+  });
 }
 
 function markResultsStale() {

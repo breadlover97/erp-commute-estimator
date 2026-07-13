@@ -2,73 +2,108 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>ERP Calculator</title>
     <meta
       name="description"
       content="Estimate ERP charges for a driving commute in Singapore with route matching, gantry details and timing comparisons."
     />
-    <link rel="icon" href="./favicon.svg?v=2026-06-10-title-v2" type="image/svg+xml" />
-    <meta name="theme-color" content="#f7f8fa" />
+    <link rel="icon" href="./favicon.svg?v=2026-07-10-redesign-v7" type="image/svg+xml" />
+    <meta name="theme-color" content="#0f6458" />
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       integrity="sha256-p4NxAoJBhIINfQKJvI5v3XYPS0obTRR9BMYgqNJFlIk="
       crossorigin=""
     />
-    <link rel="stylesheet" href="./styles.css?v=2026-06-10-desktop-map-fixed-v55" />
+    <link rel="stylesheet" href="./styles.css?v=2026-07-13-navigation-v1" />
   </head>
   <body>
-    <main class="app-shell">
+    <a class="skip-link" href="#route-form">Skip to route planner</a>
+
+    <main class="app-shell" id="app-shell" data-result-state="empty">
       <section class="planner-panel" aria-label="ERP Calculator">
         <header class="topbar">
-          <div>
-            <h1>ERP Calculator</h1>
-            <p class="topbar-copy">Enter a route and time to compare ERP charges before you leave.</p>
+          <div class="brand-row">
+            <span class="brand-mark" aria-hidden="true"><i data-lucide="car-front"></i></span>
+            <div class="brand-copy">
+              <span>ERP Calculator</span>
+              <small>Singapore</small>
+            </div>
+          </div>
+          <div class="hero-copy">
+            <p class="eyebrow">Plan with confidence</p>
+            <h1>Know the cost before you drive.</h1>
+            <p class="topbar-copy">Compare routes, timings and ERP charges in one quick estimate.</p>
           </div>
         </header>
 
-        <form id="route-form" class="route-form">
-          <div class="route-card" aria-label="Route endpoints">
-            <label class="field route-field start-field">
-              <span>Start</span>
-              <input
-                id="start-input"
-                name="start"
-                autocomplete="street-address"
-                placeholder="Enter starting point"
-                required
-              />
-              <small class="address-confirmation" id="start-confirmation"></small>
-              <div class="address-suggestions" id="start-suggestions" role="listbox" aria-label="Start suggestions"></div>
-            </label>
+        <form id="route-form" class="route-form" aria-describedby="planner-note">
+          <section class="form-section" aria-labelledby="route-section-title">
+            <div class="form-section-heading">
+              <span class="step-badge">1</span>
+              <div>
+                <h2 id="route-section-title">Plan your route</h2>
+                <p>Choose where you are starting and going.</p>
+              </div>
+            </div>
 
-            <button
-              id="swap-button"
-              class="icon-button route-swap"
-              type="button"
-              aria-label="Swap start and destination"
-            >
-              <i data-lucide="arrow-up-down"></i>
-            </button>
+            <div class="route-card" aria-label="Route endpoints">
+              <label class="field route-field start-field">
+                <span class="field-label"><i data-lucide="circle-dot"></i> Start point</span>
+                <input
+                  id="start-input"
+                  name="start"
+                  autocomplete="off"
+                  placeholder="Search an address or landmark"
+                  role="combobox"
+                  aria-autocomplete="list"
+                  aria-controls="start-suggestions"
+                  aria-expanded="false"
+                  required
+                />
+                <small class="address-confirmation" id="start-confirmation" aria-live="polite"></small>
+                <div
+                  class="address-suggestions"
+                  id="start-suggestions"
+                  role="listbox"
+                  aria-label="Start suggestions"
+                ></div>
+              </label>
 
-            <label class="field route-field destination-field">
-              <span>Destination</span>
-              <input
-                id="destination-input"
-                name="destination"
-                autocomplete="street-address"
-                placeholder="Enter destination"
-                required
-              />
-              <small class="address-confirmation" id="destination-confirmation"></small>
-              <div
-                class="address-suggestions"
-                id="destination-suggestions"
-                role="listbox"
-                aria-label="Destination suggestions"
-              ></div>
-            </label>
+              <button
+                id="swap-button"
+                class="icon-button route-swap"
+                type="button"
+                aria-label="Swap start and destination"
+                title="Swap route"
+              >
+                <i data-lucide="arrow-up-down"></i>
+              </button>
+
+              <label class="field route-field destination-field">
+                <span class="field-label"><i data-lucide="map-pin"></i> Destination</span>
+                <input
+                  id="destination-input"
+                  name="destination"
+                  autocomplete="off"
+                  placeholder="Where are you going?"
+                  role="combobox"
+                  aria-autocomplete="list"
+                  aria-controls="destination-suggestions"
+                  aria-expanded="false"
+                  required
+                />
+                <small class="address-confirmation" id="destination-confirmation" aria-live="polite"></small>
+                <div
+                  class="address-suggestions"
+                  id="destination-suggestions"
+                  role="listbox"
+                  aria-label="Destination suggestions"
+                ></div>
+              </label>
+
+            </div>
 
             <label class="return-trip-toggle" for="return-trip-checkbox">
               <input id="return-trip-checkbox" name="returnTrip" type="checkbox" />
@@ -77,151 +112,164 @@
                 <small>Also estimate the drive back from your destination.</small>
               </span>
             </label>
-          </div>
+          </section>
 
-          <div class="trip-controls" aria-label="Outbound timing">
-            <div class="mode-control" aria-label="Time mode">
-              <label>
-                <input type="radio" name="timeMode" value="depart" checked />
-                <span>Leave at</span>
-              </label>
-              <label>
-                <input type="radio" name="timeMode" value="arrive" />
-                <span>Arrive by</span>
-              </label>
-            </div>
-
-            <div class="time-grid">
-              <label class="field">
-                <span>Date</span>
-                <input id="date-input" type="date" required />
-              </label>
-              <label class="field">
-                <span>Time</span>
-                <input id="time-input" type="time" step="300" required />
-              </label>
-            </div>
-
-            <div class="adjuster-grid" aria-label="Adjust departure date and time">
-              <div class="adjuster-block" aria-label="Adjust departure date">
-                <span>Date</span>
-                <div class="date-stepper">
-                  <button
-                    type="button"
-                    class="icon-step date-step"
-                    data-target="date-input"
-                    data-days="-1"
-                    aria-label="Move departure date one day earlier"
-                  >
-                    <i data-lucide="minus"></i>
-                  </button>
-                  <strong>1 day</strong>
-                  <button
-                    type="button"
-                    class="icon-step date-step"
-                    data-target="date-input"
-                    data-days="1"
-                    aria-label="Move departure date one day later"
-                  >
-                    <i data-lucide="plus"></i>
-                  </button>
-                </div>
-              </div>
-              <div class="adjuster-block" aria-label="Adjust departure time">
-                <span>Time</span>
-                <div class="time-stepper">
-                  <button
-                    type="button"
-                    class="step-action time-step"
-                    data-target="time-input"
-                    data-minutes="-15"
-                    aria-label="Move departure time 15 minutes earlier"
-                  >
-                    <i data-lucide="arrow-left"></i>
-                    <span><strong>Earlier</strong><small>15 min</small></span>
-                  </button>
-                  <button
-                    type="button"
-                    class="step-action time-step"
-                    data-target="time-input"
-                    data-minutes="15"
-                    aria-label="Move departure time 15 minutes later"
-                  >
-                    <span><strong>Later</strong><small>15 min</small></span>
-                    <i data-lucide="arrow-right"></i>
-                  </button>
-                </div>
+          <section class="form-section time-section" aria-labelledby="time-section-title">
+            <div class="form-section-heading">
+              <span class="step-badge">2</span>
+              <div>
+                <h2 id="time-section-title">Choose your timing</h2>
+                <p id="time-section-copy">Tell us when you plan to set off.</p>
               </div>
             </div>
-          </div>
 
-          <div class="return-controls" id="return-controls" hidden>
-            <div class="section-heading compact-heading return-heading">
-              <h2>Return trip</h2>
-              <span>Pick when you leave the destination.</span>
-            </div>
-            <div class="time-grid">
-              <label class="field">
-                <span>Return date</span>
-                <input id="return-date-input" type="date" />
-              </label>
-              <label class="field">
-                <span>Return time</span>
-                <input id="return-time-input" type="time" step="300" />
-              </label>
-            </div>
-            <div class="adjuster-grid" aria-label="Adjust return date and time">
-              <div class="adjuster-block" aria-label="Adjust return date">
-                <span>Date</span>
-                <div class="date-stepper">
-                  <button
-                    type="button"
-                    class="icon-step date-step"
-                    data-target="return-date-input"
-                    data-days="-1"
-                    aria-label="Move return date one day earlier"
-                  >
-                    <i data-lucide="minus"></i>
-                  </button>
-                  <strong>1 day</strong>
-                  <button
-                    type="button"
-                    class="icon-step date-step"
-                    data-target="return-date-input"
-                    data-days="1"
-                    aria-label="Move return date one day later"
-                  >
-                    <i data-lucide="plus"></i>
-                  </button>
-                </div>
+            <div class="trip-controls" aria-label="Outbound timing">
+              <div class="mode-control" role="radiogroup" aria-label="Time mode">
+                <label>
+                  <input type="radio" name="timeMode" value="depart" checked />
+                  <span>Leave at</span>
+                </label>
+                <label>
+                  <input type="radio" name="timeMode" value="arrive" />
+                  <span>Arrive by</span>
+                </label>
               </div>
-              <div class="adjuster-block" aria-label="Adjust return time">
-                <span>Time</span>
-                <div class="time-stepper">
-                  <button
-                    type="button"
-                    class="step-action time-step"
-                    data-target="return-time-input"
-                    data-minutes="-15"
-                    aria-label="Move return time 15 minutes earlier"
-                  >
-                    <i data-lucide="arrow-left"></i>
-                    <span><strong>Earlier</strong><small>15 min</small></span>
-                  </button>
-                  <button
-                    type="button"
-                    class="step-action time-step"
-                    data-target="return-time-input"
-                    data-minutes="15"
-                    aria-label="Move return time 15 minutes later"
-                  >
-                    <span><strong>Later</strong><small>15 min</small></span>
-                    <i data-lucide="arrow-right"></i>
-                  </button>
+
+              <div class="time-grid">
+                <label class="field">
+                  <span><i data-lucide="calendar-days"></i> Date</span>
+                  <input id="date-input" type="date" required />
+                </label>
+                <label class="field">
+                  <span><i data-lucide="clock-3"></i> Time</span>
+                  <input id="time-input" type="time" step="300" required />
+                </label>
+              </div>
+
+              <div class="adjuster-grid quick-adjusters" aria-label="Quick date and time adjustments">
+                <div class="adjuster-block" aria-label="Adjust trip date">
+                  <span>Date</span>
+                  <div class="date-stepper">
+                    <button
+                      type="button"
+                      class="icon-step date-step"
+                      data-target="date-input"
+                      data-days="-1"
+                      aria-label="Move trip date one day earlier"
+                    >
+                      <i data-lucide="minus"></i>
+                    </button>
+                    <strong>1 day</strong>
+                    <button
+                      type="button"
+                      class="icon-step date-step"
+                      data-target="date-input"
+                      data-days="1"
+                      aria-label="Move trip date one day later"
+                    >
+                      <i data-lucide="plus"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="adjuster-block" aria-label="Adjust trip time">
+                  <span>Time</span>
+                  <div class="time-stepper">
+                    <button
+                      type="button"
+                      class="step-action time-step"
+                      data-target="time-input"
+                      data-minutes="-15"
+                      aria-label="Move trip time 15 minutes earlier"
+                    >
+                      <i data-lucide="arrow-left"></i>
+                      <span><strong>Earlier</strong><small>15 min</small></span>
+                    </button>
+                    <button
+                      type="button"
+                      class="step-action time-step"
+                      data-target="time-input"
+                      data-minutes="15"
+                      aria-label="Move trip time 15 minutes later"
+                    >
+                      <span><strong>Later</strong><small>15 min</small></span>
+                      <i data-lucide="arrow-right"></i>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+
+            <div class="return-controls" id="return-controls" hidden>
+              <div class="section-heading compact-heading return-heading">
+                <div>
+                  <h2>Return journey</h2>
+                  <span>When will you leave your destination?</span>
+                </div>
+                <i data-lucide="corner-down-left" aria-hidden="true"></i>
+              </div>
+              <div class="time-grid">
+                <label class="field">
+                  <span>Return date</span>
+                  <input id="return-date-input" type="date" />
+                </label>
+                <label class="field">
+                  <span>Return time</span>
+                  <input id="return-time-input" type="time" step="300" />
+                </label>
+              </div>
+              <div class="adjuster-grid quick-adjusters" aria-label="Quick return date and time adjustments">
+                <div class="adjuster-block" aria-label="Adjust return date">
+                  <span>Date</span>
+                  <div class="date-stepper">
+                    <button
+                      type="button"
+                      class="icon-step date-step"
+                      data-target="return-date-input"
+                      data-days="-1"
+                      aria-label="Move return date one day earlier"
+                    >
+                      <i data-lucide="minus"></i>
+                    </button>
+                    <strong>1 day</strong>
+                    <button
+                      type="button"
+                      class="icon-step date-step"
+                      data-target="return-date-input"
+                      data-days="1"
+                      aria-label="Move return date one day later"
+                    >
+                      <i data-lucide="plus"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="adjuster-block" aria-label="Adjust return time">
+                  <span>Time</span>
+                  <div class="time-stepper">
+                    <button
+                      type="button"
+                      class="step-action time-step"
+                      data-target="return-time-input"
+                      data-minutes="-15"
+                      aria-label="Move return time 15 minutes earlier"
+                    >
+                      <i data-lucide="arrow-left"></i>
+                      <span><strong>Earlier</strong><small>15 min</small></span>
+                    </button>
+                    <button
+                      type="button"
+                      class="step-action time-step"
+                      data-target="return-time-input"
+                      data-minutes="15"
+                      aria-label="Move return time 15 minutes later"
+                    >
+                      <span><strong>Later</strong><small>15 min</small></span>
+                      <i data-lucide="arrow-right"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
 
           <div class="form-actions">
             <button class="primary-button" type="submit">
@@ -233,6 +281,10 @@
               Reset
             </button>
           </div>
+          <p class="planner-note" id="planner-note">
+            <i data-lucide="info"></i>
+            Estimates use published ERP rates and route geometry, not live traffic.
+          </p>
         </form>
       </section>
 
@@ -251,12 +303,13 @@
         <span aria-hidden="true"></span>
       </div>
 
-      <section class="map-panel" id="map-panel" aria-label="Map and route">
+      <section class="map-panel" id="map-panel" aria-label="Map and route" tabindex="-1">
         <div id="map"></div>
         <details class="map-controls" aria-label="Map layers and settings">
           <summary>
-            <i data-lucide="layers"></i>
+            <i data-lucide="layers-3"></i>
             <span>Layers and settings</span>
+            <i class="map-control-chevron" data-lucide="chevron-down"></i>
           </summary>
           <div class="map-controls-content">
             <div class="map-settings-group">
@@ -281,16 +334,16 @@
               </select>
             </label>
             <label class="toggle-row">
-              <input id="show-all-gantries" type="checkbox" checked />
               <span>Show all ERP markers</span>
+              <input id="show-all-gantries" type="checkbox" checked />
             </label>
             <button type="button" class="secondary-button fit-route-control" id="fit-route-button">
               <i data-lucide="scan"></i>
               Fit route
             </button>
-            <button type="button" class="secondary-button map-share-control" id="share-button">
+            <button type="button" class="secondary-button map-share-control" id="share-button" disabled>
               <i data-lucide="share-2"></i>
-              Share URL
+              Share estimate
             </button>
             <div class="map-legend" aria-label="Map legend">
               <span><i class="legend-line route"></i> Route</span>
@@ -301,111 +354,173 @@
             </div>
           </div>
         </details>
-        <div class="status-bar" id="status-bar" role="status">Enter a start point, destination and timing.</div>
+        <div class="status-bar" id="status-bar" role="status" aria-live="polite">
+          <i data-lucide="map-pin"></i>
+          <span id="status-copy">Add a start point and destination to get started.</span>
+        </div>
         <aside class="map-result-dock" id="map-result-dock" hidden aria-label="Selected route estimate">
-          <div>
+          <div class="map-dock-cost">
             <span>Estimated ERP</span>
             <strong id="map-dock-total">S$0.00</strong>
           </div>
-          <div>
+          <div class="map-dock-details">
             <small id="map-dock-meta">--</small>
             <small id="map-dock-provider">--</small>
           </div>
-        </aside>
-        <aside class="erp-detail-panel" id="erp-detail-panel" hidden aria-label="ERP gantry details">
-          <header>
-            <span>ERP gantry details</span>
-            <button type="button" class="icon-button" id="erp-detail-close" aria-label="Close ERP gantry details">
-              <i data-lucide="x"></i>
-            </button>
-          </header>
-          <div id="erp-detail-content"></div>
+          <a class="map-dock-link" href="#results-heading">View details <i data-lucide="arrow-down"></i></a>
         </aside>
       </section>
 
       <section class="insights-panel" aria-label="ERP estimate results">
-        <section class="recommendation" id="recommendation" hidden>
-          <div class="recommendation-icon" aria-hidden="true">
-            <i data-lucide="clock-3"></i>
-          </div>
+        <header class="results-header">
+          <p class="eyebrow">Your commute</p>
+          <h2 id="results-heading">ERP estimate</h2>
+          <p>Compare the selected route with alternatives and nearby timings.</p>
+        </header>
+
+        <section class="results-state-card" id="results-state-card" aria-live="polite" hidden>
+          <span class="results-state-icon" id="results-state-icon" aria-hidden="true">
+            <i data-lucide="route"></i>
+          </span>
           <div>
-            <span>Suggested timing</span>
-            <strong id="recommendation-title"></strong>
-            <p id="recommendation-copy"></p>
-            <div class="recommendation-options" id="recommendation-options" hidden></div>
+            <h3 id="results-state-title">Your estimate will appear here</h3>
+            <p id="results-state-copy">Complete your route and timing, then tap Estimate ERP.</p>
           </div>
         </section>
 
-        <section class="results-section route-options-section" id="route-options-section" hidden>
-          <div class="section-heading">
-            <div class="section-heading-copy">
-              <h2>Route options</h2>
-              <span id="route-options-note">Choose another route to compare cost and time.</span>
+        <div class="results-content" id="results-content">
+          <section class="stale-notice" id="stale-notice" hidden aria-live="polite">
+            <i data-lucide="refresh-cw"></i>
+            <div>
+              <strong>Your trip details changed</strong>
+              <span>Update the estimate before relying on these results.</span>
             </div>
-            <p class="route-provider-indicator" id="route-provider" aria-live="polite"></p>
-          </div>
-          <div class="route-options" id="route-options"></div>
-        </section>
+          </section>
 
-        <section class="trip-breakdown" id="trip-breakdown" hidden aria-label="Return trip breakdown"></section>
+          <section class="recommendation" id="recommendation" hidden>
+            <div class="recommendation-icon" aria-hidden="true">
+              <i data-lucide="sparkles"></i>
+            </div>
+            <div class="recommendation-copy-block">
+              <span>Suggested timing</span>
+              <strong id="recommendation-title"></strong>
+              <p id="recommendation-copy"></p>
+              <div class="recommendation-options" id="recommendation-options" hidden></div>
+            </div>
+          </section>
 
-        <details class="results-section detail-disclosure" open>
-          <summary>
-            <span>
-              <strong>ERP gantries on route</strong>
-              <small>Matched by route geometry and direction.</small>
-            </span>
-            <i data-lucide="chevron-down"></i>
-          </summary>
-          <div class="gantry-list" id="gantry-list">
-            <div class="empty-state">No route calculated yet.</div>
-          </div>
-        </details>
+          <section class="results-section route-options-section" id="route-options-section" hidden>
+            <div class="section-heading">
+              <div class="section-heading-copy">
+                <h2>Route options</h2>
+                <span id="route-options-note">Choose another route to compare cost and time.</span>
+              </div>
+              <p class="route-provider-indicator" id="route-provider" aria-live="polite"></p>
+            </div>
+            <div class="route-options" id="route-options"></div>
+          </section>
+
+          <section class="trip-breakdown" id="trip-breakdown" hidden aria-label="Return trip breakdown"></section>
+
+          <details class="results-section detail-disclosure" open>
+            <summary>
+              <span class="disclosure-icon" aria-hidden="true"><i data-lucide="circle-dollar-sign"></i></span>
+              <span class="disclosure-copy">
+                <strong>ERP gantries on route</strong>
+                <small>See each matched location and estimated charge.</small>
+              </span>
+              <i class="disclosure-chevron" data-lucide="chevron-down"></i>
+            </summary>
+            <div class="gantry-list" id="gantry-list">
+              <div class="empty-state">No route calculated yet.</div>
+            </div>
+          </details>
+        </div>
 
         <details class="source-section detail-disclosure" aria-label="Data sources and assumptions">
-          <summary>
-            <span>
-              <strong>Data sources</strong>
-              <small id="source-generated">Loading source metadata.</small>
-            </span>
-            <i data-lucide="chevron-down"></i>
-          </summary>
-          <div class="source-list">
-            <a href="https://onemotoring.lta.gov.sg/content/dam/onemotoring/Driving/ERP/ERP%20Rates.pdf" target="_blank" rel="noopener noreferrer">
-              OneMotoring base rate table
-            </a>
-            <a href="https://onemotoring.lta.gov.sg/content/dam/onemotoring/Driving/ERP/ERP_rates_tables/2026.05.28-ERP%20Rates%20(Eff.%202%20Jun%202026%20-%2028%20Jun%202026).pdf" target="_blank" rel="noopener noreferrer">
-              June 2026 ERP table
-            </a>
-            <a href="https://www.lta.gov.sg/content/ltagov/en/newsroom/2026/5/news-releases/revised-erp-rates-2-jun-26.html" target="_blank" rel="noopener noreferrer">
-              LTA June 2026 revisions
-            </a>
-            <a href="https://onemotoring.lta.gov.sg/mapapp/kml/erp-kml/erp-kml-0.kml" target="_blank" rel="noopener noreferrer">
-              OneMotoring ERP map KML
-            </a>
-            <a href="https://data.gov.sg/collections/lta-gantry/view" target="_blank" rel="noopener noreferrer">
-              LTA Gantry GeoJSON
-            </a>
-            <a href="https://www.mom.gov.sg/newsroom/press-releases/2025/0616-public-holidays-for-2026" target="_blank" rel="noopener noreferrer">
-              MOM public holidays 2026
-            </a>
-          </div>
-          <p class="source-copy" id="source-copy">
-            Estimates are for passenger cars, taxis and light goods vehicles. The route match is based on public route geometry, official ERP marker coordinates and direction checks.
-          </p>
+            <summary>
+              <span class="disclosure-icon" aria-hidden="true"><i data-lucide="database"></i></span>
+              <span class="disclosure-copy">
+                <strong>Data and assumptions</strong>
+                <small id="source-generated">Loading source metadata.</small>
+              </span>
+              <i class="disclosure-chevron" data-lucide="chevron-down"></i>
+            </summary>
+            <div class="source-list">
+              <a
+                href="https://onemotoring.lta.gov.sg/content/dam/onemotoring/Driving/ERP/ERP_rates_tables/20260626-1PCU_ERP_Rates_Report.20260623170433.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+              >Current ERP rate table</a>
+              <a
+                href="https://onemotoring.lta.gov.sg/content/dam/onemotoring/Driving/ERP/ERP%20Rates.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+              >Previous ERP rate table</a>
+              <a
+                href="https://www.lta.gov.sg/content/ltagov/en/newsroom/2026/5/news-releases/revised-erp-rates-2-jun-26.html"
+                target="_blank"
+                rel="noopener noreferrer"
+              >LTA rate revisions</a>
+              <a
+                href="https://onemotoring.lta.gov.sg/mapapp/kml/erp-kml/erp-kml-0.kml"
+                target="_blank"
+                rel="noopener noreferrer"
+              >OneMotoring ERP map</a>
+              <a
+                href="https://data.gov.sg/datasets/d_753090823cc9920ac41efaa6530c5893/view"
+                target="_blank"
+                rel="noopener noreferrer"
+              >LTA gantry geometry</a>
+              <a
+                href="https://www.mom.gov.sg/employment-practices/public-holidays"
+                target="_blank"
+                rel="noopener noreferrer"
+              >MOM public holidays</a>
+            </div>
+            <p class="source-copy" id="source-copy">
+              Estimates are based on public route geometry, official ERP marker coordinates and direction checks.
+            </p>
         </details>
 
         <footer class="site-credits" aria-label="Disclaimer and credits">
           <strong>Disclaimer and credits</strong>
           <p>
-            ERP estimates are for planning only and may differ from actual charges. Routing and gantry matching depend on third-party map data, public routing services and official source data availability.
+            ERP estimates are for planning only and may differ from actual charges. Routing and gantry matching depend
+            on third-party map data, public routing services and official source data availability.
           </p>
-          <p>
-            Copyright 2026 Ngim Tai Zhi. All rights reserved. No part of this site may be copied, reproduced, distributed or republished without prior written permission.
-          </p>
+          <p>No part of this site may be copied, reproduced, distributed or republished without prior written permission.</p>
         </footer>
       </section>
     </main>
+
+    <footer class="site-footer">
+      <p>Copyright 2026 Ngim Tai Zhi. All rights reserved.</p>
+    </footer>
+
+    <div class="overlay-scrim" id="overlay-scrim" hidden></div>
+    <aside
+      class="erp-detail-panel"
+      id="erp-detail-panel"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="erp-detail-heading"
+      tabindex="-1"
+    >
+      <header>
+        <span id="erp-detail-heading">ERP gantry details</span>
+        <button type="button" class="icon-button" id="erp-detail-close" aria-label="Close ERP gantry details">
+          <i data-lucide="x"></i>
+        </button>
+      </header>
+      <div id="erp-detail-content"></div>
+    </aside>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden>
+      <i data-lucide="check-circle-2"></i>
+      <span id="toast-copy"></span>
+    </div>
 
     <script
       src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
@@ -413,6 +528,6 @@
       crossorigin=""
     ></script>
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
-    <script src="./app.js?v=2026-06-10-route-match-v48" type="module"></script>
+    <script src="./app-2026-07-13-address-route-v2.js" type="module"></script>
   </body>
 </html>

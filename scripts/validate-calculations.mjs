@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 const data = JSON.parse(await readFile(new URL("../public/data/erp-data.json", import.meta.url), "utf8"));
 
-const publicHolidays2026 = new Set([
+const publicHolidays = new Set([
   "2026-01-01",
   "2026-02-17",
   "2026-02-18",
@@ -18,8 +18,31 @@ const publicHolidays2026 = new Set([
   "2026-11-08",
   "2026-11-09",
   "2026-12-25",
+  "2027-01-01",
+  "2027-02-06",
+  "2027-02-07",
+  "2027-02-08",
+  "2027-03-10",
+  "2027-03-26",
+  "2027-05-01",
+  "2027-05-17",
+  "2027-05-20",
+  "2027-08-09",
+  "2027-10-28",
+  "2027-12-25",
 ]);
-const eveCutoffDates2026 = new Set(["2026-02-16", "2026-03-20", "2026-11-07", "2026-12-24"]);
+const eveCutoffDates = new Set([
+  "2026-02-16",
+  "2026-03-20",
+  "2026-11-07",
+  "2026-12-24",
+  "2026-12-31",
+  "2027-02-05",
+  "2027-03-09",
+  "2027-10-27",
+  "2027-12-24",
+  "2027-12-31",
+]);
 
 const vehicleTypes = {
   motorcycle: { multiplier: 0.5 },
@@ -37,6 +60,10 @@ const rateCases = [
   ["50", "2026-06-13", "08:45", "car", 0, "Saturday ERP-free"],
   ["50", "2026-06-01", "08:45", "car", 0, "Singapore public holiday ERP-free"],
   ["46,67", "2026-12-24", "18:15", "car", 0, "major public holiday eve after 13:00"],
+  ["52,53,74", "2026-07-13", "07:45", "car", 5, "current AYE rate"],
+  ["32,45", "2026-07-13", "08:45", "car", 4, "current PIE rate"],
+  ["50", "2027-03-10", "08:45", "car", 0, "2027 public holiday ERP-free"],
+  ["46,67", "2026-12-31", "18:15", "car", 0, "New Year's Eve cutoff"],
 ];
 
 for (const [groupId, dateString, clock, vehicleType, expected, label] of rateCases) {
@@ -176,11 +203,11 @@ function isWeekday(dateStringValue) {
 function isZeroErpDate(dateStringValue) {
   const [year, month, day] = dateStringValue.split("-").map(Number);
   const dayOfWeek = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
-  return dayOfWeek === 0 || publicHolidays2026.has(dateStringValue);
+  return dayOfWeek === 0 || publicHolidays.has(dateStringValue);
 }
 
 function isMajorHolidayEveCutoff(dateStringValue, minutes) {
-  return eveCutoffDates2026.has(dateStringValue) && minutes >= 13 * 60;
+  return eveCutoffDates.has(dateStringValue) && minutes >= 13 * 60;
 }
 
 function addSeconds(date, seconds) {

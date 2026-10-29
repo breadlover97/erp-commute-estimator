@@ -1,13 +1,13 @@
 {
   "name": "erp-commute-estimator",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "npm run validate",
     "check": "node --check public/app.js && node --check functions/api/search.js && node --check functions/api/routes/onemap.js && npm run validate",
     "serve": "python3 -m http.server 4173 --directory public",
-    "validate": "node scripts/validate-data.mjs && node scripts/validate-routing.mjs && node scripts/validate-calculations.mjs && node scripts/validate-engine.mjs && node scripts/validate-planner.mjs",
+    "validate": "node scripts/validate-data.mjs && node scripts/validate-routing.mjs && node scripts/validate-calculations.mjs && node scripts/validate-engine.mjs && node scripts/validate-planner.mjs && node scripts/validate-zero-erp-search.mjs && node scripts/validate-avoidance-provider.mjs && node scripts/validate-zero-erp-integration.mjs && node scripts/validate-avoidance-live-fixture.mjs",
     "validate:data": "node scripts/validate-data.mjs",
     "validate:calculations": "node scripts/validate-calculations.mjs",
     "validate:routing": "node scripts/validate-routing.mjs",

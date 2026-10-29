@@ -2,6 +2,8 @@ import { readFile } from "node:fs/promises";
 import vm from "node:vm";
 import * as plannerUtils from "../public/planner-utils.js";
 import * as erpEngine from "../public/lib/erp-engine.js";
+import { createZeroErpSearch } from "../public/lib/zero-erp-search.js";
+import { createAvoidanceProvider } from "../public/lib/avoidance-provider.js";
 import { createRouteService } from "../public/lib/route-service.js";
 
 export async function loadAppForTest(data, overrides = {}) {
@@ -22,7 +24,7 @@ export async function loadAppForTest(data, overrides = {}) {
     querySelectorAll() { return []; }, createElement: element,
   };
   const context = vm.createContext({
-    ...plannerUtils, ...erpEngine, createRouteService, console, URL, URLSearchParams, Date, Map, Set, WeakMap,
+    ...plannerUtils, ...erpEngine, createRouteService, createZeroErpSearch, createAvoidanceProvider, console, URL, URLSearchParams, Date, Map, Set, WeakMap,
     AbortController, DOMException, document,
     window: { setTimeout, clearTimeout, history: { replaceState() {} }, location: { origin: "https://example.com", pathname: "/" } },
     ...overrides,
@@ -30,7 +32,7 @@ export async function loadAppForTest(data, overrides = {}) {
   vm.runInContext(`${source}\nglobalThis.api = { buildLegOptions, matchGantriesToRoute, buildRouteCandidate,
     findTimingSuggestions, renderRecommendation, calculateTrip, buildCumulativeDistances, bearingDegrees, haversineMeters, state, els,
     clearCurrentEstimate, handleTimingChange, requireConfirmedAddress, useCurrentLocation, cancelLocationRequest,
-    handleSwap, bindAddressField,
+    handleSwap, bindAddressField, evaluateZeroErpCandidate, applyZeroErpResult, zeroErpStatusTemplate, searchPlanForZeroErp, routeLocationAtProgress,
     setData(data) { state.erpData = data; } };`, context);
   if (data) context.api.setData(data);
   return context;

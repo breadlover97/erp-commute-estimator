@@ -1,6 +1,8 @@
 import { defaultTripTiming, relativeSingaporeDate, singaporeDateValue, singaporeClock, singaporeDateTime, isSingaporePoint, displayTime } from "./planner-utils.js";
 import { departureForMode, indexErpData, lookupErpRate } from "./lib/erp-engine.js";
 import { createRouteService } from "./lib/route-service.js";
+import { createZeroErpSearch } from "./lib/zero-erp-search.js";
+import { createAvoidanceProvider } from "./lib/avoidance-provider.js";
 
 const SINGAPORE_CENTER = [1.3521, 103.8198];
 const GANTRY_POINT_MATCH_THRESHOLD_METERS = 115;
@@ -233,7 +235,7 @@ function bindEvents() {
   els.vehicleType.addEventListener("change", () => {
     closeErpDetail();
     renderAllGantries();
-    if (state.currentPlan) recalculatePlanForVehicle();
+    if (state.currentPlan || els.primaryButton.disabled) handleTimingChange();
   });
   els.mapSource.addEventListener("change", () => setMapSource(els.mapSource.value));
   els.showAllGantries.addEventListener("change", () => {
@@ -697,9 +699,10 @@ async function handleRouteSubmit(event) {
       throw new Error("Choose a return time after the outbound departure.");
     }
 
+    const candidates = { outbound: [], return: [] };
     const [outboundRoutes, returnRoutes] = await Promise.all([
-      fetchDrivingRoutes(startPoint, endPoint, { signal }),
-      tripMode === "return" ? fetchDrivingRoutes(endPoint, startPoint, { signal }) : Promise.resolve([]),
+      fetchDrivingRoutes(startPoint, endPoint, { signal, onCandidates: (routes) => { candidates.outbound = routes; } }),
+      tripMode === "return" ? fetchDrivingRoutes(endPoint, startPoint, { signal, onCandidates: (routes) => { candidates.return = routes; } }) : Promise.resolve([]),
     ]);
 
     const outbound = buildLegOptions({
@@ -743,11 +746,16 @@ async function handleRouteSubmit(event) {
       vehicleType,
       outbound,
       return: returnLeg,
+      returnDeparture,
+      restoreZeroRoutes: { outbound: !!routeSelectionToRestore?.zeroOutbound, return: !!routeSelectionToRestore?.zeroReturn },
+      zeroErp: { outbound: { status: "searching" }, return: { status: "searching" } },
     };
 
     renderPlan();
     if (event.submitter) focusMapAfterEstimate();
     replaceUrlWithShareState();
+    // Normal results stay usable while the dedicated search runs.
+    void searchPlanForZeroErp(state.currentPlan, { signal, requestId, candidates });
   } catch (error) {
     if (signal.aborted || requestId !== state.routeRequestId) {
       return;
@@ -761,17 +769,96 @@ async function handleRouteSubmit(event) {
   }
 }
 
-function buildLegOptions({ legKey, legLabel, routes, departureDate, vehicleType, timeMode = "depart" }) {
-  const options = routes.slice(0, MAX_ROUTE_OPTIONS).map((route) => {
-    const matchedGantries = matchGantriesToRoute(route);
-    const actualDeparture = departureForMode(departureDate, route.durationSeconds, timeMode);
-    return {
-      legKey, legLabel, route, matchedGantries, timeMode,
-      selectedDateTime: departureDate,
-      trip: calculateTrip(route, matchedGantries, actualDeparture, vehicleType, legLabel),
-    };
+function buildLegOption({ legKey, legLabel, route, departureDate, vehicleType, timeMode = "depart" }) {
+  const matchedGantries = matchGantriesToRoute(route);
+  const actualDeparture = departureForMode(departureDate, route.durationSeconds, timeMode);
+  return {
+    legKey, legLabel, route, matchedGantries, timeMode,
+    selectedDateTime: departureDate,
+    trip: calculateTrip(route, matchedGantries, actualDeparture, vehicleType, legLabel),
+  };
+}
+
+function buildLegOptions({ routes, ...settings }) {
+  return rankLegOptions(settings.legKey, routes.slice(0, MAX_ROUTE_OPTIONS).map((route) => buildLegOption({ ...settings, route })));
+}
+
+function evaluateZeroErpCandidate(route, plan, legKey) {
+  const option = buildLegOption({
+    legKey, legLabel: legKey === "outbound" ? "Outbound" : "Return", route,
+    departureDate: legKey === "outbound" ? plan.requestedDate : plan.returnDeparture,
+    vehicleType: plan.vehicleType, timeMode: legKey === "outbound" ? plan.timeMode : "depart",
   });
-  return rankLegOptions(legKey, options);
+  return {
+    eligible: !(legKey === "outbound" && plan.returnDeparture && option.trip.arrivalDate >= plan.returnDeparture),
+    total: option.trip.total, option,
+    // Exclude the actual travelled road, not a gantry marker offset onto a
+    // neighbouring carriageway. Only charged crossings at this timing matter.
+    chargeLocations: option.trip.entries.filter((entry) => entry.amount > 0)
+      .map((entry) => routeLocationAtProgress(route, entry.match.progressMeters)),
+  };
+}
+
+function routeLocationAtProgress(route, progressMeters) {
+  const cumulative = route.cumulativeMeters;
+  let end = cumulative.findIndex((meters, index) => index > 0 && meters >= progressMeters);
+  if (end < 0) end = route.points.length - 1;
+  const a = route.points[end - 1], b = route.points[end];
+  const span = cumulative[end] - cumulative[end - 1];
+  const ratio = span > 0 ? clamp((progressMeters - cumulative[end - 1]) / span, 0, 1) : 0;
+  return { lat: a.lat + (b.lat - a.lat) * ratio, lng: a.lng + (b.lng - a.lng) * ratio, heading: bearingDegrees(a, b) };
+}
+
+async function searchPlanForZeroErp(plan, { signal, requestId, candidates }) {
+  const active = () => !signal.aborted && requestId === state.routeRequestId && state.currentPlan === plan;
+  await Promise.all((plan.tripMode === "return" ? ["outbound", "return"] : ["outbound"]).map(async (legKey) => {
+    try {
+      const result = await searchZeroErpRoutes(
+        legKey === "outbound" ? plan.startPoint : plan.endPoint,
+        legKey === "outbound" ? plan.endPoint : plan.startPoint,
+        { routes: candidates[legKey], signal, evaluate: (route) => evaluateZeroErpCandidate(route, plan, legKey) },
+      );
+      if (!active()) return;
+      applyZeroErpResult(plan, legKey, result);
+    } catch (error) {
+      if (!active()) return;
+      applyZeroErpResult(plan, legKey, { status: "unavailable" });
+    }
+    if (active()) {
+      renderPlan({ fitMap: false });
+      replaceUrlWithShareState();
+    }
+  }));
+}
+
+function applyZeroErpResult(plan, legKey, result) {
+  plan.zeroErp[legKey] = result;
+  if (result.status !== "found") {
+    if (plan.restoreZeroRoutes) plan.restoreZeroRoutes[legKey] = false;
+    return;
+  }
+  // Keep a dedicated $0 option even when it falls outside the three ordinary
+  // choices. Do not re-rank or change the user's selection when it arrives.
+  const existing = plan[legKey].find((option) => option.route.points === result.route.points && option.route.durationSeconds === result.route.durationSeconds);
+  if (existing) {
+    existing.zeroErp = true;
+    restoreZeroRouteSelection(plan, legKey, existing.index);
+    return;
+  }
+  const pool = [...plan[legKey].map((option) => option.route), result.route];
+  const route = { ...result.route, efficiencyScore: routeEfficiencyScore(result.route,
+    Math.min(...pool.map((item) => item.durationSeconds)), Math.min(...pool.map((item) => item.totalMeters)),
+    Math.max(haversineMeters(plan.startPoint, plan.endPoint), 1)) };
+  const index = plan[legKey].length;
+  plan[legKey].push({ ...result.evaluation.option, route, zeroErp: true, index, id: `${legKey}-${index}` });
+  restoreZeroRouteSelection(plan, legKey, index);
+}
+
+function restoreZeroRouteSelection(plan, legKey, index) {
+  if (plan.restoreZeroRoutes?.[legKey]) {
+    state.selectedRoutes[legKey] = index;
+    plan.restoreZeroRoutes[legKey] = false;
+  }
 }
 
 function rankLegOptions(legKey, options) {
@@ -806,7 +893,7 @@ function recalculatePlanForVehicle() {
   replaceUrlWithShareState();
 }
 
-function renderPlan() {
+function renderPlan({ fitMap = true } = {}) {
   const selectedLegs = getSelectedLegs();
   const total = selectedLegs.reduce((sum, option) => sum + option.trip.total, 0);
   const gantryCount = selectedLegs.reduce((sum, option) => sum + option.trip.entries.length, 0);
@@ -815,7 +902,7 @@ function renderPlan() {
   renderRouteProvider(selectedLegs);
   renderEstimateCoverage(selectedLegs);
   renderMapResultDock(selectedLegs, total, gantryCount);
-  renderRouteMap(selectedLegs);
+  renderRouteMap(selectedLegs, { fitMap });
   renderTripBreakdown(selectedLegs);
   renderTimingComparison(buildTimingComparison(selectedLegs), selectedLegs[0].trip.departureDate);
   renderGantryList(selectedLegs.flatMap((option) => option.trip.entries));
@@ -840,6 +927,7 @@ function renderRouteOptions() {
   els.routeOptions.querySelectorAll(".route-option").forEach((button) => {
     button.addEventListener("click", () => {
       state.selectedRoutes[button.dataset.leg] = Number(button.dataset.index);
+      if (state.currentPlan.restoreZeroRoutes) state.currentPlan.restoreZeroRoutes[button.dataset.leg] = false;
       renderPlan();
       replaceUrlWithShareState();
     });
@@ -874,9 +962,24 @@ function routeOptionsForLeg(legKey, options) {
     .join("");
   return `<section class="route-option-leg" aria-label="${legLabel} route choices">
     <div class="route-option-group-title">${legLabel}</div>
-    <div class="route-option-tabs" aria-label="${legLabel} route options">${buttons}</div>
+    ${zeroErpStatusTemplate(legKey)}
+    <div class="route-option-tabs${options.length > 3 ? " has-extra-route" : ""}" aria-label="${legLabel} route options">${buttons}</div>
     ${selectedRouteCardTemplate(selectedOption, legKey)}
   </section>`;
+}
+
+function zeroErpStatusTemplate(legKey) {
+  const result = state.currentPlan.zeroErp?.[legKey];
+  if (!result) return "";
+  const copy = {
+    searching: ["Searching for a S$0 ERP route…", "Checking alternatives at your selected time. You can use the routes below while this runs."],
+    found: ["S$0 ERP route found", "Estimated at your selected time using the published rates. Select the S$0 ERP route below."],
+    "not-found": ["No S$0 ERP route found for this timing", result.partial
+      ? "The search was limited. No S$0 option was found among the routes checked; a free route may still exist."
+      : "None of the routes checked had S$0 ERP. A free route may still exist."],
+    unavailable: ["S$0 ERP search unavailable", "The routing service could not complete the search. Estimate again to retry; the routes below are still available."],
+  }[result.status];
+  return `<div class="zero-erp-status ${result.status}" role="status" aria-live="polite"><strong>${copy[0]}</strong><span>${copy[1]}</span></div>`;
 }
 
 function selectedRouteCardTemplate(option, legKey) {
@@ -957,6 +1060,7 @@ function routingProviderLabel(route) {
 }
 
 function routeOptionName(option) {
+  if (option.zeroErp) return "S$0 ERP route";
   if (option.index === 0) {
     return "Recommended route";
   }
@@ -964,6 +1068,7 @@ function routeOptionName(option) {
 }
 
 function routeColorForOption(option) {
+  if (option.zeroErp) return option.legKey === "return" ? "#137a62" : "#16804a";
   const palette = ROUTE_COLORS[option.legKey] || ROUTE_COLORS.outbound;
   return palette[option.index % palette.length];
 }
@@ -1016,7 +1121,7 @@ function renderTripBreakdown(selectedLegs) {
     .join("");
 }
 
-function renderRouteMap(selectedLegs) {
+function renderRouteMap(selectedLegs, { fitMap = true } = {}) {
   clearRouteLayers();
 
   state.currentPlan.outbound.forEach((option) => {
@@ -1050,7 +1155,7 @@ function renderRouteMap(selectedLegs) {
     option.trip.entries.forEach((entry) => drawMatchedGantry(entry));
   });
 
-  fitCurrentRoute();
+  if (fitMap) fitCurrentRoute();
   refreshMapLayout();
 }
 
@@ -2041,6 +2146,9 @@ function addressSuggestionParts(label) {
   };
 }
 
+const avoidanceProvider = createAvoidanceProvider({ parseRoutes: parseValhallaRoutes });
+const searchZeroErpRoutes = createZeroErpSearch({ providers: [avoidanceProvider], maxRequests: 6, deadlineMs: 18000, requestTimeoutMs: 8000 });
+
 const cachedDrivingRoutes = createRouteService({
   providers: [fetchOneMapRoutes, fetchFossgisOsrmRoutes, fetchValhallaRoutes, fetchOsrmDemoRoutes],
   rank: rankRouteCandidates,
@@ -2087,33 +2195,7 @@ async function fetchOsrmDemoRoutes(startPoint, endPoint, { signal } = {}) {
 }
 
 async function fetchValhallaRoutes(startPoint, endPoint, { signal } = {}) {
-  const request = {
-    locations: [
-      { lat: startPoint.lat, lon: startPoint.lng, type: "break" },
-      { lat: endPoint.lat, lon: endPoint.lng, type: "break" },
-    ],
-    costing: "auto",
-    units: "kilometers",
-    alternates: MAX_ROUTE_OPTIONS - 1,
-    directions_options: {
-      units: "kilometers",
-    },
-  };
-  const payload = await fetchJson("https://valhalla1.openstreetmap.de/route", {
-    method: "POST",
-    timeoutMs: ROUTING_TIMEOUTS.valhalla,
-    signal,
-    headers: {
-      "Content-Type": "application/json",
-      "X-Client-Id": "erp-commute-estimator.pages.dev",
-    },
-    body: JSON.stringify(request),
-  });
-  return parseValhallaRoutes(payload, {
-    provider: "valhalla",
-    providerLabel: "Valhalla enhanced routing",
-    providerRank: -1,
-  });
+  return avoidanceProvider.route(startPoint, endPoint, { signal, avoidTolls: false });
 }
 
 function parseOneMapRoutes(payload, providerMeta) {
@@ -2938,6 +3020,11 @@ function buildShareUrl() {
     params.set("auto", "1");
     params.set("outRoute", String(state.selectedRoutes.outbound));
     params.set("retRoute", String(state.selectedRoutes.return));
+    for (const [legKey, param] of [["outbound", "outZero"], ["return", "retZero"]]) {
+      const selected = state.currentPlan[legKey][state.selectedRoutes[legKey]];
+      if (selected?.zeroErp || state.currentPlan.restoreZeroRoutes?.[legKey]) params.set(param, "1");
+      else params.delete(param);
+    }
   }
   return url.toString();
 }
@@ -2981,6 +3068,8 @@ function hydrateFromUrl() {
   state.routeSelectionToRestore = {
     outbound: params.get("outRoute"),
     return: params.get("retRoute"),
+    zeroOutbound: params.get("outZero") === "1",
+    zeroReturn: params.get("retZero") === "1",
   };
   state.autoEstimateOnReady = params.get("auto") === "1" && !!state.address.start && !!state.address.destination;
 }

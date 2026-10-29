@@ -88,7 +88,7 @@ assert.ok(Number.isFinite(plan.outbound[3].route.efficiencyScore));
 api.applyZeroErpResult(plan, "outbound", freeResult);
 assert.equal(plan.outbound.length, 4, "Repeated equivalent result marks the existing option without duplication");
 for (const [status, expected] of [
-  ["searching", /Searching for a S\$0 ERP route/], ["found", /S\$0 ERP route found/],
+  ["searching", /Searching for a S\$0 ERP route/],
   ["not-found", /No S\$0 ERP route found for this timing/], ["unavailable", /S\$0 ERP search unavailable/],
 ]) {
   plan.zeroErp.outbound = { status };
@@ -97,6 +97,8 @@ for (const [status, expected] of [
   assert.match(markup, /aria-live="polite"/);
   if (status === "not-found") assert.match(markup, /A free route may still exist/);
 }
+plan.zeroErp.outbound = { status: "found" };
+assert.match(api.zeroErpStatusTemplate("outbound"), /class="sr-only"/, "The free card replaces a visible duplicate success banner while announcing completion");
 plan.zeroErp.outbound = { status: "not-found", partial: true };
 assert.match(api.zeroErpStatusTemplate("outbound"), /search was limited/);
 

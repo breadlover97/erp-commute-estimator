@@ -37,20 +37,20 @@ assert.equal(lookupErpRate(data, "test", "2026-10-31", 510, car).amount, 0, "Sat
 assert.equal(lookupErpRate(data, "test", "2028-10-30", 510, car).estimated, true, "Unknown calendar year is qualified");
 assert.equal(lookupErpRate(data, "test", "2026-09-04", 510, car).estimated, true, "Dates outside rate coverage are qualified");
 
-context.api.state.currentPlan = { timeMode: "arrive", requestedDate: selected, vehicleType: "car" };
+context.api.state.currentPlan = { timeMode: "arrive", requestedDate: selected, vehicleType: "car", earlyFlexibility: 60 };
 const arrivalSuggestions = context.api.findTimingSuggestions([arrive]);
 assert.ok(arrivalSuggestions.before, "A cheaper earlier arrival is offered");
 assert.ok(arrivalSuggestions.before.arrivalDate <= selected, "Recommendation respects the requested arrival deadline");
 assert.equal(arrivalSuggestions.after, null, "Cheaper but late arrivals are excluded");
 context.api.renderRecommendation([arrive]);
-assert.match(context.api.els.recommendationCopy.textContent, /09:00 arrival deadline/);
+assert.match(context.api.els.recommendationCopy.textContent, /60 minutes before your 09:00 arrival target/);
 assert.doesNotMatch(context.api.els.recommendationOptions.innerHTML, />Later</, "Arrive-by recommendations show only the valid earlier option");
 const returnLeg = { trip: { total: 0, departureDate: new Date("2026-10-30T09:15:00+08:00") } };
 context.api.state.currentPlan.timeMode = "depart";
 const returnSuggestions = context.api.findTimingSuggestions([arrive, returnLeg]);
 assert.equal(returnSuggestions.after, null, "A proposed outbound trip cannot overlap the return departure");
 context.api.renderRecommendation([{ ...arrive, trip: { ...arrive.trip, total: 0 } }]);
-assert.equal(context.api.els.recommendationTitle.textContent, "No ERP charge estimated", "A zero estimate does not promise a free trip");
+assert.equal(context.api.els.recommendation.hidden, true, "A zero estimate is already shown in the route card without another success panel");
 context.api.state.currentPlan = null;
 
 let calls = 0;

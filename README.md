@@ -4,9 +4,17 @@ A lightweight Singapore commute planner, published at https://erp-commute-estima
 
 ## Plan a trip
 
-A fresh visit defaults to **arrive by 9:00 am tomorrow**, in Singapore time. Search by postal code, building or street, select a matching address (or use the keyboard), and estimate. Current location, recent places, swap, Today/Tomorrow shortcuts, time presets and a five-minute slider reduce repeat entry. Vehicle and return-trip settings are optional. Changing timing after an estimate recalculates automatically using cached route geometry.
+A fresh visit defaults to **arrive by 9:00 am tomorrow**, in Singapore time. Search by postal code, building or street, select a matching address (or use the keyboard), and estimate. Current location, focused recent places, short address labels and swap reduce repeat entry. The primary time slider moves in fifteen-minute steps, with large −15/+15 controls. The precise date/time editor is collapsed by default. Vehicle, arrival buffer, timing flexibility and return-trip settings are optional. Changing timing after an estimate recalculates automatically using cached route geometry.
 
-Results show estimated departure/arrival times, route options, ERP charges, timing comparisons and individual gantry details. Every estimate also searches for a **S$0 ERP route at the selected time**. Normal results appear first; a qualifying free option stays visible even if it is slower than the three usual alternatives. Outbound and return legs are searched separately. If none is found, the result says so clearly; a routing-service failure is reported separately. The share action includes the selected addresses and coordinates in the URL. Recent locations are stored only in the browser; current geolocation is not added to that history.
+Results show departure/arrival times and decision cards comparing estimated ERP, drive time and the savings versus extra minutes. Near-identical same-price paths are consolidated only after ERP evaluation; the S$0 option remains visible. On mobile, explicit estimates collapse the form and show results before the map; adjusting the slider keeps the editor open. Timing comparisons are collapsed and respect the selected deadline and flexibility window (30 minutes by default). Suggested times can be applied without losing the selected route. Every estimate also searches for a **S$0 ERP route at the selected time**. Normal results appear first; a qualifying free option stays visible even if it is slower than the three usual alternatives. Outbound and return legs are searched separately. If none is found, the result says so clearly; a routing-service failure is reported separately. The share action includes the selected addresses and coordinates in the URL. Recent locations are stored only in the browser; current geolocation is not added to that history.
+
+## Saved trips and commute features
+
+Save named commutes and Home/Work locations on the current device without an account. Saved trips restore addresses, vehicle, timing mode, arrival buffer, flexibility and return timing, then estimate for tomorrow. Saving is explicit and storage failures are reported.
+
+The optional weekly panel prices the selected weekdays across the next seven calendar days using the same routes, times, vehicle and published holiday schedule, including return legs. It compares the selected cost with the fastest available options and qualifies dates beyond verified coverage. It does not request new routes for each day.
+
+Google Maps links open directions between the selected endpoints. Google recalculates directions and may use a different route or incur different ERP; the interface states this next to the links. Route-provider and matching details are tucked away. Relevant gantries are shown by default; the all-island marker layer is optional.
 
 ## Architecture
 
@@ -14,6 +22,8 @@ Results show estimated departure/arrival times, route options, ERP charges, timi
 - `public/app.js`: interface, route rendering and directional gantry matching.
 - `public/planner-utils.js`: Singapore dates and normalized address data.
 - `public/lib/erp-engine.js`: indexed tariff/calendar calculations.
+- `public/lib/route-presentation.js`: route decision grouping, navigation URLs and time stepping.
+- `public/lib/commute-features.js`: explicit local saved trips and dated weekly estimates.
 - `public/lib/route-service.js`: cancellable provider selection and bounded ten-minute route cache; retains the full candidate pool for ERP evaluation.
 - `public/lib/zero-erp-search.js`: bounded, cancellable search that evaluates each candidate at its actual estimated crossing times.
 - `public/lib/avoidance-provider.js`: shared Valhalla adapter with toll preference, directed road exclusions, request pacing and a geometry-only cache.

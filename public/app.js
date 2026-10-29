@@ -210,9 +210,6 @@ async function init() {
   setReturnOffset(8);
   initMap();
   hydrateFromUrl();
-  state.erpData = await fetchJson(`./data/erp-data.json?v=${DATA_VERSION}`);
-  renderSourceMetadata();
-  renderAllGantries();
   bindEvents();
   initPanelResizer();
   renderTripMode();
@@ -220,6 +217,10 @@ async function init() {
   renderRecentPlaces();
   if (els.returnTrip.checked || els.vehicleType.value !== "car") document.querySelector("#trip-options").open = true;
   window.lucide?.createIcons();
+  // Address entry is interactive while the ERP table loads.
+  state.erpData = await fetchJson(`./data/erp-data.json?v=${DATA_VERSION}`);
+  renderSourceMetadata();
+  renderAllGantries();
 
   if (state.autoEstimateOnReady) {
     window.setTimeout(() => els.form.requestSubmit(), 250);
@@ -550,6 +551,9 @@ function bindAddressField(type) {
       selectAddress(type, suggestions[Math.max(0, state.activeSuggestions[type])]);
     }
   });
+  if (!state.address[type] && input.value.trim().length >= 3) {
+    searchAddress(type, input.value.trim());
+  }
 }
 
 function cancelAddressSearch(type) {
@@ -663,6 +667,10 @@ function useCurrentLocation() {
 
 async function handleRouteSubmit(event) {
   event.preventDefault();
+  if (!state.erpData) {
+    setStatus("ERP rates are loading. Please estimate again in a moment.");
+    return;
+  }
   cancelLocationRequest();
   state.routeController?.abort();
   state.routeController = new AbortController();

@@ -32,3 +32,14 @@ try {
 } finally { globalThis.fetch=originalFetch; }
 assert.equal((await onRequestGet({request:new Request('https://example.com/api/search?q=unconfigured'),env:{}})).status,503);
 console.log('Planner and address-search validation passed');
+
+// Browsers may preserve a typed value before the module has attached listeners.
+const { loadAppForTest } = await import('./app-test-harness.mjs');
+const vm = await import('node:vm');
+const boot = await loadAppForTest();
+boot.api.els.start.value = 'Ang Mo Kio';
+vm.runInContext('globalThis.earlySearches = []; searchAddress = (type, query) => earlySearches.push({type, query});', boot);
+boot.api.bindAddressField('start');
+assert.equal(boot.earlySearches[0].query, 'Ang Mo Kio', 'Input typed before startup is searched when listeners bind');
+assert.equal(typeof boot.api.els.start.events.input,'function');
+console.log('Early address-entry regression passed');

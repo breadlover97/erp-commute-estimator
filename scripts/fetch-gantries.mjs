@@ -1,37 +1,27 @@
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
 
-const datasetId = "d_753090823cc9920ac41efaa6530c5893";
-const pollUrl = `https://api-open.data.gov.sg/v1/public/api/datasets/${datasetId}/poll-download`;
-const metaResponse = await fetch(pollUrl);
-
-if (!metaResponse.ok) {
-  throw new Error(`Failed to fetch data.gov.sg download metadata: ${metaResponse.status}`);
+// Download only the explicitly reviewed source versions. Advancing a source URL
+// or verifiedOn requires reviewing LTA's release, PDF and calendar together.
+const manifestUrl = new URL("../data/sources.json", import.meta.url);
+const manifest = JSON.parse(await readFile(manifestUrl, "utf8"));
+const keys = ["oneMotoringErpRatesPdf", "ltaGantryGeoJson", "oneMotoringErpKml"];
+const downloads = await Promise.all(keys.map(async (key) => {
+  const source = manifest.sources[key];
+  const response = await fetch(source.url, { signal: AbortSignal.timeout(30000) });
+  if (!response.ok) throw new Error(`${key}: download failed (${response.status})`);
+  const bytes = Buffer.from(await response.arrayBuffer());
+  const header = bytes.subarray(0, 120).toString();
+  const expected = source.file.endsWith(".pdf") ? "%PDF-" : source.file.endsWith(".zip") ? "PK" : "<?xml";
+  if (!header.startsWith(expected)) throw new Error(`${key}: expected ${expected} file, received unexpected content`);
+  const sha256 = createHash("sha256").update(bytes).digest("hex");
+  if (sha256 !== source.sha256) {
+    throw new Error(`${key}: source changed since verification; review the new source before updating sources.json`);
+  }
+  return { source, bytes };
+}));
+for (const { source, bytes } of downloads) {
+  await writeFile(new URL(`../data/${source.file}`, import.meta.url), bytes);
+  console.log(`Verified and saved data/${source.file}`);
 }
-
-const downloadMeta = await metaResponse.json();
-if (!downloadMeta?.data?.url) {
-  throw new Error("Missing signed data.gov.sg download URL.");
-}
-
-const response = await fetch(downloadMeta.data.url);
-if (!response.ok) {
-  throw new Error(`Failed to fetch LTA gantry GeoJSON: ${response.status}`);
-}
-
-await writeFile(
-  new URL("../data/lta-gantry.geojson", import.meta.url),
-  await response.text(),
-);
-
-const erpKmlResponse = await fetch("https://onemotoring.lta.gov.sg/mapapp/kml/erp-kml/erp-kml-0.kml");
-if (!erpKmlResponse.ok) {
-  throw new Error(`Failed to fetch OneMotoring ERP KML: ${erpKmlResponse.status}`);
-}
-
-await writeFile(
-  new URL("../data/onemotoring-erp.kml", import.meta.url),
-  await erpKmlResponse.text(),
-);
-
-console.log("Saved data/lta-gantry.geojson");
-console.log("Saved data/onemotoring-erp.kml");
+console.log("Run python3 scripts/convert-gantries.py, then python3 scripts/build-data.py and npm run validate:data.");

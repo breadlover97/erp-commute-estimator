@@ -1,3 +1,7 @@
+import { defaultTripTiming, relativeSingaporeDate, singaporeDateValue, singaporeClock, singaporeDateTime, isSingaporePoint, displayTime } from "./planner-utils.js";
+import { departureForMode, indexErpData, lookupErpRate } from "./lib/erp-engine.js";
+import { createRouteService } from "./lib/route-service.js";
+
 const SINGAPORE_CENTER = [1.3521, 103.8198];
 const GANTRY_POINT_MATCH_THRESHOLD_METERS = 115;
 const UNPRICED_MARKER_MATCH_THRESHOLD_METERS = 35;
@@ -6,7 +10,9 @@ const GANTRY_LINE_INTERIOR_BUFFER_T = 0.12;
 const DIRECTION_TOLERANCE_DEGREES = 75;
 const COMPETING_GANTRY_PROGRESS_WINDOW_METERS = 45;
 const COMPETING_GANTRY_SPATIAL_WINDOW_METERS = 55;
-const DATA_VERSION = "2026-06-08-erp-data-v1";
+const DATA_VERSION = "2026-10-29-v2";
+const ADDRESS_STORAGE_KEY = "erpRecentPlaces";
+const addressCache = new Map();
 const SINGAPORE_MAP_BOUNDS = [
   [1.11, 103.55],
   [1.5, 104.15],
@@ -137,6 +143,11 @@ const state = {
   routeSelectionToRestore: null,
   showAllGantries: true,
   suggestionTimers: {},
+  searchControllers: {},
+  suggestions: { start: [], destination: [] },
+  activeSuggestions: { start: -1, destination: -1 },
+  routeController: null,
+  timingTimer: null,
   autoEstimateOnReady: false,
   routeRequestId: 0,
   selectedErpDetail: null,
@@ -205,6 +216,9 @@ async function init() {
   bindEvents();
   initPanelResizer();
   renderTripMode();
+  syncTimingControls();
+  renderRecentPlaces();
+  if (els.returnTrip.checked || els.vehicleType.value !== "car") document.querySelector("#trip-options").open = true;
   window.lucide?.createIcons();
 
   if (state.autoEstimateOnReady) {
@@ -218,9 +232,7 @@ function bindEvents() {
   els.vehicleType.addEventListener("change", () => {
     closeErpDetail();
     renderAllGantries();
-    if (state.currentPlan) {
-      recalculatePlanForVehicle();
-    }
+    if (state.currentPlan) recalculatePlanForVehicle();
   });
   els.mapSource.addEventListener("change", () => setMapSource(els.mapSource.value));
   els.showAllGantries.addEventListener("change", () => {
@@ -233,79 +245,71 @@ function bindEvents() {
   els.erpDetailClose.addEventListener("click", closeErpDetail);
   els.returnTrip.addEventListener("change", () => {
     renderTripMode();
-    clearCurrentEstimate("Trip type changed. Estimate again.");
+    handleTimingChange();
   });
-  els.date.addEventListener("change", () => {
-    closeErpDetail();
-    syncReturnDateIfBeforeDeparture();
-    renderAllGantries();
-    clearCurrentEstimate("Timing changed. Estimate again.");
+  [els.date, els.time, els.returnDate, els.returnTime].forEach((input) => {
+    input.addEventListener("change", handleTimingChange);
   });
-  els.time.addEventListener("change", () => {
-    closeErpDetail();
-    syncReturnDateIfBeforeDeparture();
-    renderAllGantries();
-    clearCurrentEstimate("Timing changed. Estimate again.");
-  });
-  els.returnDate.addEventListener("change", () => {
-    closeErpDetail();
-    renderAllGantries();
-    clearCurrentEstimate("Return timing changed. Estimate again.");
-  });
-  els.returnTime.addEventListener("change", () => {
-    closeErpDetail();
-    renderAllGantries();
-    clearCurrentEstimate("Return timing changed. Estimate again.");
-  });
-
   document.querySelectorAll("input[name='timeMode']").forEach((input) => {
-    input.addEventListener("change", () => {
-      clearCurrentEstimate("Time mode changed. Estimate again.");
+    input.addEventListener("change", handleTimingChange);
+  });
+  document.querySelectorAll("[data-date-shortcut]").forEach((button) => {
+    button.addEventListener("click", () => {
+      els.date.value = relativeSingaporeDate(Number(button.dataset.dateShortcut));
+      handleTimingChange();
     });
   });
-
+  document.querySelectorAll("[data-time-preset]").forEach((button) => {
+    button.addEventListener("click", () => {
+      els.time.value = button.dataset.timePreset;
+      handleTimingChange();
+    });
+  });
+  document.querySelector("#time-slider").addEventListener("input", (event) => {
+    els.time.value = clockFromMinutes(Number(event.target.value));
+    handleTimingChange();
+  });
+  document.querySelector("#use-location").addEventListener("click", useCurrentLocation);
   bindAddressField("start");
   bindAddressField("destination");
-
-  document.querySelectorAll(".date-step").forEach((button) => {
-    button.addEventListener("click", () => {
-      const target = document.querySelector(`#${button.dataset.target}`);
-      stepDateInput(target, Number(button.dataset.days));
-      closeErpDetail();
-      syncReturnDateIfBeforeDeparture();
-      renderAllGantries();
-      clearCurrentEstimate("Timing changed. Estimate again.");
-    });
-  });
-
-  document.querySelectorAll(".time-step").forEach((button) => {
-    button.addEventListener("click", () => {
-      const target = document.querySelector(`#${button.dataset.target}`);
-      stepTimeInput(target, Number(button.dataset.minutes));
-      closeErpDetail();
-      syncReturnDateIfBeforeDeparture();
-      renderAllGantries();
-      clearCurrentEstimate("Timing changed. Estimate again.");
-    });
-  });
-
   document.addEventListener("click", (event) => {
-    const tooltipCard = event.target.closest(".tooltip-card");
-    document.querySelectorAll(".tooltip-card.show-tooltip").forEach((card) => {
-      if (card !== tooltipCard) {
-        card.classList.remove("show-tooltip");
-      }
-    });
-    if (tooltipCard && window.matchMedia("(hover: none)").matches) {
-      tooltipCard.classList.toggle("show-tooltip");
+    for (const type of ["start", "destination"]) {
+      if (!event.target.closest(`.${type === "start" ? "start" : "destination"}-field`)) closeAddressSuggestions(type);
     }
   });
-
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") {
-      closeErpDetail();
-    }
+    if (event.key === "Escape") closeErpDetail();
   });
+}
+
+function syncTimingControls() {
+  if (!els.time.value) return;
+  const minutes = minutesFromClock(els.time.value);
+  const slider = document.querySelector("#time-slider");
+  slider.value = minutes;
+  slider.setAttribute("aria-valuetext", displayTime(els.time.value));
+  document.querySelector("#time-display").textContent = displayTime(els.time.value);
+  document.querySelectorAll("[data-time-preset]").forEach((button) => {
+    button.setAttribute("aria-pressed", String(button.dataset.timePreset === els.time.value));
+  });
+  document.querySelectorAll("[data-date-shortcut]").forEach((button) => {
+    button.setAttribute("aria-pressed", String(relativeSingaporeDate(Number(button.dataset.dateShortcut)) === els.date.value));
+  });
+}
+
+function handleTimingChange() {
+  const shouldRecalculate = !!state.currentPlan || !!state.timingTimer || els.primaryButton.disabled;
+  window.clearTimeout(state.timingTimer);
+  syncTimingControls();
+  syncReturnDateIfBeforeDeparture();
+  closeErpDetail();
+  clearCurrentEstimate("Timing updated. Ready to estimate.");
+  if (shouldRecalculate && state.address.start && state.address.destination) {
+    state.timingTimer = window.setTimeout(() => {
+      state.timingTimer = null;
+      els.form.requestSubmit();
+    }, 180);
+  }
 }
 
 function initPanelResizer() {
@@ -505,43 +509,177 @@ function readStoredPanelWidth() {
 
 function bindAddressField(type) {
   const input = els[type];
+  input.setAttribute("role", "combobox");
+  input.setAttribute("aria-autocomplete", "list");
+  input.setAttribute("aria-controls", `${type}-suggestions`);
+  input.setAttribute("aria-expanded", "false");
   input.addEventListener("input", () => {
-    const confirmed = state.address[type];
-    if (confirmed && confirmed.inputValue !== input.value.trim()) {
-      state.address[type] = null;
-      renderAddressConfirmation(type);
-      clearCurrentEstimate("Address changed. Estimate again.");
-    }
-
-    window.clearTimeout(state.suggestionTimers[type]);
-    state.suggestionTimers[type] = window.setTimeout(async () => {
-      const query = input.value.trim();
-      if (query.length < 3) {
-        renderAddressSuggestions(type, []);
-        return;
-      }
-      try {
-        renderAddressSuggestions(type, null);
-        const suggestions = await fetchAddressSuggestions(query, 5);
-        renderAddressSuggestions(type, suggestions);
-      } catch {
-        renderAddressSuggestions(type, []);
-      }
-    }, 350);
+    if (type === "start") cancelLocationRequest();
+    state.address[type] = null;
+    renderAddressConfirmation(type);
+    clearCurrentEstimate("Choose a matching address to continue.");
+    cancelAddressSearch(type);
+    closeAddressSuggestions(type);
+    const query = input.value.trim();
+    if (query.length < 3) return;
+    state.suggestionTimers[type] = window.setTimeout(() => searchAddress(type, query), 240);
   });
+  input.addEventListener("focus", () => {
+    if (!state.address[type] && input.value.trim().length >= 3) searchAddress(type, input.value.trim());
+  });
+  input.addEventListener("blur", (event) => {
+    if (els[`${type}Suggestions`].contains(event.relatedTarget)) return;
+    cancelAddressSearch(type);
+    closeAddressSuggestions(type);
+  });
+  input.addEventListener("keydown", (event) => {
+    const suggestions = state.suggestions[type];
+    if (event.key === "Escape") {
+      cancelAddressSearch(type);
+      closeAddressSuggestions(type);
+      return;
+    }
+    if (["ArrowDown", "ArrowUp"].includes(event.key) && suggestions.length) {
+      event.preventDefault();
+      const delta = event.key === "ArrowDown" ? 1 : -1;
+      state.activeSuggestions[type] = (state.activeSuggestions[type] + delta + suggestions.length) % suggestions.length;
+      updateActiveSuggestion(type);
+    }
+    if (event.key === "Enter" && suggestions.length && input.getAttribute("aria-expanded") === "true") {
+      event.preventDefault();
+      selectAddress(type, suggestions[Math.max(0, state.activeSuggestions[type])]);
+    }
+  });
+}
+
+function cancelAddressSearch(type) {
+  window.clearTimeout(state.suggestionTimers[type]);
+  state.searchControllers[type]?.abort();
+  state.searchControllers[type] = null;
+}
+
+async function searchAddress(type, query) {
+  cancelAddressSearch(type);
+  const controller = new AbortController();
+  state.searchControllers[type] = controller;
+  renderAddressSuggestions(type, null);
+  try {
+    const suggestions = await fetchAddressSuggestions(query, 5, controller.signal);
+    if (controller.signal.aborted || els[type].value.trim() !== query) return;
+    renderAddressSuggestions(type, suggestions);
+  } catch (error) {
+    if (controller.signal.aborted) return;
+    const container = els[`${type}Suggestions`];
+    container.innerHTML = '<div class="suggestion-muted" role="status">Address search is unavailable. Try again shortly.</div>';
+    els[type].setAttribute("aria-expanded", "true");
+  }
+}
+
+function closeAddressSuggestions(type) {
+  els[`${type}Suggestions`].innerHTML = "";
+  els[type].setAttribute("aria-expanded", "false");
+  els[type].removeAttribute("aria-activedescendant");
+  state.suggestions[type] = [];
+  state.activeSuggestions[type] = -1;
+}
+
+function updateActiveSuggestion(type) {
+  els[`${type}Suggestions`].querySelectorAll(".suggestion-option").forEach((option, index) => {
+    const selected = index === state.activeSuggestions[type];
+    option.setAttribute("aria-selected", String(selected));
+    if (selected) {
+      els[type].setAttribute("aria-activedescendant", option.id);
+      option.scrollIntoView({ block: "nearest" });
+    }
+  });
+}
+
+function selectAddress(type, point) {
+  if (type === "start") cancelLocationRequest();
+  clearCurrentEstimate("Route updated. Ready to estimate.");
+  setConfirmedAddress(type, point);
+  rememberPlace(point);
+  closeAddressSuggestions(type);
+  if (type === "start" && !state.address.destination) els.destination.focus();
+  else els.primaryButton.focus();
+}
+
+function readRecentPlaces() {
+  try {
+    const places = JSON.parse(localStorage.getItem(ADDRESS_STORAGE_KEY) || "[]");
+    return Array.isArray(places) ? places.filter((place) => isSingaporePoint(place) && typeof place.label === "string").slice(0, 5) : [];
+  } catch { return []; }
+}
+
+function rememberPlace(point) {
+  if (point.isCurrentLocation) return;
+  const places = [point, ...readRecentPlaces().filter((place) => place.lat !== point.lat || place.lng !== point.lng)].slice(0, 5);
+  try { localStorage.setItem(ADDRESS_STORAGE_KEY, JSON.stringify(places)); } catch { /* Storage is optional. */ }
+  renderRecentPlaces();
+}
+
+function renderRecentPlaces() {
+  const places = readRecentPlaces();
+  for (const type of ["start", "destination"]) {
+    const container = document.querySelector(`#${type}-recent`);
+    container.replaceChildren();
+    for (const place of places.slice(0, 3)) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "recent-place";
+      button.textContent = place.label.split(",")[0];
+      button.title = place.label;
+      button.addEventListener("click", () => selectAddress(type, place));
+      container.append(button);
+    }
+  }
+}
+
+function cancelLocationRequest() {
+  state.locationRequestId = (state.locationRequestId || 0) + 1;
+  document.querySelector("#use-location").disabled = false;
+}
+
+function useCurrentLocation() {
+  if (!navigator.geolocation) { setStatus("Location is unavailable. Enter an address instead."); return; }
+  cancelLocationRequest();
+  const requestId = state.locationRequestId;
+  const button = document.querySelector("#use-location");
+  button.disabled = true;
+  setStatus("Finding your location…");
+  navigator.geolocation.getCurrentPosition((position) => {
+    if (requestId !== state.locationRequestId) return;
+    button.disabled = false;
+    const point = { lat: position.coords.latitude, lng: position.coords.longitude, label: "Current location", isCurrentLocation: true };
+    if (!isSingaporePoint(point)) { setStatus("Please choose a location in Singapore."); return; }
+    selectAddress("start", point);
+    setStatus("Current location selected. Choose your destination.");
+  }, () => {
+    if (requestId !== state.locationRequestId) return;
+    button.disabled = false;
+    setStatus("Location access is unavailable. Enter your starting address instead.");
+  }, { timeout: 10000, maximumAge: 60000, enableHighAccuracy: false });
 }
 
 async function handleRouteSubmit(event) {
   event.preventDefault();
+  cancelLocationRequest();
+  state.routeController?.abort();
+  state.routeController = new AbortController();
+  const signal = state.routeController.signal;
   const requestId = ++state.routeRequestId;
+  window.clearTimeout(state.timingTimer);
+  state.timingTimer = null;
   setLoading(true);
   closeErpDetail();
   clearRouteLayers();
   setStatus("Confirming addresses and finding route options...");
 
   try {
-    const startPoint = await requireConfirmedAddress("start");
-    const endPoint = await requireConfirmedAddress("destination");
+    const startPoint = await requireConfirmedAddress("start", signal);
+    const endPoint = await requireConfirmedAddress("destination", signal);
+    if (signal.aborted || requestId !== state.routeRequestId) return;
+    const timeMode = new FormData(els.form).get("timeMode") || "arrive";
     const vehicleType = getVehicleType();
     const tripMode = getTripMode();
     const outboundDeparture = getSelectedDateTime();
@@ -552,8 +690,8 @@ async function handleRouteSubmit(event) {
     }
 
     const [outboundRoutes, returnRoutes] = await Promise.all([
-      fetchDrivingRoutes(startPoint, endPoint),
-      tripMode === "return" ? fetchDrivingRoutes(endPoint, startPoint) : Promise.resolve([]),
+      fetchDrivingRoutes(startPoint, endPoint, { signal }),
+      tripMode === "return" ? fetchDrivingRoutes(endPoint, startPoint, { signal }) : Promise.resolve([]),
     ]);
 
     const outbound = buildLegOptions({
@@ -561,8 +699,12 @@ async function handleRouteSubmit(event) {
       legLabel: "Outbound",
       routes: outboundRoutes,
       departureDate: outboundDeparture,
+      timeMode,
       vehicleType,
     });
+    if (tripMode === "return" && outbound.some((option) => returnDeparture <= option.trip.arrivalDate)) {
+      throw new Error("Choose a return time after the outbound journey finishes.");
+    }
     const returnLeg =
       tripMode === "return"
         ? buildLegOptions({
@@ -574,7 +716,7 @@ async function handleRouteSubmit(event) {
           })
         : [];
 
-    if (requestId !== state.routeRequestId) {
+    if (signal.aborted || requestId !== state.routeRequestId) {
       return;
     }
 
@@ -588,16 +730,18 @@ async function handleRouteSubmit(event) {
       startPoint,
       endPoint,
       tripMode,
+      timeMode,
+      requestedDate: outboundDeparture,
       vehicleType,
       outbound,
       return: returnLeg,
     };
 
     renderPlan();
-    focusMapAfterEstimate();
+    if (event.submitter) focusMapAfterEstimate();
     replaceUrlWithShareState();
   } catch (error) {
-    if (requestId !== state.routeRequestId) {
+    if (signal.aborted || requestId !== state.routeRequestId) {
       return;
     }
     setStatus(error.message || "Unable to calculate this route.");
@@ -609,20 +753,16 @@ async function handleRouteSubmit(event) {
   }
 }
 
-function buildLegOptions({ legKey, legLabel, routes, departureDate, vehicleType }) {
-  const options = routes
-    .slice(0, MAX_ROUTE_OPTIONS)
-    .map((route) => {
-      const matchedGantries = matchGantriesToRoute(route);
-      const trip = calculateTrip(route, matchedGantries, departureDate, vehicleType, legLabel);
-      return {
-        legKey,
-        legLabel,
-        route,
-        matchedGantries,
-        trip,
-      };
-    });
+function buildLegOptions({ legKey, legLabel, routes, departureDate, vehicleType, timeMode = "depart" }) {
+  const options = routes.slice(0, MAX_ROUTE_OPTIONS).map((route) => {
+    const matchedGantries = matchGantriesToRoute(route);
+    const actualDeparture = departureForMode(departureDate, route.durationSeconds, timeMode);
+    return {
+      legKey, legLabel, route, matchedGantries, timeMode,
+      selectedDateTime: departureDate,
+      trip: calculateTrip(route, matchedGantries, actualDeparture, vehicleType, legLabel),
+    };
+  });
   return rankLegOptions(legKey, options);
 }
 
@@ -641,38 +781,19 @@ function legOptionRecommendationScore(option) {
 }
 
 function recalculatePlanForVehicle() {
+  const plan = state.currentPlan;
   const vehicleType = getVehicleType();
-  state.currentPlan.vehicleType = vehicleType;
-  state.currentPlan.outbound = rankLegOptions(
-    "outbound",
-    state.currentPlan.outbound.map((option) => ({
+  plan.vehicleType = vehicleType;
+  for (const leg of ["outbound", "return"]) {
+    const selectedRoute = plan[leg][state.selectedRoutes[leg]]?.route;
+    plan[leg] = rankLegOptions(leg, plan[leg].map((option) => ({
       ...option,
-      trip: calculateTrip(
-        option.route,
-        option.matchedGantries,
-        option.trip.departureDate,
-        vehicleType,
-        option.legLabel,
-      ),
-    })),
-  );
-  state.currentPlan.return = rankLegOptions(
-    "return",
-    state.currentPlan.return.map((option) => ({
-      ...option,
-      trip: calculateTrip(
-        option.route,
-        option.matchedGantries,
-        option.trip.departureDate,
-        vehicleType,
-        option.legLabel,
-      ),
-    })),
-  );
-  state.selectedRoutes = {
-    outbound: routeIndexOrDefault(state.selectedRoutes.outbound, state.currentPlan.outbound.length),
-    return: routeIndexOrDefault(state.selectedRoutes.return, state.currentPlan.return.length),
-  };
+      trip: calculateTrip(option.route, option.matchedGantries,
+        option.selectedDateTime ? departureForMode(option.selectedDateTime, option.route.durationSeconds, option.timeMode) : option.trip.departureDate,
+        vehicleType, option.legLabel),
+    })));
+    state.selectedRoutes[leg] = Math.max(0, plan[leg].findIndex((option) => option.route === selectedRoute));
+  }
   renderPlan();
   replaceUrlWithShareState();
 }
@@ -684,6 +805,7 @@ function renderPlan() {
 
   renderRouteOptions();
   renderRouteProvider(selectedLegs);
+  renderEstimateCoverage(selectedLegs);
   renderMapResultDock(selectedLegs, total, gantryCount);
   renderRouteMap(selectedLegs);
   renderTripBreakdown(selectedLegs);
@@ -764,6 +886,7 @@ function selectedRouteCardTemplate(option, legKey) {
         } ERP</small>
       </div>
     </div>
+    <p class="selected-route-times">Leave <strong>${formatClock(option.trip.departureDate)}</strong> · Arrive <strong>${formatClock(option.trip.arrivalDate)}</strong>${toDateInputValue(option.trip.departureDate) !== toDateInputValue(option.trip.arrivalDate) ? " (next day)" : ""}</p>
     ${legKey === "outbound" ? selectedRouteTimingTemplate() : ""}
   </article>`;
 }
@@ -1010,7 +1133,7 @@ function infoForTripEntry(entry) {
     title: erpRateTitle(entry.label, entry.gantryNos),
     vehicleType: state.currentPlan?.vehicleType || getVehicleType(),
     dateString: entry.crossingDateString || selectedRateDateString(),
-    highlightMinutes: entry.crossingDate.getHours() * 60 + entry.crossingDate.getMinutes(),
+    highlightMinutes: minutesFromClock(formatClock(entry.crossingDate)),
     note: `${entry.legLabel} crosses around ${entry.crossingTime}. Estimated charge: ${formatMoney(entry.amount)}.`,
   });
 }
@@ -1322,32 +1445,41 @@ function renderGantryList(entries) {
 }
 
 function renderRecommendation(selectedLegs) {
-  const currentTotal = selectedLegs.reduce((sum, option) => sum + option.trip.total, 0);
   clearRecommendationOptions();
+  if (!selectedLegs.length) {
+    els.recommendation.hidden = true;
+    return;
+  }
+  const currentTotal = selectedLegs.reduce((sum, option) => sum + option.trip.total, 0);
+  const arriveBy = state.currentPlan?.timeMode === "arrive";
+  const deadline = state.currentPlan?.requestedDate || selectedLegs[0].trip.arrivalDate;
+  els.recommendation.hidden = false;
 
   if (currentTotal === 0) {
-    els.recommendation.hidden = false;
-    els.recommendationTitle.textContent = "Your selected timing is already ERP-free";
-    els.recommendationCopy.textContent = "The route has no estimated ERP charge at the selected timing.";
+    els.recommendationTitle.textContent = "No ERP charge estimated";
+    els.recommendationCopy.textContent = "No ERP charge was found for the selected route and timing. Actual charges may differ.";
     return;
   }
 
   const suggestions = findTimingSuggestions(selectedLegs);
-  els.recommendation.hidden = false;
-
   if (!suggestions.before && !suggestions.after) {
-    els.recommendationTitle.textContent = "No lower-cost timing found nearby";
-    els.recommendationCopy.textContent = "The nearby search window did not find a lower ERP cost for this route.";
+    els.recommendationTitle.textContent = arriveBy
+      ? "No cheaper timing before your arrival deadline"
+      : "No lower-cost timing found";
+    els.recommendationCopy.textContent = arriveBy
+      ? `No lower ERP estimate was found for this route while arriving by ${formatClock(deadline)}.`
+      : "No lower ERP estimate was found for this route within the search window and your trip times.";
     return;
   }
 
-  const selectedTime = formatClock(selectedLegs[0].trip.departureDate);
-  els.recommendationTitle.textContent = "Try these lower-cost timings";
-  els.recommendationCopy.textContent = `Compared with your selected leave time of ${selectedTime}.`;
+  els.recommendationTitle.textContent = arriveBy ? "Leave earlier to spend less on ERP" : "Try these lower-cost timings";
+  els.recommendationCopy.textContent = arriveBy
+    ? `This earlier departure keeps you within your ${formatClock(deadline)} arrival deadline.`
+    : `Compared with your selected leave time of ${formatClock(selectedLegs[0].trip.departureDate)}.`;
   els.recommendationOptions.hidden = false;
   els.recommendationOptions.innerHTML = [
-    renderRecommendationOption("Earlier", suggestions.before, "No lower-cost timing found before selected time."),
-    renderRecommendationOption("Later", suggestions.after, "No lower-cost timing found after selected time."),
+    suggestions.before ? renderRecommendationOption("Earlier", suggestions.before) : "",
+    !arriveBy && suggestions.after ? renderRecommendationOption("Later", suggestions.after) : "",
   ].join("");
 }
 
@@ -1363,7 +1495,7 @@ function renderRecommendationOption(label, suggestion, emptyMessage) {
 
   const title =
     suggestion.total === 0
-      ? `Leave ${formatClock(suggestion.departureDate)} to avoid ERP`
+      ? `Leave ${formatClock(suggestion.departureDate)} · no ERP charge estimated`
       : `Leave ${formatClock(suggestion.departureDate)} for ${formatMoney(suggestion.total)}`;
 
   return `
@@ -1381,8 +1513,11 @@ function findTimingSuggestions(selectedLegs) {
   const outbound = selectedLegs[0];
   const returnLeg = selectedLegs[1];
   const baseDeparture = outbound.trip.departureDate;
+  const arrivalDeadline = state.currentPlan.timeMode === "arrive"
+    ? state.currentPlan.requestedDate || outbound.selectedDateTime || outbound.trip.arrivalDate
+    : null;
   const dateString = toDateInputValue(baseDeparture);
-  const startOfDay = new Date(`${dateString}T00:00:00`);
+  const startOfDay = singaporeDateTime(dateString);
   const currentTotal = selectedLegs.reduce((sum, option) => sum + option.trip.total, 0);
   const suggestions = {
     before: null,
@@ -1391,7 +1526,10 @@ function findTimingSuggestions(selectedLegs) {
 
   for (let minute = ROUTE_SEARCH_START_MINUTES; minute <= ROUTE_SEARCH_END_MINUTES; minute += 5) {
     const departure = addMinutes(startOfDay, minute);
-    if (departure.getTime() === baseDeparture.getTime()) {
+    const arrival = addSeconds(departure, outbound.route.durationSeconds);
+    if ((arrivalDeadline && arrival > arrivalDeadline) ||
+        (returnLeg && arrival >= returnLeg.trip.departureDate) ||
+        departure.getTime() === baseDeparture.getTime()) {
       continue;
     }
 
@@ -1409,7 +1547,7 @@ function findTimingSuggestions(selectedLegs) {
 
     const candidate = {
       departureDate: departure,
-      arrivalDate: addSeconds(departure, outbound.route.durationSeconds),
+      arrivalDate: arrival,
       total,
       saving: roundMoney(currentTotal - total),
     };
@@ -1489,9 +1627,10 @@ function renderInitialResults() {
 }
 
 function clearCurrentEstimate(message) {
-  if (!state.currentPlan) {
-    return;
-  }
+  state.routeController?.abort();
+  state.routeController = null;
+  window.clearTimeout(state.timingTimer);
+  state.timingTimer = null;
   state.routeRequestId += 1;
   closeErpDetail();
   state.currentPlan = null;
@@ -1555,7 +1694,7 @@ function renderAllGantries() {
       weight: gantry.isPriced ? 1.5 : 1,
       className: "erp-map-target",
     });
-    bindGantryInfo(marker, infoForGantry(gantry));
+    bindGantryInfo(marker, () => infoForGantry(gantry));
     marker.addTo(state.allGantriesLayer);
   });
 }
@@ -1732,9 +1871,7 @@ function chargedWindowSummary(rows) {
   return `${clockFromMinutes(chargedRows[0].start)} - ${clockFromMinutes(chargedRows.at(-1).end)}`;
 }
 
-function dateWithMinutes(dateString, minutes) {
-  return new Date(`${dateString}T${clockFromMinutes(minutes)}:00`);
-}
+function dateWithMinutes(dateString, minutes) { return singaporeDateTime(dateString, clockFromMinutes(minutes)); }
 
 function clockFromMinutes(minutes) {
   const hours = Math.floor(minutes / 60);
@@ -1777,7 +1914,7 @@ function bindHoverPopup(layer) {
 
 function bindGantryInfo(layer, detail) {
   layer.on("click", () => {
-    openErpDetail(detail);
+    openErpDetail(typeof detail === "function" ? detail() : detail);
   });
 }
 
@@ -1796,115 +1933,88 @@ function closeErpDetail() {
   els.erpDetailContent.innerHTML = "";
 }
 
-async function requireConfirmedAddress(type) {
-  const input = els[type];
-  const value = input.value.trim();
+async function requireConfirmedAddress(type, signal = state.routeController?.signal) {
+  if (signal?.aborted) throw new DOMException("Cancelled", "AbortError");
+  const value = els[type].value.trim();
   const confirmed = state.address[type];
-  if (confirmed && confirmed.inputValue === value) {
-    return confirmed;
-  }
-
+  if (confirmed && confirmed.inputValue === value) return confirmed;
   const coordinatePoint = parseCoordinateInput(value);
   if (coordinatePoint) {
-    setConfirmedAddress(type, coordinatePoint, value);
+    setConfirmedAddress(type, coordinatePoint);
     return state.address[type];
   }
-
-  const suggestions = await fetchAddressSuggestions(value, 5);
-  renderAddressSuggestions(type, suggestions);
-  if (!suggestions.length) {
-    throw new Error(`No Singapore address match found for "${value}".`);
+  const suggestions = await fetchAddressSuggestions(value, 5, signal);
+  if (signal?.aborted || els[type].value.trim() !== value) throw new DOMException("Cancelled", "AbortError");
+  // A single unambiguous match can be used directly; ambiguous addresses stay explicit.
+  if (suggestions.length === 1) {
+    setConfirmedAddress(type, suggestions[0]);
+    rememberPlace(suggestions[0]);
+    return state.address[type];
   }
-  throw new Error(
-    `Confirm the ${type === "start" ? "start point" : "destination"} from the suggestions before estimating.`,
-  );
+  renderAddressSuggestions(type, suggestions);
+  els[type].focus();
+  throw new Error(suggestions.length
+    ? `Choose the ${type === "start" ? "start point" : "destination"} from the matching addresses.`
+    : `No Singapore address found for “${value}”. Try a postal code or building name.`);
 }
 
-async function fetchAddressSuggestions(query, limit = 5) {
+async function fetchAddressSuggestions(query, limit = 5, signal) {
   const coordinatePoint = parseCoordinateInput(query);
-  if (coordinatePoint) {
-    return [coordinatePoint];
-  }
-  const searchQuery = /singapore/i.test(query) ? query : `${query}, Singapore`;
-  const url = new URL("https://nominatim.openstreetmap.org/search");
-  url.search = new URLSearchParams({
-    format: "jsonv2",
-    q: searchQuery,
-    limit: String(limit),
-    countrycodes: "sg",
-    addressdetails: "1",
-    viewbox: "103.55,1.49,104.15,1.16",
-    bounded: "1",
-  }).toString();
-
-  const results = await fetchJson(url.toString());
-  if (!Array.isArray(results)) {
-    return [];
-  }
-  return results.map((result) => ({
-    lat: Number(result.lat),
-    lng: Number(result.lon),
-    label: result.display_name,
-  }));
+  if (coordinatePoint) return [coordinatePoint];
+  const key = query.trim().toLowerCase();
+  if (addressCache.has(key)) return addressCache.get(key).slice(0, limit);
+  const payload = await fetchJson(`/api/search?q=${encodeURIComponent(query.trim())}`, { timeoutMs: 6500, signal });
+  const results = (payload.results || []).filter(isSingaporePoint);
+  if (addressCache.size >= 60) addressCache.delete(addressCache.keys().next().value);
+  addressCache.set(key, results);
+  return results.slice(0, limit);
 }
 
 function parseCoordinateInput(value) {
-  const coordinateMatch = value.trim().match(/^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/);
-  if (!coordinateMatch) {
-    return null;
-  }
-  return {
-    lat: Number(coordinateMatch[1]),
-    lng: Number(coordinateMatch[2]),
-    label: value.trim(),
-  };
+  const match = value.trim().match(/^(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)$/);
+  if (!match) return null;
+  const point = { lat: Number(match[1]), lng: Number(match[2]), label: value.trim() };
+  return isSingaporePoint(point) ? point : null;
 }
 
 function renderAddressSuggestions(type, suggestions) {
-  const container = type === "start" ? els.startSuggestions : els.destinationSuggestions;
+  const container = els[`${type}Suggestions`];
+  state.suggestions[type] = suggestions || [];
+  state.activeSuggestions[type] = -1;
+  els[type].removeAttribute("aria-activedescendant");
+  els[type].setAttribute("aria-expanded", "true");
   if (suggestions === null) {
-    container.innerHTML = `<div class="suggestion-muted">Searching...</div>`;
+    container.innerHTML = '<div class="suggestion-muted" role="status">Searching Singapore addresses…</div>';
     return;
   }
   if (!suggestions.length) {
-    container.innerHTML = "";
+    container.innerHTML = '<div class="suggestion-muted" role="status">No match. Try a postal code or building name.</div>';
     return;
   }
-  container.innerHTML = suggestions
-    .map((suggestion, index) => {
-      const address = addressSuggestionParts(suggestion.label);
-      return `<button type="button" class="suggestion-option" data-index="${index}">
-        <strong>${escapeHtml(address.title)}</strong>
-        ${address.detail ? `<small>${escapeHtml(address.detail)}</small>` : ""}
-      </button>`;
-    })
-    .join("");
+  container.innerHTML = suggestions.map((suggestion, index) => {
+    const address = addressSuggestionParts(suggestion.label);
+    return `<button type="button" role="option" tabindex="-1" aria-selected="false" id="${type}-option-${index}" class="suggestion-option" data-index="${index}">
+      <strong>${escapeHtml(address.title)}</strong>${address.detail ? `<small>${escapeHtml(address.detail)}</small>` : ""}
+    </button>`;
+  }).join("");
   container.querySelectorAll(".suggestion-option").forEach((button) => {
-    button.addEventListener("click", () => {
-      setConfirmedAddress(type, suggestions[Number(button.dataset.index)]);
-      container.innerHTML = "";
-    });
+    button.addEventListener("click", () => selectAddress(type, suggestions[Number(button.dataset.index)]));
   });
 }
 
 function setConfirmedAddress(type, point, inputValue = null) {
+  cancelAddressSearch(type);
   const input = els[type];
-  if (inputValue !== null) {
-    input.value = inputValue;
-  }
-  state.address[type] = {
-    lat: point.lat,
-    lng: point.lng,
-    label: point.label,
-    inputValue: input.value.trim(),
-  };
+  input.value = inputValue ?? shortAddress(point.label);
+  state.address[type] = { ...point, inputValue: input.value.trim() };
+  closeAddressSuggestions(type);
   renderAddressConfirmation(type);
 }
 
 function renderAddressConfirmation(type) {
-  const confirmation = type === "start" ? els.startConfirmation : els.destinationConfirmation;
+  const confirmation = els[`${type}Confirmation`];
   const point = state.address[type];
-  confirmation.textContent = point ? `Using: ${shortAddress(point.label)}` : "";
+  confirmation.textContent = point ? "Location selected" : "";
 }
 
 function shortAddress(label) {
@@ -1916,40 +2026,29 @@ function addressSuggestionParts(label) {
     .split(",")
     .map((part) => part.trim())
     .filter(Boolean);
-  const titleParts = parts.slice(0, 3);
+  const titleParts = parts.slice(0, 1);
   return {
     title: titleParts.join(", ") || label,
     detail: parts.slice(titleParts.length).join(", "),
   };
 }
 
-async function fetchDrivingRoutes(startPoint, endPoint) {
-  const providerResults = await Promise.allSettled([
-    fetchOneMapRoutes(startPoint, endPoint),
-    fetchFossgisOsrmRoutes(startPoint, endPoint),
-    fetchValhallaRoutes(startPoint, endPoint),
-    fetchOsrmDemoRoutes(startPoint, endPoint),
-  ]);
-  const routes = providerResults.flatMap((result) => (result.status === "fulfilled" ? result.value : []));
+const cachedDrivingRoutes = createRouteService({
+  providers: [fetchOneMapRoutes, fetchFossgisOsrmRoutes, fetchValhallaRoutes, fetchOsrmDemoRoutes],
+  rank: rankRouteCandidates,
+  limit: MAX_ROUTE_OPTIONS,
+});
 
-  if (!routes.length) {
-    throw new Error("No driving route found between those points.");
-  }
-
-  return rankRouteCandidates(routes, startPoint, endPoint)
-    .slice(0, MAX_ROUTE_OPTIONS)
-    .map((route, index) => ({
-      ...route,
-      index,
-    }));
+async function fetchDrivingRoutes(startPoint, endPoint, options = {}) {
+  return cachedDrivingRoutes(startPoint, endPoint, options);
 }
 
-async function fetchOneMapRoutes(startPoint, endPoint) {
+async function fetchOneMapRoutes(startPoint, endPoint, { signal } = {}) {
   const params = new URLSearchParams({
     start: `${startPoint.lat},${startPoint.lng}`,
     end: `${endPoint.lat},${endPoint.lng}`,
   });
-  const payload = await fetchJson(`./api/routes/onemap?${params}`, { timeoutMs: ROUTING_TIMEOUTS.onemap });
+  const payload = await fetchJson(`./api/routes/onemap?${params}`, { signal, timeoutMs: ROUTING_TIMEOUTS.onemap });
   return parseOneMapRoutes(payload, {
     provider: "onemap",
     providerLabel: "OneMap routing",
@@ -1957,10 +2056,10 @@ async function fetchOneMapRoutes(startPoint, endPoint) {
   });
 }
 
-async function fetchFossgisOsrmRoutes(startPoint, endPoint) {
+async function fetchFossgisOsrmRoutes(startPoint, endPoint, { signal } = {}) {
   const coordinates = `${startPoint.lng},${startPoint.lat};${endPoint.lng},${endPoint.lat}`;
   const url = `https://routing.openstreetmap.de/routed-car/route/v1/driving/${coordinates}?overview=full&geometries=geojson&steps=false&alternatives=true`;
-  const payload = await fetchJson(url, { timeoutMs: ROUTING_TIMEOUTS.fossgisOsrm });
+  const payload = await fetchJson(url, { signal, timeoutMs: ROUTING_TIMEOUTS.fossgisOsrm });
   return parseOsrmRoutes(payload, {
     provider: "fossgis-osrm",
     providerLabel: "OpenStreetMap routing",
@@ -1968,10 +2067,10 @@ async function fetchFossgisOsrmRoutes(startPoint, endPoint) {
   });
 }
 
-async function fetchOsrmDemoRoutes(startPoint, endPoint) {
+async function fetchOsrmDemoRoutes(startPoint, endPoint, { signal } = {}) {
   const coordinates = `${startPoint.lng},${startPoint.lat};${endPoint.lng},${endPoint.lat}`;
   const url = `https://router.project-osrm.org/route/v1/driving/${coordinates}?overview=full&geometries=geojson&steps=false&alternatives=true`;
-  const payload = await fetchJson(url, { timeoutMs: ROUTING_TIMEOUTS.osrmDemo });
+  const payload = await fetchJson(url, { signal, timeoutMs: ROUTING_TIMEOUTS.osrmDemo });
   return parseOsrmRoutes(payload, {
     provider: "osrm-demo",
     providerLabel: "OSRM fallback",
@@ -1979,7 +2078,7 @@ async function fetchOsrmDemoRoutes(startPoint, endPoint) {
   });
 }
 
-async function fetchValhallaRoutes(startPoint, endPoint) {
+async function fetchValhallaRoutes(startPoint, endPoint, { signal } = {}) {
   const request = {
     locations: [
       { lat: startPoint.lat, lon: startPoint.lng, type: "break" },
@@ -1995,6 +2094,7 @@ async function fetchValhallaRoutes(startPoint, endPoint) {
   const payload = await fetchJson("https://valhalla1.openstreetmap.de/route", {
     method: "POST",
     timeoutMs: ROUTING_TIMEOUTS.valhalla,
+    signal,
     headers: {
       "Content-Type": "application/json",
       "X-Client-Id": "erp-commute-estimator.pages.dev",
@@ -2322,33 +2422,47 @@ function decodePolylineValue(value, startIndex) {
   };
 }
 
+const gantryMatchesCache = new WeakMap();
+
 function matchGantriesToRoute(route) {
+  const cached = gantryMatchesCache.get(route);
+  if (cached?.data === state.erpData) return cached.matches;
+  const bounds = route.points.reduce((b, p) => ({
+    minLat: Math.min(b.minLat, p.lat), maxLat: Math.max(b.maxLat, p.lat),
+    minLng: Math.min(b.minLng, p.lng), maxLng: Math.max(b.maxLng, p.lng),
+  }), { minLat: Infinity, maxLat: -Infinity, minLng: Infinity, maxLng: -Infinity });
+  const geometryLength = route.cumulativeMeters.at(-1) || route.totalMeters;
   const matches = [];
   for (const gantry of state.erpData.gantries) {
+    const points = gantry.line?.length > 1 ? gantry.line : [gantry.center];
+    // 0.0012 degrees exceeds the 115 m match radius throughout Singapore.
+    if (points.every(([lat]) => lat < bounds.minLat - 0.0012) ||
+        points.every(([lat]) => lat > bounds.maxLat + 0.0012) ||
+        points.every(([, lng]) => lng < bounds.minLng - 0.0012) ||
+        points.every(([, lng]) => lng > bounds.maxLng + 0.0012)) continue;
     const closest = closestProgressToGantry(gantry, route);
-    if (
-      gantryMatchIsCloseEnough(closest, gantry) &&
-      routeDirectionMatchesGantry(closest.routeBearingDegrees, gantry.directionDegrees)
-    ) {
+    if (gantryMatchIsCloseEnough(closest, gantry) &&
+        routeDirectionMatchesGantry(closest.routeBearingDegrees, gantry.directionDegrees)) {
       matches.push({
         gantry,
         distanceMeters: closest.distanceMeters,
         directionDelta: directionDelta(closest.routeBearingDegrees, gantry.directionDegrees),
         progressMeters: closest.progressMeters,
-        progressRatio: route.totalMeters > 0 ? closest.progressMeters / route.totalMeters : 0,
+        progressRatio: geometryLength > 0 ? clamp(closest.progressMeters / geometryLength, 0, 1) : 0,
         matchType: closest.matchType,
       });
     }
   }
-
-  return dedupeCompetingGantryMatches(matches).sort((a, b) => a.progressMeters - b.progressMeters);
+  const result = dedupeCompetingGantryMatches(matches).sort((a, b) => a.progressMeters - b.progressMeters);
+  gantryMatchesCache.set(route, { data: state.erpData, matches: result });
+  return result;
 }
 
 function gantryMatchIsCloseEnough(closest, gantry) {
   if (closest.matchType === "line") {
     return gantryLineMatchIsUsable(closest);
   }
-  const markerThreshold = gantry.groupId
+  const markerThreshold = gantry.isPriced && Number.isFinite(gantry.directionDegrees)
     ? GANTRY_POINT_MATCH_THRESHOLD_METERS
     : UNPRICED_MARKER_MATCH_THRESHOLD_METERS;
   return closest.distanceMeters <= markerThreshold;
@@ -2563,7 +2677,7 @@ function calculateTrip(route, matchedGantries, departureDate, vehicleType, legLa
   });
 
   const pricedEntries = [...groupMatches.entries()].map(([groupId, item]) => {
-    const group = state.erpData.groups.find((candidate) => candidate.id === groupId);
+    const group = indexErpData(state.erpData).groups.get(groupId);
     const rate = getRateForGroup(groupId, item.crossingDate, vehicleType);
     return {
       ...item,
@@ -2575,6 +2689,7 @@ function calculateTrip(route, matchedGantries, departureDate, vehicleType, legLa
       multiplier: rate.multiplier,
       vehicleLabel: rate.vehicleLabel,
       rateLabel: rate.label,
+      estimated: rate.estimated,
     };
   });
 
@@ -2592,66 +2707,8 @@ function calculateTrip(route, matchedGantries, departureDate, vehicleType, legLa
 }
 
 function getRateForGroup(groupId, crossingDate, vehicleType) {
-  const dateString = toDateInputValue(crossingDate);
-  const minutes = crossingDate.getHours() * 60 + crossingDate.getMinutes();
-  const vehicle = VEHICLE_TYPES[vehicleType] || VEHICLE_TYPES.car;
-  const zero = (label) => ({
-    amount: 0,
-    baseAmount: 0,
-    multiplier: vehicle.multiplier,
-    vehicleLabel: vehicle.label,
-    label,
-  });
-
-  if (isZeroErpDate(dateString)) {
-    return zero("Sunday or Singapore public holiday");
-  }
-  if (isMajorHolidayEveCutoff(dateString, minutes)) {
-    return zero("Eve of major public holiday after 13:00");
-  }
-  if (!isWeekday(dateString)) {
-    return zero("No modelled Saturday ERP rate");
-  }
-
-  const adjustment = state.erpData.adjustments.find((item) => {
-    return (
-      item.groupId === groupId &&
-      dateString >= item.fromDate &&
-      (!item.toDate || dateString <= item.toDate) &&
-      minutes >= minutesFromClock(item.start) &&
-      minutes < minutesFromClock(item.end)
-    );
-  });
-
-  if (adjustment) {
-    return {
-      amount: roundMoney(adjustment.amount * vehicle.multiplier),
-      baseAmount: adjustment.amount,
-      multiplier: vehicle.multiplier,
-      vehicleLabel: vehicle.label,
-      label: adjustment.reason,
-    };
-  }
-
-  const baseRate = state.erpData.baseRates.find((item) => {
-    return (
-      item.groupId === groupId &&
-      minutes >= minutesFromClock(item.start) &&
-      minutes < minutesFromClock(item.end)
-    );
-  });
-
-  if (baseRate) {
-    return {
-      amount: roundMoney(baseRate.amount * vehicle.multiplier),
-      baseAmount: baseRate.amount,
-      multiplier: vehicle.multiplier,
-      vehicleLabel: vehicle.label,
-      label: "Base weekday rate",
-    };
-  }
-
-  return zero("No active ERP rate");
+  return lookupErpRate(state.erpData, groupId, toDateInputValue(crossingDate),
+    minutesFromClock(formatClock(crossingDate)), VEHICLE_TYPES[vehicleType] || VEHICLE_TYPES.car);
 }
 
 function getSelectedLegs() {
@@ -2671,6 +2728,12 @@ function clearRouteLayers() {
 }
 
 function resetEstimator() {
+  cancelLocationRequest();
+  state.routeController?.abort();
+  window.clearTimeout(state.timingTimer);
+  state.timingTimer = null;
+  cancelAddressSearch("start");
+  cancelAddressSearch("destination");
   closeErpDetail();
   state.routeRequestId += 1;
   state.address = {
@@ -2693,17 +2756,19 @@ function resetEstimator() {
 
   els.start.value = "";
   els.destination.value = "";
-  els.startSuggestions.innerHTML = "";
-  els.destinationSuggestions.innerHTML = "";
+  closeAddressSuggestions("start");
+  closeAddressSuggestions("destination");
   renderAddressConfirmation("start");
   renderAddressConfirmation("destination");
 
   els.returnTrip.checked = false;
-  setRadioValue("timeMode", "depart");
+  setRadioValue("timeMode", "arrive");
   els.vehicleType.value = "car";
   setDefaultSingaporeDateTime();
   setReturnOffset(8);
   renderTripMode();
+  syncTimingControls();
+  document.querySelector("#trip-options").open = false;
 
   els.showAllGantries.checked = true;
   setMapSource("osm");
@@ -2712,7 +2777,7 @@ function resetEstimator() {
   fitCurrentRoute();
   renderInitialResults();
   setLoading(false);
-  setStatus("Enter a start point, destination and timing.");
+  setStatus("Arrive by 9:00 am tomorrow. Choose your start and destination.");
 
   window.history.replaceState(null, "", `${window.location.origin}${window.location.pathname}`);
   els.start.focus();
@@ -2746,6 +2811,11 @@ function routeFitOptions() {
 }
 
 function handleSwap() {
+  cancelLocationRequest();
+  for (const type of ["start", "destination"]) {
+    cancelAddressSearch(type);
+    closeAddressSuggestions(type);
+  }
   const oldStart = els.start.value;
   els.start.value = els.destination.value;
   els.destination.value = oldStart;
@@ -2776,13 +2846,9 @@ function getVehicleType() {
   return els.vehicleType.value in VEHICLE_TYPES ? els.vehicleType.value : "car";
 }
 
-function getSelectedDateTime() {
-  return new Date(`${els.date.value}T${els.time.value}:00`);
-}
+function getSelectedDateTime() { return singaporeDateTime(els.date.value, els.time.value); }
 
-function getReturnDateTime() {
-  return new Date(`${els.returnDate.value}T${els.returnTime.value}:00`);
-}
+function getReturnDateTime() { return singaporeDateTime(els.returnDate.value, els.returnTime.value); }
 
 function setReturnOffset(hours) {
   const departure = getSelectedDateTime();
@@ -2802,20 +2868,14 @@ function syncReturnDateIfBeforeDeparture() {
 }
 
 function stepTimeInput(input, minutes) {
-  if (!input?.value) {
-    input.value = "08:00";
-  }
-  const [hours, currentMinutes] = input.value.split(":").map(Number);
-  const date = new Date(2026, 0, 1, hours, currentMinutes);
-  const next = addMinutes(date, minutes);
-  input.value = formatClock(next);
+  input.value = clockFromMinutes((minutesFromClock(input.value || "09:00") + minutes + 1440) % 1440);
 }
 
 function stepDateInput(input, days) {
   if (!input) {
     return;
   }
-  const current = input.value ? new Date(`${input.value}T00:00:00`) : new Date();
+  const current = input.value ? singaporeDateTime(input.value) : new Date();
   input.value = toDateInputValue(addDays(current, days));
 }
 
@@ -2926,35 +2986,54 @@ function hydratePointFromParams(type, params, prefix) {
   const lat = Number(params.get(`${prefix}lat`));
   const lng = Number(params.get(`${prefix}lng`));
   const label = params.get(`${prefix}label`);
-  if (Number.isFinite(lat) && Number.isFinite(lng) && label) {
+  if (params.has(`${prefix}lat`) && params.has(`${prefix}lng`) && isSingaporePoint({ lat, lng }) && label) {
     setConfirmedAddress(type, { lat, lng, label });
   }
 }
 
 function setRadioValue(name, value) {
-  if (!value) {
-    return;
-  }
-  const radio = document.querySelector(`input[name="${name}"][value="${value}"]`);
-  if (radio) {
-    radio.checked = true;
-  }
+  document.querySelectorAll(`input[name="${name}"]`).forEach((radio) => {
+    if (radio.value === value) radio.checked = true;
+  });
 }
 
 function renderSourceMetadata() {
-  const generatedDate = state.erpData.meta.generatedAt
-    ? new Date(state.erpData.meta.generatedAt).toLocaleDateString("en-SG", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        timeZone: "Asia/Singapore",
-      })
-    : "unknown date";
-  const pricedCount = state.erpData.gantries.filter((gantry) => gantry.isPriced).length;
-  els.sourceGenerated.textContent = `Generated ${generatedDate}; ${pricedCount} priced gantry geometries indexed.`;
-  els.sourceCopy.textContent = `${state.erpData.meta.notes.join(
-    " ",
-  )} Vehicle types use the official base-rate multipliers. Route geometry uses OneMap drive routing when configured, with OpenStreetMap-based fallback providers.`;
+  const meta = state.erpData.meta;
+  const activeCount = state.erpData.gantries.filter((gantry) => gantry.isPriced).length;
+  const verified = new Date(`${meta.verifiedOn}T00:00:00+08:00`).toLocaleDateString("en-SG", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Singapore" });
+  els.sourceGenerated.textContent = `Checked ${verified} · ${state.erpData.gantries.length} locations · ${activeCount} active`;
+  els.sourceCopy.textContent = `${meta.notes.join(" ")} Address search: OneMap, Singapore Land Authority. Routing uses OneMap and OpenStreetMap-based providers; no live traffic.`;
+  const sourceList = document.querySelector(".source-list");
+  const rateLink = document.createElement("a");
+  rateLink.href = meta.sourceLinks.oneMotoringErpRatesPdf;
+  rateLink.target = "_blank";
+  rateLink.rel = "noopener noreferrer";
+  rateLink.textContent = "Full rate table · effective 7 September 2026";
+  sourceList.prepend(rateLink);
+}
+
+function renderEstimateCoverage(legs) {
+  let note = document.querySelector("#estimate-coverage");
+  if (!note) {
+    note = document.createElement("p");
+    note.id = "estimate-coverage";
+    note.className = "estimate-coverage";
+    note.setAttribute("role", "note");
+    els.routeOptions.before(note);
+  }
+  const meta = state.erpData.meta;
+  const calendar = state.erpData.calendar;
+  const dates = legs.flatMap((leg) => [toDateInputValue(leg.trip.departureDate), toDateInputValue(leg.trip.arrivalDate)]);
+  const messages = [];
+  if (dates.some((date) => date < meta.ratesEffectiveFrom)) messages.push("Historical rates are unverified; this estimate uses the current rate table.");
+  if (dates.some((date) => !calendar.years.includes(Number(date.slice(0, 4))))) messages.push("Public holidays for this year are unverified.");
+  if (legs.some((leg) => calendar.uncertainEveDates.some((date) => {
+    const cutoff = singaporeDateTime(date, "13:00").getTime();
+    return leg.trip.arrivalDate.getTime() >= cutoff && leg.trip.departureDate.getTime() < cutoff + 11 * 3600000;
+  }))) messages.push("LTA's Hari Raya eve cutoff guidance differs between sources. Standard rates are shown; check OneMotoring before travel.");
+  if (!messages.length && dates.some((date) => date > meta.ratesVerifiedThrough)) messages.push("Uses the latest published rates. Future rate revisions may change this estimate.");
+  note.textContent = messages.join(" ");
+  note.hidden = !messages.length;
 }
 
 function focusMapAfterEstimate() {
@@ -2980,21 +3059,10 @@ function refreshMapLayout() {
 }
 
 function setDefaultSingaporeDateTime() {
-  const formatter = new Intl.DateTimeFormat("en-SG", {
-    timeZone: "Asia/Singapore",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-  const parts = Object.fromEntries(formatter.formatToParts(new Date()).map((part) => [part.type, part.value]));
-  els.date.value = `${parts.year}-${parts.month}-${parts.day}`;
-  const roundedMinute = Math.ceil(Number(parts.minute) / 5) * 5;
-  const hour = Number(parts.hour) + (roundedMinute === 60 ? 1 : 0);
-  const minute = roundedMinute === 60 ? 0 : roundedMinute;
-  els.time.value = `${String(hour % 24).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+  const defaults = defaultTripTiming();
+  els.date.value = defaults.date;
+  els.time.value = defaults.time;
+  setRadioValue("timeMode", defaults.mode);
 }
 
 function buildCumulativeDistances(points) {
@@ -3112,24 +3180,16 @@ function addHours(date, hours) {
   return new Date(date.getTime() + hours * 3600000);
 }
 
-function addDays(date, days) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days, date.getHours(), date.getMinutes());
-}
+function addDays(date, days) { return new Date(date.getTime() + days * 86400000); }
 
 function minutesFromClock(clock) {
   const [hours, minutes] = clock.split(":").map(Number);
   return hours * 60 + minutes;
 }
 
-function toDateInputValue(date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
-    date.getDate(),
-  ).padStart(2, "0")}`;
-}
+function toDateInputValue(date) { return singaporeDateValue(date); }
 
-function formatClock(date) {
-  return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
-}
+function formatClock(date) { return singaporeClock(date); }
 
 function formatDuration(seconds) {
   const minutes = Math.round(seconds / 60);
@@ -3161,23 +3221,23 @@ function roundMoney(amount) {
 }
 
 async function fetchJson(url, options = {}) {
-  const { timeoutMs = 12000, headers = {}, ...fetchOptions } = options;
+  const { timeoutMs = 12000, headers = {}, signal, ...fetchOptions } = options;
   const controller = new AbortController();
+  const abort = () => controller.abort(signal?.reason);
+  if (signal?.aborted) abort();
+  else signal?.addEventListener("abort", abort, { once: true });
   const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
-  let response;
   try {
-    response = await fetch(url, {
-      ...fetchOptions,
-      signal: controller.signal,
+    const response = await fetch(url, {
+      ...fetchOptions, signal: controller.signal,
       headers: { Accept: "application/json", ...headers },
     });
+    if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+    return await response.json();
   } finally {
     window.clearTimeout(timeout);
+    signal?.removeEventListener("abort", abort);
   }
-  if (!response.ok) {
-    throw new Error(`Request failed: ${response.status}`);
-  }
-  return response.json();
 }
 
 function setStatus(message) {

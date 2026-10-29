@@ -1,16 +1,17 @@
 {
   "name": "erp-commute-estimator",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "npm run validate",
-    "check": "node --check public/app.js && node --check functions/api/routes/onemap.js && node --check scripts/fetch-gantries.mjs && node --check scripts/validate-data.mjs && node --check scripts/validate-routing.mjs && node --check scripts/validate-calculations.mjs && npm run validate",
+    "check": "node --check public/app.js && node --check functions/api/search.js && node --check functions/api/routes/onemap.js && npm run validate",
     "serve": "python3 -m http.server 4173 --directory public",
-    "validate": "node scripts/validate-data.mjs && node scripts/validate-routing.mjs && node scripts/validate-calculations.mjs",
+    "validate": "node scripts/validate-data.mjs && node scripts/validate-routing.mjs && node scripts/validate-calculations.mjs && node scripts/validate-engine.mjs && node scripts/validate-planner.mjs",
     "validate:data": "node scripts/validate-data.mjs",
     "validate:calculations": "node scripts/validate-calculations.mjs",
     "validate:routing": "node scripts/validate-routing.mjs",
-    "fetch:gantries": "node scripts/fetch-gantries.mjs"
+    "fetch:gantries": "node scripts/fetch-gantries.mjs",
+    "dev": "wrangler pages dev public --ip 127.0.0.1 --port 4173"
   }
 }

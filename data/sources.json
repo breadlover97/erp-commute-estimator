@@ -1,0 +1,49 @@
+{
+  "verifiedOn": "2026-10-29",
+  "sources": {
+    "oneMotoringErpRatesPdf": {
+      "url": "https://onemotoring.lta.gov.sg/content/dam/onemotoring/Driving/ERP/ERP_rates_tables/2026.09.03-20260626-1PCU_ERP_Rates_Report.20260623170433.pdf",
+      "effectiveFrom": "2026-09-07",
+      "file": "erp-rates.pdf",
+      "sha256": "698957274233ce7ffb22dae2a66129fb0b8b3fca1866176eb0c31fd192e29098",
+      "bytes": 29413
+    },
+    "ltaSeptember2026Revision": {
+      "url": "https://www.lta.gov.sg/content/ltagov/en/newsroom/2026/8/news-releases/revised-erp-rates-from-7-september-2026.html",
+      "publishedOn": "2026-08-31"
+    },
+    "oneMotoringErpGuide": {
+      "url": "https://onemotoring.lta.gov.sg/content/onemotoring/home/driving/ERP/ERP.html",
+      "pageUpdatedOn": "2026-10-27"
+    },
+    "oneMotoringErpKml": {
+      "url": "https://onemotoring.lta.gov.sg/mapapp/kml/erp-kml/erp-kml-0.kml",
+      "file": "onemotoring-erp.kml",
+      "sha256": "c6598965266f9c212300bde4de5571fdae433aa9b6870e5fb49f3b1a703dbcf6",
+      "bytes": 50120
+    },
+    "ltaGantryGeoJson": {
+      "url": "https://datamall.lta.gov.sg/content/dam/datamall/datasets/Geospatial/ERPGantry_Sep2026.zip",
+      "datasetMonth": "2026-09",
+      "file": "lta-gantry-sep2026.zip",
+      "sha256": "6c3fd0a705799caf8b246cf5d5b1cb643afc9c1a431818f53c1b42bee8a76351",
+      "bytes": 70887
+    },
+    "ltaDataMall": {
+      "url": "https://datamall.lta.gov.sg/content/datamall/en/static-data.html"
+    },
+    "momPublicHolidays": {
+      "url": "https://www.mom.gov.sg/employment-practices/public-holidays"
+    },
+    "momPublicHolidays2026": {
+      "url": "https://www.mom.gov.sg/newsroom/press-releases/2025/0616-public-holidays-for-2026"
+    },
+    "momPublicHolidays2027": {
+      "url": "https://www.mom.gov.sg/newsroom/press-releases/2026/0618-public-holidays-for-2027"
+    },
+    "ltaErp2Transition": {
+      "url": "https://www.lta.gov.sg/content/ltagov/en/newsroom/2026/9/news-releases/new-road-markings-signs-erp-2-transition-oct-26.html",
+      "publishedOn": "2026-09-28"
+    }
+  }
+}

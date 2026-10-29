@@ -3,3 +3,6 @@ node_modules/
 data/gantry-download.json
 .dev.vars
 .wrangler/
+
+.venv-data/
+__pycache__/

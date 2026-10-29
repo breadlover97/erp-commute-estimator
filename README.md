@@ -1,75 +1,54 @@
 # ERP Calculator
 
-A static web app for estimating Singapore ERP charges for a driving commute.
+A lightweight Singapore commute planner, published at https://erp-commute-estimator.pages.dev.
 
-## What It Does
+## Plan a trip
 
-- Searches a start point and destination in Singapore.
-- Confirms address suggestions before routing, including postal-code searches.
-- Draws ranked driving route alternatives on an interactive Leaflet map.
-- Shows official OneMotoring ERP marker locations.
-- Highlights ERP gantries along the selected route with rate tooltips.
-- Calculates ERP cost for motorcycles, cars/taxis/light goods vehicles, heavy goods vehicles and very heavy vehicles.
-- Supports one-way and return commute estimates.
-- Compares ERP cost across nearby departure times and route alternatives.
-- Suggests a lower-cost or ERP-free departure time where one is found.
-- Creates a shareable commute URL.
+A fresh visit defaults to **arrive by 9:00 am tomorrow**, in Singapore time. Search by postal code, building or street, select a matching address (or use the keyboard), and estimate. Current location, recent places, swap, Today/Tomorrow shortcuts, time presets and a five-minute slider reduce repeat entry. Vehicle and return-trip settings are optional. Changing timing after an estimate recalculates automatically using cached route geometry.
 
-## Data Sources
+Results show estimated departure/arrival times, route options, ERP charges, timing comparisons and individual gantry details. The share action includes the selected addresses and coordinates in the URL. Recent locations are stored only in the browser; current geolocation is not added to that history.
 
-- ERP marker locations: OneMotoring ERP KML marker layer.
-- Gantry line geometry where available: data.gov.sg `LTA Gantry (GEOJSON)`, dataset `d_753090823cc9920ac41efaa6530c5893`.
-- Base rates: OneMotoring `ERP Rates.pdf`, with effect from 23 Mar 2026.
-- Latest adjustments: LTA news release, `Revised ERP Rates from 2 June 2026`, published 25 May 2026.
-- Public holidays: MOM 2026 Singapore public holidays.
-- Route geometry: OneMap drive routing when configured, with OpenStreetMap/FOSSGIS OSRM, Valhalla and OSRM demo fallback providers.
+## Architecture
 
-The checked-in app data is in `public/data/erp-data.json`.
+- Plain HTML, CSS and ES modules; no frontend build framework or package installation required.
+- `public/app.js`: interface, route rendering and directional gantry matching.
+- `public/planner-utils.js`: Singapore dates and normalized address data.
+- `public/lib/erp-engine.js`: indexed tariff/calendar calculations.
+- `public/lib/route-service.js`: cancellable provider selection and bounded ten-minute route cache.
+- `functions/api/search.js`: authenticated OneMap address search, validation and bounded cache.
+- `functions/api/routes/onemap.js`: OneMap driving route proxy.
+- `functions/_lib/onemap.js`: shared server-side token refresh and bounded requests.
+- Pinned Leaflet and Lucide assets are served locally, with their licenses retained under `public/vendor`.
 
-## Known Limits
+Slow routing providers are cancelled after usable alternatives arrive. The app caches route matching, calculates gantry details only when opened, rejects stale requests and keeps time calculations in Singapore time regardless of the visitor's timezone.
 
-- This is an estimate. Route-to-gantry matching is based on proximity to official ERP marker coordinates or gantry line geometry plus a directional check.
-- 2026 public holidays and major public-holiday eve cut-offs are modelled; later years need a public-holiday data refresh.
-- The app uses public Nominatim for geocoding and a multi-engine routing stack for route geometry. OneMap drive routing is tried first when `ONEMAP_EMAIL` and `ONEMAP_PASSWORD` Cloudflare Pages secrets are configured. OpenStreetMap/FOSSGIS OSRM, Valhalla, and the OSRM project demo remain as fallbacks.
-- Public demo routing services are rate-limited and do not include live traffic. OneMap is Singapore-specific, but still depends on OneMap service availability, token access and quota limits.
-- ERP directionality is estimated from the route geometry and gantry position, not from an authoritative lane-level routing engine.
-- The validation script includes regression cases for common opposite-direction false positives, but live route geometry still depends on the public routing provider.
+## Data and limitations
 
-## Local Commands
+Rates are the complete OneMotoring table effective **7 September 2026**, checked **29 October 2026**. The dataset contains **78 official locations**, including **33 with active charges**, and the 2026/2027 MOM holiday calendars. Orchard's 11 charging locations and exact five-minute transition bands are included. See [data/SOURCES.md](data/SOURCES.md) for primary sources, provenance, caveats and refresh instructions.
 
-```bash
+This remains a planning estimate. Travel times do not include live traffic. Road direction and gantry crossings are inferred from public route geometry; actual charges may differ. Future rate reviews and school-holiday concessions require a refresh. Historical dates use the current table with a visible qualification. Conflicting official guidance for Hari Raya holiday eves is flagged rather than assumed free. ERP 2 physical gantry removal does not itself remove a charging location.
+
+## Run and verify
+
+```sh
+npm run check
 npm run build
-npm run validate
-npm run serve
+npm run dev
 ```
 
-Open `http://localhost:4173`.
+`dev` requires Wrangler 4 and serves on `http://127.0.0.1:4173`. Copy `.dev.vars.example` to `.dev.vars` and fill in local OneMap credentials for authenticated address/routing APIs; never commit credentials. `npm run serve` offers a static-only preview without Pages Functions.
 
-## OneMap Routing
+Validation runs independent official-rate checks, geometry regressions against the shipped matcher, current-rate and crossing calculations, arrival/midnight and request-lifecycle tests, route cache/cancellation tests, and mocked OneMap proxy/search tests. The tests use Node's built-in APIs and do not send real credentials.
 
-The OneMap routing proxy lives at `functions/api/routes/onemap.js`, which Cloudflare Pages deploys as `/api/routes/onemap`.
+## Deployment
 
-Set the OneMap login credentials as Cloudflare Pages secrets named `ONEMAP_EMAIL` and `ONEMAP_PASSWORD`. The proxy exchanges them for a OneMap access token server-side and refreshes it before expiry. `ONEMAP_API_TOKEN` is still supported as a fallback, but direct tokens expire after about 3 days.
+The existing Cloudflare Pages project is `erp-commute-estimator`, production branch `main`, assets `public/`, Functions `functions/`.
 
-For local Wrangler testing, copy `.dev.vars.example` to `.dev.vars` and fill in the credentials. The checked-in `.dev.vars.example` is only a template; do not commit real secrets.
+Production OneMap secrets: `ONEMAP_EMAIL` and `ONEMAP_PASSWORD`. `ONEMAP_API_TOKEN` remains a fallback if refresh credentials are unavailable. Credentials never enter the browser.
 
-## Refreshing Source Data
-
-```bash
-npm run fetch:gantries
-/Users/ngimtaizhi/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3 scripts/build-data.py
-npm run validate
-```
-
-## Deploy
-
-Cloudflare Pages can serve the static `public/` directory directly.
-
-- Build command: `npm run build`
-- Output directory: `public`
-- Functions directory: `functions`
-- Required production secrets for OneMap routing: `ONEMAP_EMAIL`, `ONEMAP_PASSWORD`
-
-```bash
+```sh
+npm run check
 wrangler pages deploy public --project-name erp-commute-estimator --branch main
 ```
+
+Preview environment secrets are separate from production. Verify search and routing in the destination environment. An authenticated Cloudflare Pages Direct Upload API deployment is also supported: compile the Pages Functions with Wrangler, upload assets using the project upload token, and deploy the matching manifest, worker and headers.

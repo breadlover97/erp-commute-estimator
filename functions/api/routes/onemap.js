@@ -1,6 +1,6 @@
-const ONEMAP_AUTH_ENDPOINT = "https://www.onemap.gov.sg/api/auth/post/getToken";
+import { fetchOneMapJson } from "../../_lib/onemap.js";
+
 const ONEMAP_ROUTE_ENDPOINT = "https://www.onemap.gov.sg/api/public/routingsvc/route";
-const TOKEN_REFRESH_BUFFER_MS = 5 * 60 * 1000;
 const JSON_RESPONSE_HEADERS = {
   "Content-Type": "application/json; charset=utf-8",
   "Cache-Control": "no-store",
@@ -8,206 +8,45 @@ const JSON_RESPONSE_HEADERS = {
   "Cross-Origin-Resource-Policy": "same-origin",
   "X-Content-Type-Options": "nosniff",
   "Referrer-Policy": "strict-origin-when-cross-origin",
-  "Permissions-Policy": "geolocation=()",
   Vary: "Sec-Fetch-Site",
 };
-const SINGAPORE_BOUNDS = {
-  minLat: 1.13,
-  maxLat: 1.49,
-  minLng: 103.58,
-  maxLng: 104.12,
-};
 
-let cachedOneMapToken = null;
-let cachedOneMapTokenExpiresAtMs = 0;
-
-export async function onRequestGet(context) {
-  if (isCrossSiteBrowserRequest(context.request)) {
-    return jsonResponse(
-      {
-        error: "Cross-site requests are not allowed for this routing proxy.",
-        code: "cross_site_request_blocked",
-      },
-      403,
-    );
+export async function onRequestGet({ request, env }) {
+  if (request.headers.get("Sec-Fetch-Site") === "cross-site") {
+    return jsonResponse({ error: "Cross-site requests are not allowed.", code: "cross_site_request_blocked" }, 403);
   }
-
-  const requestUrl = new URL(context.request.url);
-  const start = parseCoordinatePair(requestUrl.searchParams.get("start"));
-  const end = parseCoordinatePair(requestUrl.searchParams.get("end"));
-
+  const url = new URL(request.url);
+  const start = parseCoordinatePair(url.searchParams.get("start"));
+  const end = parseCoordinatePair(url.searchParams.get("end"));
   if (!start || !end) {
-    return jsonResponse(
-      {
-        error: "Both start and end query parameters must be WGS84 latitude,longitude pairs.",
-        code: "invalid_coordinates",
-      },
-      400,
-    );
+    return jsonResponse({ error: "Provide valid latitude,longitude pairs.", code: "invalid_coordinates" }, 400);
   }
-
-  if (!isInSingapore(start) || !isInSingapore(end)) {
-    return jsonResponse(
-      {
-        error: "OneMap routing only supports Singapore coordinates.",
-        code: "outside_singapore",
-      },
-      400,
-    );
+  if (![start, end].every(isInSingapore)) {
+    return jsonResponse({ error: "OneMap routing only supports Singapore.", code: "outside_singapore" }, 400);
   }
-
-  const tokenResult = await getOneMapToken(context.env);
-  if (!tokenResult.token) {
-    return jsonResponse(
-      {
-        error: tokenResult.error || "OneMap routing is not configured.",
-        code: tokenResult.code || "missing_onemap_credentials",
-        details: tokenResult.details || null,
-      },
-      503,
-    );
-  }
-
-  const oneMapUrl = new URL(ONEMAP_ROUTE_ENDPOINT);
-  oneMapUrl.searchParams.set("start", `${start.lat},${start.lng}`);
-  oneMapUrl.searchParams.set("end", `${end.lat},${end.lng}`);
-  oneMapUrl.searchParams.set("routeType", "drive");
-
-  let { response, payload } = await fetchOneMapRoute(oneMapUrl, tokenResult.token);
-  if (shouldRetryWithFreshToken(response, payload) && hasRefreshCredentials(context.env)) {
-    clearCachedOneMapToken();
-    const retryTokenResult = await getOneMapToken(context.env, { forceRefresh: true });
-    if (retryTokenResult.token) {
-      ({ response, payload } = await fetchOneMapRoute(oneMapUrl, retryTokenResult.token));
+  const routeUrl = new URL(ONEMAP_ROUTE_ENDPOINT);
+  routeUrl.search = new URLSearchParams({ start: `${start.lat},${start.lng}`, end: `${end.lat},${end.lng}`, routeType: "drive" });
+  try {
+    const { response, payload } = await fetchOneMapJson(routeUrl, { env, signal: request.signal });
+    if (!response.ok || !payload || payload.error) {
+      return jsonResponse({ error: "OneMap could not calculate this route.", code: payload?.code || "onemap_route_failed" }, response.ok ? 502 : response.status);
     }
+    return jsonResponse(payload, 200);
+  } catch (error) {
+    return jsonResponse({ error: "OneMap is temporarily unavailable.", code: error.name === "AbortError" ? "onemap_timeout" : "onemap_unavailable" }, 504);
   }
-  if (!response.ok) {
-    return jsonResponse(
-      {
-        error: "OneMap could not calculate this driving route.",
-        code: "onemap_route_failed",
-        status: response.status,
-        details: summarizeOneMapError(payload),
-      },
-      response.status,
-    );
-  }
-
-  return jsonResponse(payload, 200);
-}
-
-async function getOneMapToken(env, options = {}) {
-  if (hasRefreshCredentials(env)) {
-    return getOneMapTokenFromCredentials(env, options);
-  }
-  if (env.ONEMAP_API_TOKEN) {
-    return { token: env.ONEMAP_API_TOKEN };
-  }
-  return {
-    error: "OneMap routing is not configured. Add ONEMAP_EMAIL and ONEMAP_PASSWORD secrets.",
-    code: "missing_onemap_credentials",
-  };
-}
-
-async function getOneMapTokenFromCredentials(env, { forceRefresh = false } = {}) {
-  const now = Date.now();
-  if (!forceRefresh && cachedOneMapToken && cachedOneMapTokenExpiresAtMs - TOKEN_REFRESH_BUFFER_MS > now) {
-    return { token: cachedOneMapToken };
-  }
-
-  const response = await fetch(ONEMAP_AUTH_ENDPOINT, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      email: env.ONEMAP_EMAIL,
-      password: env.ONEMAP_PASSWORD,
-    }),
-  });
-  const payload = await response.json().catch(() => null);
-  if (!response.ok || !payload?.access_token) {
-    clearCachedOneMapToken();
-    return {
-      error: "OneMap authentication failed.",
-      code: "onemap_auth_failed",
-      details: summarizeOneMapError(payload) || `HTTP ${response.status}`,
-    };
-  }
-
-  const expirySeconds = Number(payload.expiry_timestamp);
-  cachedOneMapToken = payload.access_token;
-  cachedOneMapTokenExpiresAtMs = Number.isFinite(expirySeconds)
-    ? expirySeconds * 1000
-    : now + 70 * 60 * 60 * 1000;
-  return { token: cachedOneMapToken };
-}
-
-async function fetchOneMapRoute(oneMapUrl, token) {
-  const response = await fetch(oneMapUrl.toString(), {
-    headers: {
-      Accept: "application/json",
-      Authorization: token,
-    },
-  });
-  const payload = await response.json().catch(() => null);
-  return { response, payload };
-}
-
-function shouldRetryWithFreshToken(response, payload) {
-  if (response.status === 401 || response.status === 403) {
-    return true;
-  }
-  const message = summarizeOneMapError(payload);
-  return typeof message === "string" && /token|auth|expired/i.test(message);
-}
-
-function hasRefreshCredentials(env) {
-  return Boolean(env.ONEMAP_EMAIL && env.ONEMAP_PASSWORD);
-}
-
-function clearCachedOneMapToken() {
-  cachedOneMapToken = null;
-  cachedOneMapTokenExpiresAtMs = 0;
-}
-
-function isCrossSiteBrowserRequest(request) {
-  return request.headers.get("Sec-Fetch-Site") === "cross-site";
 }
 
 function parseCoordinatePair(value) {
-  if (!value) {
-    return null;
-  }
-  const [latRaw, lngRaw] = value.split(",");
-  const lat = Number(latRaw);
-  const lng = Number(lngRaw);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-    return null;
-  }
-  return { lat, lng };
+  if (!value || !/^[+-]?\d+(?:\.\d+)?,[+-]?\d+(?:\.\d+)?$/.test(value)) return null;
+  const [lat, lng] = value.split(",").map(Number);
+  return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
 }
 
-function isInSingapore(point) {
-  return (
-    point.lat >= SINGAPORE_BOUNDS.minLat &&
-    point.lat <= SINGAPORE_BOUNDS.maxLat &&
-    point.lng >= SINGAPORE_BOUNDS.minLng &&
-    point.lng <= SINGAPORE_BOUNDS.maxLng
-  );
-}
-
-function summarizeOneMapError(payload) {
-  if (!payload || typeof payload !== "object") {
-    return null;
-  }
-  return payload.error || payload.message || payload.Message || payload.status_message || null;
+function isInSingapore({ lat, lng }) {
+  return lat >= 1.13 && lat <= 1.49 && lng >= 103.58 && lng <= 104.12;
 }
 
 function jsonResponse(payload, status) {
-  return new Response(JSON.stringify(payload), {
-    status,
-    headers: JSON_RESPONSE_HEADERS,
-  });
+  return new Response(JSON.stringify(payload), { status, headers: JSON_RESPONSE_HEADERS });
 }

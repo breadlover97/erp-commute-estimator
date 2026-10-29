@@ -67,197 +67,32 @@ GROUP_DIRECTIONS = {
     "65": 270,
 }
 
-JUNE_2026_ADJUSTMENTS = [
-    {
-        "groupId": "36",
-        "start": "08:00",
-        "end": "08:30",
-        "amount": 0,
-        "fromDate": "2026-06-02",
-        "toDate": "2026-06-28",
-        "reason": "June 2026 school holiday reduction",
-    },
-    {
-        "groupId": "52,53,74",
-        "start": "09:00",
-        "end": "09:30",
-        "amount": 2,
-        "fromDate": "2026-06-02",
-        "toDate": "2026-06-28",
-        "reason": "June 2026 school holiday reduction",
-    },
-    {
-        "groupId": "52,53,74",
-        "start": "18:00",
-        "end": "18:30",
-        "amount": 0,
-        "fromDate": "2026-06-02",
-        "toDate": "2026-06-28",
-        "reason": "June 2026 school holiday reduction",
-    },
-    {
-        "groupId": "35",
-        "start": "07:00",
-        "end": "07:30",
-        "amount": 1,
-        "fromDate": "2026-06-02",
-        "toDate": "2026-06-28",
-        "reason": "June 2026 school holiday reduction",
-    },
-    {
-        "groupId": "35",
-        "start": "08:00",
-        "end": "09:00",
-        "amount": 2,
-        "fromDate": "2026-06-02",
-        "toDate": "2026-06-28",
-        "reason": "June 2026 school holiday reduction",
-    },
-    {
-        "groupId": "50",
-        "start": "07:00",
-        "end": "07:30",
-        "amount": 0,
-        "fromDate": "2026-06-02",
-        "toDate": "2026-06-28",
-        "reason": "June 2026 school holiday reduction",
-    },
-    {
-        "groupId": "50",
-        "start": "07:30",
-        "end": "08:00",
-        "amount": 3,
-        "fromDate": "2026-06-02",
-        "toDate": "2026-06-28",
-        "reason": "June 2026 school holiday reduction",
-    },
-    {
-        "groupId": "50",
-        "start": "08:00",
-        "end": "08:30",
-        "amount": 4,
-        "fromDate": "2026-06-02",
-        "toDate": "2026-06-28",
-        "reason": "June 2026 school holiday reduction",
-    },
-    {
-        "groupId": "50",
-        "start": "08:30",
-        "end": "09:00",
-        "amount": 5,
-        "fromDate": "2026-06-02",
-        "toDate": "2026-06-28",
-        "reason": "June 2026 school holiday reduction",
-    },
-    {
-        "groupId": "50",
-        "start": "09:00",
-        "end": "09:30",
-        "amount": 1,
-        "fromDate": "2026-06-02",
-        "toDate": "2026-06-28",
-        "reason": "June 2026 school holiday reduction",
-    },
-    {
-        "groupId": "50",
-        "start": "09:30",
-        "end": "10:00",
-        "amount": 0,
-        "fromDate": "2026-06-02",
-        "toDate": "2026-06-28",
-        "reason": "June 2026 school holiday reduction",
-    },
-    {
-        "groupId": "65",
-        "start": "07:30",
-        "end": "08:00",
-        "amount": 0,
-        "fromDate": "2026-06-02",
-        "toDate": "2026-06-28",
-        "reason": "June 2026 school holiday reduction",
-    },
-    {
-        "groupId": "65",
-        "start": "09:00",
-        "end": "09:30",
-        "amount": 0,
-        "fromDate": "2026-06-02",
-        "toDate": "2026-06-28",
-        "reason": "June 2026 school holiday reduction",
-    },
-    {
-        "groupId": "46,67",
-        "start": "18:00",
-        "end": "19:00",
-        "amount": 3,
-        "fromDate": "2026-06-02",
-        "toDate": "2026-06-28",
-        "reason": "June 2026 school holiday reduction",
-    },
-    {
-        "groupId": "46,67",
-        "start": "19:00",
-        "end": "19:30",
-        "amount": 2,
-        "fromDate": "2026-06-02",
-        "toDate": "2026-06-28",
-        "reason": "June 2026 school holiday reduction",
-    },
-    {
-        "groupId": "46,67",
-        "start": "19:30",
-        "end": "20:00",
-        "amount": 0,
-        "fromDate": "2026-06-02",
-        "toDate": "2026-06-28",
-        "reason": "June 2026 school holiday reduction",
-    },
-    {
-        "groupId": "52,53,74",
-        "start": "07:00",
-        "end": "07:30",
-        "amount": 1,
-        "fromDate": "2026-06-29",
-        "toDate": None,
-        "reason": "ERP increase from 29 June 2026",
-    },
-    {
-        "groupId": "52,53,74",
-        "start": "07:30",
-        "end": "08:00",
-        "amount": 5,
-        "fromDate": "2026-06-29",
-        "toDate": None,
-        "reason": "ERP increase from 29 June 2026",
-    },
-    {
-        "groupId": "32,45",
-        "start": "07:00",
-        "end": "07:30",
-        "amount": 1,
-        "fromDate": "2026-06-29",
-        "toDate": None,
-        "reason": "ERP increase from 29 June 2026",
-    },
-    {
-        "groupId": "32,45",
-        "start": "07:30",
-        "end": "08:30",
-        "amount": 2,
-        "fromDate": "2026-06-29",
-        "toDate": None,
-        "reason": "ERP increase from 29 June 2026",
-    },
-    {
-        "groupId": "32,45",
-        "start": "08:30",
-        "end": "09:00",
-        "amount": 4,
-        "fromDate": "2026-06-29",
-        "toDate": None,
-        "reason": "ERP increase from 29 June 2026",
-    },
-]
+# CBD rows share tariffs, but entering at separate gantries is charged separately.
+# Do not deduplicate all of Orchard as if it were an expressway gantry set.
+CBD_GROUPS = {
+    "1": "Victoria Street", "2": "Nicoll Highway", "9": "Bencoolen Street",
+    "10": "Queen Street", "11": "North Bridge Road", "16": "Beach Road",
+    "17": "Temasek Boulevard", "18": "Republic Boulevard", "23": "River Valley Road",
+    "3": "Eu Tong Sen Street", "5": "Lim Teck Kim Road", "6": "Anson Road",
+    "7": "Tanjong Pagar Road", "19": "Havelock Road / Clemenceau Avenue",
+    "20": "Havelock Road / CTE exit", "24": "Merchant Road / Clemenceau Avenue",
+    "25": "Merchant Road / CTE exit", "28": "Central Boulevard",
+    "29": "MCE westbound slip road towards Maxwell Road", "72": "Sheares Avenue towards Sheares Link",
+    "4": "Orchard Link", "12": "Oxley Road", "13": "Orchard Road",
+    "14": "Orchard Turn", "15": "Killiney Road", "21": "Buyong Road",
+    "22": "Kramat Road", "26": "Clemenceau Avenue", "27": "Cairnhill Road",
+    "47": "Orchard Road at YMCA", "49": "Fort Canning Tunnel", "48": "Handy Road",
+    "61": "New Bridge Road", "62": "South Bridge Road",
+    "64": "Fullerton Road southbound", "69": "Bayfront Avenue southbound",
+    "60": "Eu Tong Sen Street at Central", "63": "Fullerton Road northbound",
+    "66": "Bayfront Avenue northbound",
+}
+GROUP_LABELS.update(CBD_GROUPS)
+PDF_REFERENCES = {
+    "Refer to 1": ["1", "2", "9", "10", "11", "16", "17", "18", "23"],
+    "Refer to 2": ["3", "5", "6", "7", "19", "20", "24", "25", "28", "29", "72"],
+    "Refer to 3": ["4", "12", "13", "14", "15", "21", "22", "26", "27"],
+}
 
 
 def text_items(page):
@@ -273,43 +108,52 @@ def text_items(page):
 
 
 def extract_base_rates():
+    """Extract every nonblank rate cell, failing closed if the PDF layout changes."""
     reader = PdfReader(DATA_DIR / "erp-rates.pdf")
+    if len(reader.pages) != 5 or "07 Sep 2026" not in reader.pages[0].extract_text():
+        raise ValueError("Review the new source PDF and update its expected effective date/layout first")
     rates = []
-    for page_number in (2, 3):
+    source_cell_count = 0
+    for page_number in range(4):
         items = text_items(reader.pages[page_number])
-        columns = [
-            item
-            for item in items
-            if item["y"] == 663 and re.fullmatch(r"\d+(?:,\d+)*", item["text"])
-        ]
+        header_y = 685 if page_number < 2 else 663
+        columns = [item for item in items if item["y"] == header_y and (
+            re.fullmatch(r"\d+(?:,\d+)*", item["text"]) or item["text"] in PDF_REFERENCES
+        )]
         columns.sort(key=lambda item: item["x"])
-        rows = [
-            item
-            for item in items
-            if re.fullmatch(r"\d{2}:\d{2} - \d{2}:\d{2}", item["text"])
-        ]
-
-        for row in rows:
-            row_y = row["y"]
-            amount_items = [
-                item for item in items if item["y"] == row_y and item["text"].startswith("$")
-            ]
-            for amount_item in amount_items:
-                column = min(columns, key=lambda item: abs(item["x"] - amount_item["x"]))
-                if abs(column["x"] - amount_item["x"]) > 16:
-                    continue
-                start, end = row["text"].split(" - ")
-                amount = float(amount_item["text"].replace("$", ""))
-                rates.append(
-                    {
-                        "groupId": column["text"],
-                        "start": start,
-                        "end": end,
-                        "amount": amount,
-                    }
-                )
-
-    return rates
+        expected_columns = 14 if page_number < 2 else 28
+        if len(columns) != expected_columns:
+            raise ValueError(f"Unexpected columns on PDF page {page_number + 1}")
+        rows = {item["y"]: item for item in items
+                if re.fullmatch(r"\d{2}:\d{2} - \d{2}:\d{2}", item["text"])}
+        for amount_item in (item for item in items if item["text"].startswith("$")):
+            row = rows.get(amount_item["y"])
+            if not row:
+                raise ValueError(f"Unmatched amount row on PDF page {page_number + 1}")
+            column = min(columns, key=lambda item: abs(item["x"] - amount_item["x"]))
+            if abs(column["x"] - amount_item["x"]) > 16:
+                raise ValueError(f"Unmatched amount column on PDF page {page_number + 1}")
+            if page_number < 2 and columns.index(column) >= 7:
+                raise ValueError("Saturday rates added: update the calculation engine before publishing")
+            start, end = row["text"].split(" - ")
+            amount = float(amount_item["text"].removeprefix("$"))
+            group_ids = (PDF_REFERENCES.get(column["text"], column["text"].split(","))
+                         if page_number < 2 else [column["text"]])
+            for group_id in group_ids:
+                if group_id not in GROUP_LABELS:
+                    raise ValueError(f"Unmapped rate group: {group_id}")
+                rates.append({"groupId": group_id, "start": start, "end": end, "amount": amount})
+            source_cell_count += 1
+    if source_cell_count != 294:
+        raise ValueError(f"Expected 294 nonblank source cells, extracted {source_cell_count}")
+    # Adjacent equal-price intervals are equivalent and need no extra runtime lookup.
+    compact = []
+    for rate in sorted(rates, key=lambda rate: (rate["groupId"], rate["start"])):
+        if compact and all(compact[-1][key] == rate[key] for key in ("groupId", "amount")) and compact[-1]["end"] == rate["start"]:
+            compact[-1]["end"] = rate["end"]
+        else:
+            compact.append(rate.copy())
+    return compact
 
 
 def extract_field(description, field_name):
@@ -345,7 +189,7 @@ def build_geojson_lines_by_gantry():
     lines_by_gantry = {}
     for feature in source["features"]:
         description = feature["properties"].get("Description", "")
-        raw_gantry_no = extract_field(description, "GNTRY_NUM")
+        raw_gantry_no = feature["properties"].get("GNTRY_NUM") or extract_field(description, "GNTRY_NUM")
         if raw_gantry_no in {"UNK", ""}:
             raw_gantry_no = None
         gantry_no = normalize_gantry_no(raw_gantry_no)
@@ -366,7 +210,7 @@ def child_text(element, local_name):
     return ""
 
 
-def build_gantries():
+def build_gantries(active_group_ids):
     gantry_to_group = {}
     for group_id in GROUP_LABELS:
         for number in group_id.split(","):
@@ -387,7 +231,7 @@ def build_gantries():
         group_id = gantry_to_group.get(gantry_no)
         gantries.append(
             {
-                "id": f"g{index}",
+                "id": f"gantry-{gantry_no}",
                 "gantryNo": gantry_no,
                 "rawGantryNo": gantry_no,
                 "uniqueId": None,
@@ -396,7 +240,7 @@ def build_gantries():
                 "directionDegrees": GROUP_DIRECTIONS.get(group_id),
                 "center": [round(lat, 8), round(lon, 8)],
                 "line": lines_by_gantry.get(gantry_no, []),
-                "isPriced": group_id is not None,
+                "isPriced": group_id in active_group_ids,
             }
         )
     return gantries
@@ -407,35 +251,37 @@ def main():
         {"id": group_id, "label": label, "gantryNos": group_id.split(",")}
         for group_id, label in GROUP_LABELS.items()
     ]
+    rates = extract_base_rates()
+    active_group_ids = {rate["groupId"] for rate in rates if rate["amount"] > 0}
+    manifest = json.loads((DATA_DIR / "sources.json").read_text())
     payload = {
         "meta": {
             "generatedAt": datetime.now(timezone.utc).isoformat(),
+            "verifiedOn": manifest["verifiedOn"],
+            "ratesEffectiveFrom": "2026-09-07",
+            "ratesVerifiedThrough": manifest["verifiedOn"],
+            "nextReviewNote": "LTA expects its next rate review in mid-November 2026.",
             "vehicleClass": "Passenger cars, taxis and light goods vehicles",
-            "baseRateSource": "OneMotoring ERP Rates PDF, with effect from 23 Mar 2026",
-            "latestAdjustmentSource": "LTA news release, Revised ERP Rates from 2 June 2026, published 25 May 2026",
-            "gantrySource": "OneMotoring ERP KML marker layer, with data.gov.sg LTA Gantry GeoJSON line geometry where available",
-            "sourceLinks": {
-                "oneMotoringErpRatesPdf": "https://onemotoring.lta.gov.sg/content/dam/onemotoring/Driving/ERP/ERP%20Rates.pdf",
-                "oneMotoringJune2026RatesPdf": "https://onemotoring.lta.gov.sg/content/dam/onemotoring/Driving/ERP/ERP_rates_tables/2026.05.28-ERP%20Rates%20%28Eff.%202%20Jun%202026%20-%2028%20Jun%202026%29.pdf",
-                "ltaJune2026Revision": "https://www.lta.gov.sg/content/ltagov/en/newsroom/2026/5/news-releases/revised-erp-rates-2-jun-26.html",
-                "oneMotoringErpGuide": "https://onemotoring.lta.gov.sg/content/onemotoring/home/driving/ERP/ERP.html",
-                "oneMotoringErpKml": "https://onemotoring.lta.gov.sg/mapapp/kml/erp-kml/erp-kml-0.kml",
-                "ltaGantryGeoJson": "https://data.gov.sg/collections/lta-gantry/view",
-                "momPublicHolidays2026": "https://www.mom.gov.sg/newsroom/press-releases/2025/0616-public-holidays-for-2026",
-            },
+            "baseRateSource": "OneMotoring full ERP rate table, effective 7 September 2026",
+            "latestAdjustmentSource": "Full September 2026 rate table includes Orchard Cordon and June expressway revisions",
+            "gantrySource": "OneMotoring ERP markers retrieved 29 October 2026; LTA DataMall September 2026 ERP gantry geometry",
+            "sourceLinks": {key: source["url"] for key, source in manifest["sources"].items()},
             "notes": [
-                "Weekday expressway rates are modelled for passenger cars, taxis and light goods vehicles.",
-                "Sundays, 2026 Singapore public holidays, and post-1pm eves of major public holidays are treated as zero ERP.",
-                "Where LTA defines a set of gantries, the app charges at most once for the set.",
-                "Route matching uses proximity plus direction checks against official ERP marker coordinates and should be treated as an estimate.",
+                "All published weekday rates, including Orchard, and exact five-minute transition bands are included.",
+                "Saturdays, Sundays and published Singapore public holidays have no ERP charges under this verified schedule.",
+                "Holiday-eve closure is applied at 13:00 for New Year, Chinese New Year, Deepavali and Christmas; conflicting LTA guidance on Hari Raya eves is flagged.",
+                "Orchard gantries share a tariff but are separate charging locations; expressway gantry sets are counted once per trip.",
+                "Routes and crossing times are estimates. Physical gantry removal does not establish removal of an ERP charging location.",
+                "Dates outside the verified schedule use the current table as a projection; future quarterly and school-holiday changes are not yet known.",
             ],
         },
+        "calendar": json.loads((DATA_DIR / "calendar.json").read_text()),
         "groups": groups,
-        "gantries": build_gantries(),
-        "baseRates": extract_base_rates(),
-        "adjustments": JUNE_2026_ADJUSTMENTS,
+        "gantries": build_gantries(active_group_ids),
+        "baseRates": rates,
+        "adjustments": [],
     }
-    (PUBLIC_DATA_DIR / "erp-data.json").write_text(json.dumps(payload, indent=2))
+    (PUBLIC_DATA_DIR / "erp-data.json").write_text(json.dumps(payload, indent=2) + "\n")
     print(
         f"wrote public/data/erp-data.json with {len(payload['gantries'])} gantries, "
         f"{len(payload['baseRates'])} base rates, {len(payload['adjustments'])} adjustments"

@@ -1,25 +1,86 @@
 {
   "meta": {
-    "generatedAt": "2026-06-08T13:21:14.426649+00:00",
+    "generatedAt": "2026-10-29T10:09:32.664698+00:00",
+    "verifiedOn": "2026-10-29",
+    "ratesEffectiveFrom": "2026-09-07",
+    "ratesVerifiedThrough": "2026-10-29",
+    "nextReviewNote": "LTA expects its next rate review in mid-November 2026.",
     "vehicleClass": "Passenger cars, taxis and light goods vehicles",
-    "baseRateSource": "OneMotoring ERP Rates PDF, with effect from 23 Mar 2026",
-    "latestAdjustmentSource": "LTA news release, Revised ERP Rates from 2 June 2026, published 25 May 2026",
-    "gantrySource": "OneMotoring ERP KML marker layer, with data.gov.sg LTA Gantry GeoJSON line geometry where available",
+    "baseRateSource": "OneMotoring full ERP rate table, effective 7 September 2026",
+    "latestAdjustmentSource": "Full September 2026 rate table includes Orchard Cordon and June expressway revisions",
+    "gantrySource": "OneMotoring ERP markers retrieved 29 October 2026; LTA DataMall September 2026 ERP gantry geometry",
     "sourceLinks": {
-      "oneMotoringErpRatesPdf": "https://onemotoring.lta.gov.sg/content/dam/onemotoring/Driving/ERP/ERP%20Rates.pdf",
-      "oneMotoringJune2026RatesPdf": "https://onemotoring.lta.gov.sg/content/dam/onemotoring/Driving/ERP/ERP_rates_tables/2026.05.28-ERP%20Rates%20%28Eff.%202%20Jun%202026%20-%2028%20Jun%202026%29.pdf",
-      "ltaJune2026Revision": "https://www.lta.gov.sg/content/ltagov/en/newsroom/2026/5/news-releases/revised-erp-rates-2-jun-26.html",
+      "oneMotoringErpRatesPdf": "https://onemotoring.lta.gov.sg/content/dam/onemotoring/Driving/ERP/ERP_rates_tables/2026.09.03-20260626-1PCU_ERP_Rates_Report.20260623170433.pdf",
+      "ltaSeptember2026Revision": "https://www.lta.gov.sg/content/ltagov/en/newsroom/2026/8/news-releases/revised-erp-rates-from-7-september-2026.html",
       "oneMotoringErpGuide": "https://onemotoring.lta.gov.sg/content/onemotoring/home/driving/ERP/ERP.html",
       "oneMotoringErpKml": "https://onemotoring.lta.gov.sg/mapapp/kml/erp-kml/erp-kml-0.kml",
-      "ltaGantryGeoJson": "https://data.gov.sg/collections/lta-gantry/view",
-      "momPublicHolidays2026": "https://www.mom.gov.sg/newsroom/press-releases/2025/0616-public-holidays-for-2026"
+      "ltaGantryGeoJson": "https://datamall.lta.gov.sg/content/dam/datamall/datasets/Geospatial/ERPGantry_Sep2026.zip",
+      "ltaDataMall": "https://datamall.lta.gov.sg/content/datamall/en/static-data.html",
+      "momPublicHolidays": "https://www.mom.gov.sg/employment-practices/public-holidays",
+      "momPublicHolidays2026": "https://www.mom.gov.sg/newsroom/press-releases/2025/0616-public-holidays-for-2026",
+      "momPublicHolidays2027": "https://www.mom.gov.sg/newsroom/press-releases/2026/0618-public-holidays-for-2027",
+      "ltaErp2Transition": "https://www.lta.gov.sg/content/ltagov/en/newsroom/2026/9/news-releases/new-road-markings-signs-erp-2-transition-oct-26.html"
     },
     "notes": [
-      "Weekday expressway rates are modelled for passenger cars, taxis and light goods vehicles.",
-      "Sundays, 2026 Singapore public holidays, and post-1pm eves of major public holidays are treated as zero ERP.",
-      "Where LTA defines a set of gantries, the app charges at most once for the set.",
-      "Route matching uses proximity plus direction checks against official ERP marker coordinates and should be treated as an estimate."
+      "All published weekday rates, including Orchard, and exact five-minute transition bands are included.",
+      "Saturdays, Sundays and published Singapore public holidays have no ERP charges under this verified schedule.",
+      "Holiday-eve closure is applied at 13:00 for New Year, Chinese New Year, Deepavali and Christmas; conflicting LTA guidance on Hari Raya eves is flagged.",
+      "Orchard gantries share a tariff but are separate charging locations; expressway gantry sets are counted once per trip.",
+      "Routes and crossing times are estimates. Physical gantry removal does not establish removal of an ERP charging location.",
+      "Dates outside the verified schedule use the current table as a projection; future quarterly and school-holiday changes are not yet known."
     ]
+  },
+  "calendar": {
+    "years": [
+      2026,
+      2027
+    ],
+    "publicHolidays": [
+      "2026-01-01",
+      "2026-02-17",
+      "2026-02-18",
+      "2026-03-21",
+      "2026-04-03",
+      "2026-05-01",
+      "2026-05-27",
+      "2026-05-31",
+      "2026-06-01",
+      "2026-08-09",
+      "2026-08-10",
+      "2026-11-08",
+      "2026-11-09",
+      "2026-12-25",
+      "2027-01-01",
+      "2027-02-06",
+      "2027-02-07",
+      "2027-02-08",
+      "2027-03-10",
+      "2027-03-26",
+      "2027-05-01",
+      "2027-05-17",
+      "2027-05-20",
+      "2027-08-09",
+      "2027-10-28",
+      "2027-12-25"
+    ],
+    "eveCutoffDates": [
+      "2026-02-16",
+      "2026-11-07",
+      "2026-12-24",
+      "2026-12-31",
+      "2027-02-05",
+      "2027-10-27",
+      "2027-12-24",
+      "2027-12-31"
+    ],
+    "uncertainEveDates": [
+      "2026-03-20",
+      "2026-05-26",
+      "2027-03-09",
+      "2027-05-16"
+    ],
+    "eveCutoffMinutes": 780,
+    "uncertainEveNote": "OneMotoring's summary names Hari Raya Haji, while its detailed operating-hours section names Hari Raya Puasa. On these eves after 13:00, show the standard-rate estimate with a warning until LTA confirms the cutoff."
   },
   "groups": [
     {
@@ -228,15 +289,288 @@
       "gantryNos": [
         "65"
       ]
+    },
+    {
+      "id": "1",
+      "label": "Victoria Street",
+      "gantryNos": [
+        "1"
+      ]
+    },
+    {
+      "id": "2",
+      "label": "Nicoll Highway",
+      "gantryNos": [
+        "2"
+      ]
+    },
+    {
+      "id": "9",
+      "label": "Bencoolen Street",
+      "gantryNos": [
+        "9"
+      ]
+    },
+    {
+      "id": "10",
+      "label": "Queen Street",
+      "gantryNos": [
+        "10"
+      ]
+    },
+    {
+      "id": "11",
+      "label": "North Bridge Road",
+      "gantryNos": [
+        "11"
+      ]
+    },
+    {
+      "id": "16",
+      "label": "Beach Road",
+      "gantryNos": [
+        "16"
+      ]
+    },
+    {
+      "id": "17",
+      "label": "Temasek Boulevard",
+      "gantryNos": [
+        "17"
+      ]
+    },
+    {
+      "id": "18",
+      "label": "Republic Boulevard",
+      "gantryNos": [
+        "18"
+      ]
+    },
+    {
+      "id": "23",
+      "label": "River Valley Road",
+      "gantryNos": [
+        "23"
+      ]
+    },
+    {
+      "id": "3",
+      "label": "Eu Tong Sen Street",
+      "gantryNos": [
+        "3"
+      ]
+    },
+    {
+      "id": "5",
+      "label": "Lim Teck Kim Road",
+      "gantryNos": [
+        "5"
+      ]
+    },
+    {
+      "id": "6",
+      "label": "Anson Road",
+      "gantryNos": [
+        "6"
+      ]
+    },
+    {
+      "id": "7",
+      "label": "Tanjong Pagar Road",
+      "gantryNos": [
+        "7"
+      ]
+    },
+    {
+      "id": "19",
+      "label": "Havelock Road / Clemenceau Avenue",
+      "gantryNos": [
+        "19"
+      ]
+    },
+    {
+      "id": "20",
+      "label": "Havelock Road / CTE exit",
+      "gantryNos": [
+        "20"
+      ]
+    },
+    {
+      "id": "24",
+      "label": "Merchant Road / Clemenceau Avenue",
+      "gantryNos": [
+        "24"
+      ]
+    },
+    {
+      "id": "25",
+      "label": "Merchant Road / CTE exit",
+      "gantryNos": [
+        "25"
+      ]
+    },
+    {
+      "id": "28",
+      "label": "Central Boulevard",
+      "gantryNos": [
+        "28"
+      ]
+    },
+    {
+      "id": "29",
+      "label": "MCE westbound slip road towards Maxwell Road",
+      "gantryNos": [
+        "29"
+      ]
+    },
+    {
+      "id": "72",
+      "label": "Sheares Avenue towards Sheares Link",
+      "gantryNos": [
+        "72"
+      ]
+    },
+    {
+      "id": "4",
+      "label": "Orchard Link",
+      "gantryNos": [
+        "4"
+      ]
+    },
+    {
+      "id": "12",
+      "label": "Oxley Road",
+      "gantryNos": [
+        "12"
+      ]
+    },
+    {
+      "id": "13",
+      "label": "Orchard Road",
+      "gantryNos": [
+        "13"
+      ]
+    },
+    {
+      "id": "14",
+      "label": "Orchard Turn",
+      "gantryNos": [
+        "14"
+      ]
+    },
+    {
+      "id": "15",
+      "label": "Killiney Road",
+      "gantryNos": [
+        "15"
+      ]
+    },
+    {
+      "id": "21",
+      "label": "Buyong Road",
+      "gantryNos": [
+        "21"
+      ]
+    },
+    {
+      "id": "22",
+      "label": "Kramat Road",
+      "gantryNos": [
+        "22"
+      ]
+    },
+    {
+      "id": "26",
+      "label": "Clemenceau Avenue",
+      "gantryNos": [
+        "26"
+      ]
+    },
+    {
+      "id": "27",
+      "label": "Cairnhill Road",
+      "gantryNos": [
+        "27"
+      ]
+    },
+    {
+      "id": "47",
+      "label": "Orchard Road at YMCA",
+      "gantryNos": [
+        "47"
+      ]
+    },
+    {
+      "id": "49",
+      "label": "Fort Canning Tunnel",
+      "gantryNos": [
+        "49"
+      ]
+    },
+    {
+      "id": "48",
+      "label": "Handy Road",
+      "gantryNos": [
+        "48"
+      ]
+    },
+    {
+      "id": "61",
+      "label": "New Bridge Road",
+      "gantryNos": [
+        "61"
+      ]
+    },
+    {
+      "id": "62",
+      "label": "South Bridge Road",
+      "gantryNos": [
+        "62"
+      ]
+    },
+    {
+      "id": "64",
+      "label": "Fullerton Road southbound",
+      "gantryNos": [
+        "64"
+      ]
+    },
+    {
+      "id": "69",
+      "label": "Bayfront Avenue southbound",
+      "gantryNos": [
+        "69"
+      ]
+    },
+    {
+      "id": "60",
+      "label": "Eu Tong Sen Street at Central",
+      "gantryNos": [
+        "60"
+      ]
+    },
+    {
+      "id": "63",
+      "label": "Fullerton Road northbound",
+      "gantryNos": [
+        "63"
+      ]
+    },
+    {
+      "id": "66",
+      "label": "Bayfront Avenue northbound",
+      "gantryNos": [
+        "66"
+      ]
     }
   ],
   "gantries": [
     {
-      "id": "g1",
+      "id": "gantry-1",
       "gantryNo": "1",
       "rawGantryNo": "1",
       "uniqueId": null,
-      "groupId": null,
+      "groupId": "1",
       "label": "Victoria Street",
       "directionDegrees": null,
       "center": [
@@ -256,11 +590,11 @@
       "isPriced": false
     },
     {
-      "id": "g2",
+      "id": "gantry-2",
       "gantryNo": "2",
       "rawGantryNo": "2",
       "uniqueId": null,
-      "groupId": null,
+      "groupId": "2",
       "label": "Nicoll Highway",
       "directionDegrees": null,
       "center": [
@@ -280,11 +614,11 @@
       "isPriced": false
     },
     {
-      "id": "g3",
+      "id": "gantry-3",
       "gantryNo": "3",
       "rawGantryNo": "3",
       "uniqueId": null,
-      "groupId": null,
+      "groupId": "3",
       "label": "Eu Tong Sen Street",
       "directionDegrees": null,
       "center": [
@@ -293,22 +627,22 @@
       ],
       "line": [
         [
-          1.28064836,
-          103.84033999
+          1.28036873,
+          103.84013513
         ],
         [
-          1.28074487,
-          103.84022094
+          1.28047354,
+          103.83999663
         ]
       ],
       "isPriced": false
     },
     {
-      "id": "g4",
+      "id": "gantry-4",
       "gantryNo": "4",
       "rawGantryNo": "4",
       "uniqueId": null,
-      "groupId": null,
+      "groupId": "4",
       "label": "Orchard Link",
       "directionDegrees": null,
       "center": [
@@ -325,14 +659,14 @@
           103.83499465
         ]
       ],
-      "isPriced": false
+      "isPriced": true
     },
     {
-      "id": "g5",
+      "id": "gantry-5",
       "gantryNo": "5",
       "rawGantryNo": "5",
       "uniqueId": null,
-      "groupId": null,
+      "groupId": "5",
       "label": "Lim Teck Kim Road",
       "directionDegrees": null,
       "center": [
@@ -352,11 +686,11 @@
       "isPriced": false
     },
     {
-      "id": "g6",
+      "id": "gantry-6",
       "gantryNo": "6",
       "rawGantryNo": "6",
       "uniqueId": null,
-      "groupId": null,
+      "groupId": "6",
       "label": "Anson Road",
       "directionDegrees": null,
       "center": [
@@ -376,11 +710,11 @@
       "isPriced": false
     },
     {
-      "id": "g7",
+      "id": "gantry-7",
       "gantryNo": "7",
       "rawGantryNo": "7",
       "uniqueId": null,
-      "groupId": null,
+      "groupId": "7",
       "label": "Tanjong Pagar Road",
       "directionDegrees": null,
       "center": [
@@ -389,7 +723,7 @@
       ],
       "line": [
         [
-          1.27301913,
+          1.27301912,
           103.8430276
         ],
         [
@@ -400,11 +734,11 @@
       "isPriced": false
     },
     {
-      "id": "g8",
+      "id": "gantry-9",
       "gantryNo": "9",
       "rawGantryNo": "9",
       "uniqueId": null,
-      "groupId": null,
+      "groupId": "9",
       "label": "Bencoolen Street",
       "directionDegrees": null,
       "center": [
@@ -415,11 +749,11 @@
       "isPriced": false
     },
     {
-      "id": "g9",
+      "id": "gantry-10",
       "gantryNo": "10",
       "rawGantryNo": "10",
       "uniqueId": null,
-      "groupId": null,
+      "groupId": "10",
       "label": "Queen Street",
       "directionDegrees": null,
       "center": [
@@ -439,11 +773,11 @@
       "isPriced": false
     },
     {
-      "id": "g10",
+      "id": "gantry-11",
       "gantryNo": "11",
       "rawGantryNo": "11",
       "uniqueId": null,
-      "groupId": null,
+      "groupId": "11",
       "label": "North Bridge Road",
       "directionDegrees": null,
       "center": [
@@ -463,11 +797,11 @@
       "isPriced": false
     },
     {
-      "id": "g11",
+      "id": "gantry-12",
       "gantryNo": "12",
       "rawGantryNo": "12",
       "uniqueId": null,
-      "groupId": null,
+      "groupId": "12",
       "label": "Oxley Road",
       "directionDegrees": null,
       "center": [
@@ -484,14 +818,14 @@
           103.84142718
         ]
       ],
-      "isPriced": false
+      "isPriced": true
     },
     {
-      "id": "g12",
+      "id": "gantry-13",
       "gantryNo": "13",
       "rawGantryNo": "13",
       "uniqueId": null,
-      "groupId": null,
+      "groupId": "13",
       "label": "Orchard Road",
       "directionDegrees": null,
       "center": [
@@ -508,14 +842,14 @@
           103.83228124
         ]
       ],
-      "isPriced": false
+      "isPriced": true
     },
     {
-      "id": "g13",
+      "id": "gantry-14",
       "gantryNo": "14",
       "rawGantryNo": "14",
       "uniqueId": null,
-      "groupId": null,
+      "groupId": "14",
       "label": "Orchard Turn",
       "directionDegrees": null,
       "center": [
@@ -532,14 +866,14 @@
           103.83269099
         ]
       ],
-      "isPriced": false
+      "isPriced": true
     },
     {
-      "id": "g14",
+      "id": "gantry-15",
       "gantryNo": "15",
       "rawGantryNo": "15",
       "uniqueId": null,
-      "groupId": null,
+      "groupId": "15",
       "label": "Killiney Road",
       "directionDegrees": null,
       "center": [
@@ -556,14 +890,14 @@
           103.83988535
         ]
       ],
-      "isPriced": false
+      "isPriced": true
     },
     {
-      "id": "g15",
+      "id": "gantry-16",
       "gantryNo": "16",
       "rawGantryNo": "16",
       "uniqueId": null,
-      "groupId": null,
+      "groupId": "16",
       "label": "Beach Road",
       "directionDegrees": null,
       "center": [
@@ -583,11 +917,11 @@
       "isPriced": false
     },
     {
-      "id": "g16",
+      "id": "gantry-17",
       "gantryNo": "17",
       "rawGantryNo": "17",
       "uniqueId": null,
-      "groupId": null,
+      "groupId": "17",
       "label": "Temasek Boulevard",
       "directionDegrees": null,
       "center": [
@@ -607,11 +941,11 @@
       "isPriced": false
     },
     {
-      "id": "g17",
+      "id": "gantry-18",
       "gantryNo": "18",
       "rawGantryNo": "18",
       "uniqueId": null,
-      "groupId": null,
+      "groupId": "18",
       "label": "Republic Boulevard",
       "directionDegrees": null,
       "center": [
@@ -620,7 +954,7 @@
       ],
       "line": [
         [
-          1.29620614,
+          1.29620613,
           103.86236572
         ],
         [
@@ -631,12 +965,12 @@
       "isPriced": false
     },
     {
-      "id": "g18",
+      "id": "gantry-19",
       "gantryNo": "19",
       "rawGantryNo": "19",
       "uniqueId": null,
-      "groupId": null,
-      "label": "Havelock Road/Clemenceau Ave",
+      "groupId": "19",
+      "label": "Havelock Road / Clemenceau Avenue",
       "directionDegrees": null,
       "center": [
         1.28845018,
@@ -655,12 +989,12 @@
       "isPriced": false
     },
     {
-      "id": "g19",
+      "id": "gantry-20",
       "gantryNo": "20",
       "rawGantryNo": "20",
       "uniqueId": null,
-      "groupId": null,
-      "label": "Havelock Road/CTE Exit",
+      "groupId": "20",
+      "label": "Havelock Road / CTE exit",
       "directionDegrees": null,
       "center": [
         1.28787248,
@@ -679,11 +1013,11 @@
       "isPriced": false
     },
     {
-      "id": "g20",
+      "id": "gantry-21",
       "gantryNo": "21",
       "rawGantryNo": "21",
       "uniqueId": null,
-      "groupId": null,
+      "groupId": "21",
       "label": "Buyong Road",
       "directionDegrees": null,
       "center": [
@@ -700,14 +1034,14 @@
           103.84324607
         ]
       ],
-      "isPriced": false
+      "isPriced": true
     },
     {
-      "id": "g21",
+      "id": "gantry-22",
       "gantryNo": "22",
       "rawGantryNo": "22",
       "uniqueId": null,
-      "groupId": null,
+      "groupId": "22",
       "label": "Kramat Road",
       "directionDegrees": null,
       "center": [
@@ -724,14 +1058,14 @@
           103.84197307
         ]
       ],
-      "isPriced": false
+      "isPriced": true
     },
     {
-      "id": "g22",
+      "id": "gantry-23",
       "gantryNo": "23",
       "rawGantryNo": "23",
       "uniqueId": null,
-      "groupId": null,
+      "groupId": "23",
       "label": "River Valley Road",
       "directionDegrees": null,
       "center": [
@@ -742,12 +1076,12 @@
       "isPriced": false
     },
     {
-      "id": "g23",
+      "id": "gantry-24",
       "gantryNo": "24",
       "rawGantryNo": "24",
       "uniqueId": null,
-      "groupId": null,
-      "label": "Merchant Road/Clemenceau Ave",
+      "groupId": "24",
+      "label": "Merchant Road / Clemenceau Avenue",
       "directionDegrees": null,
       "center": [
         1.29004485,
@@ -766,12 +1100,12 @@
       "isPriced": false
     },
     {
-      "id": "g24",
+      "id": "gantry-25",
       "gantryNo": "25",
       "rawGantryNo": "25",
       "uniqueId": null,
-      "groupId": null,
-      "label": "Merchant Road/CTE Exit",
+      "groupId": "25",
+      "label": "Merchant Road / CTE exit",
       "directionDegrees": null,
       "center": [
         1.28886852,
@@ -790,12 +1124,12 @@
       "isPriced": false
     },
     {
-      "id": "g25",
+      "id": "gantry-26",
       "gantryNo": "26",
       "rawGantryNo": "26",
       "uniqueId": null,
-      "groupId": null,
-      "label": "Clemenceau Ave",
+      "groupId": "26",
+      "label": "Clemenceau Avenue",
       "directionDegrees": null,
       "center": [
         1.29783328,
@@ -811,14 +1145,14 @@
           103.84365026
         ]
       ],
-      "isPriced": false
+      "isPriced": true
     },
     {
-      "id": "g26",
+      "id": "gantry-27",
       "gantryNo": "27",
       "rawGantryNo": "27",
       "uniqueId": null,
-      "groupId": null,
+      "groupId": "27",
       "label": "Cairnhill Road",
       "directionDegrees": null,
       "center": [
@@ -835,14 +1169,14 @@
           103.83767436
         ]
       ],
-      "isPriced": false
+      "isPriced": true
     },
     {
-      "id": "g27",
+      "id": "gantry-28",
       "gantryNo": "28",
       "rawGantryNo": "28",
       "uniqueId": null,
-      "groupId": null,
+      "groupId": "28",
       "label": "Central Boulevard",
       "directionDegrees": null,
       "center": [
@@ -851,23 +1185,23 @@
       ],
       "line": [
         [
-          1.27450685,
-          103.86061835
+          1.30421401,
+          103.86631064
         ],
         [
-          1.27433331,
-          103.86050474
+          1.30429901,
+          103.86641797
         ]
       ],
       "isPriced": false
     },
     {
-      "id": "g28",
+      "id": "gantry-29",
       "gantryNo": "29",
       "rawGantryNo": "29",
       "uniqueId": null,
-      "groupId": null,
-      "label": "Maxwell Road",
+      "groupId": "29",
+      "label": "MCE westbound slip road towards Maxwell Road",
       "directionDegrees": null,
       "center": [
         1.27460394,
@@ -886,7 +1220,7 @@
       "isPriced": false
     },
     {
-      "id": "g29",
+      "id": "gantry-30",
       "gantryNo": "30",
       "rawGantryNo": "30",
       "uniqueId": null,
@@ -898,10 +1232,10 @@
         103.8767
       ],
       "line": [],
-      "isPriced": true
+      "isPriced": false
     },
     {
-      "id": "g30",
+      "id": "gantry-31",
       "gantryNo": "31",
       "rawGantryNo": "31",
       "uniqueId": null,
@@ -916,7 +1250,7 @@
       "isPriced": true
     },
     {
-      "id": "g31",
+      "id": "gantry-32",
       "gantryNo": "32",
       "rawGantryNo": "32",
       "uniqueId": null,
@@ -940,7 +1274,7 @@
       "isPriced": true
     },
     {
-      "id": "g32",
+      "id": "gantry-33",
       "gantryNo": "33",
       "rawGantryNo": "33",
       "uniqueId": null,
@@ -964,7 +1298,7 @@
       "isPriced": true
     },
     {
-      "id": "g33",
+      "id": "gantry-34",
       "gantryNo": "34",
       "rawGantryNo": "34",
       "uniqueId": null,
@@ -988,7 +1322,7 @@
       "isPriced": true
     },
     {
-      "id": "g34",
+      "id": "gantry-35",
       "gantryNo": "35",
       "rawGantryNo": "35",
       "uniqueId": null,
@@ -1003,7 +1337,7 @@
       "isPriced": true
     },
     {
-      "id": "g35",
+      "id": "gantry-36",
       "gantryNo": "36",
       "rawGantryNo": "36",
       "uniqueId": null,
@@ -1027,7 +1361,7 @@
       "isPriced": true
     },
     {
-      "id": "g36",
+      "id": "gantry-37",
       "gantryNo": "37",
       "rawGantryNo": "37",
       "uniqueId": null,
@@ -1051,7 +1385,7 @@
       "isPriced": true
     },
     {
-      "id": "g37",
+      "id": "gantry-38",
       "gantryNo": "38",
       "rawGantryNo": "38",
       "uniqueId": null,
@@ -1075,7 +1409,7 @@
       "isPriced": true
     },
     {
-      "id": "g38",
+      "id": "gantry-39",
       "gantryNo": "39",
       "rawGantryNo": "39",
       "uniqueId": null,
@@ -1096,10 +1430,10 @@
           103.83726482
         ]
       ],
-      "isPriced": true
+      "isPriced": false
     },
     {
-      "id": "g39",
+      "id": "gantry-40",
       "gantryNo": "40",
       "rawGantryNo": "40",
       "uniqueId": null,
@@ -1120,10 +1454,10 @@
           103.86840443
         ]
       ],
-      "isPriced": true
+      "isPriced": false
     },
     {
-      "id": "g40",
+      "id": "gantry-41",
       "gantryNo": "41",
       "rawGantryNo": "41",
       "uniqueId": null,
@@ -1147,7 +1481,7 @@
       "isPriced": true
     },
     {
-      "id": "g41",
+      "id": "gantry-42",
       "gantryNo": "42",
       "rawGantryNo": "42",
       "uniqueId": null,
@@ -1171,7 +1505,7 @@
       "isPriced": true
     },
     {
-      "id": "g42",
+      "id": "gantry-43",
       "gantryNo": "43",
       "rawGantryNo": "43",
       "uniqueId": null,
@@ -1192,10 +1526,10 @@
           103.82361232
         ]
       ],
-      "isPriced": true
+      "isPriced": false
     },
     {
-      "id": "g43",
+      "id": "gantry-44",
       "gantryNo": "44",
       "rawGantryNo": "44",
       "uniqueId": null,
@@ -1216,10 +1550,10 @@
           103.82529217
         ]
       ],
-      "isPriced": true
+      "isPriced": false
     },
     {
-      "id": "g44",
+      "id": "gantry-45",
       "gantryNo": "45",
       "rawGantryNo": "45",
       "uniqueId": null,
@@ -1243,7 +1577,7 @@
       "isPriced": true
     },
     {
-      "id": "g45",
+      "id": "gantry-46",
       "gantryNo": "46",
       "rawGantryNo": "46",
       "uniqueId": null,
@@ -1258,12 +1592,12 @@
       "isPriced": true
     },
     {
-      "id": "g46",
+      "id": "gantry-47",
       "gantryNo": "47",
       "rawGantryNo": "47",
       "uniqueId": null,
-      "groupId": null,
-      "label": "Orchard Road after YMCA",
+      "groupId": "47",
+      "label": "Orchard Road at YMCA",
       "directionDegrees": null,
       "center": [
         1.29815705,
@@ -1279,15 +1613,15 @@
           103.84804804
         ]
       ],
-      "isPriced": false
+      "isPriced": true
     },
     {
-      "id": "g47",
+      "id": "gantry-48",
       "gantryNo": "48",
       "rawGantryNo": "48",
       "uniqueId": null,
-      "groupId": null,
-      "label": "Orchard Road after Handy Road",
+      "groupId": "48",
+      "label": "Handy Road",
       "directionDegrees": null,
       "center": [
         1.29872031,
@@ -1306,11 +1640,11 @@
       "isPriced": false
     },
     {
-      "id": "g48",
+      "id": "gantry-49",
       "gantryNo": "49",
       "rawGantryNo": "49",
       "uniqueId": null,
-      "groupId": null,
+      "groupId": "49",
       "label": "Fort Canning Tunnel",
       "directionDegrees": null,
       "center": [
@@ -1327,10 +1661,10 @@
           103.8464302
         ]
       ],
-      "isPriced": false
+      "isPriced": true
     },
     {
-      "id": "g49",
+      "id": "gantry-50",
       "gantryNo": "50",
       "rawGantryNo": "50",
       "uniqueId": null,
@@ -1345,7 +1679,7 @@
       "isPriced": true
     },
     {
-      "id": "g50",
+      "id": "gantry-51",
       "gantryNo": "51",
       "rawGantryNo": "51",
       "uniqueId": null,
@@ -1360,7 +1694,7 @@
       "isPriced": true
     },
     {
-      "id": "g51",
+      "id": "gantry-52",
       "gantryNo": "52",
       "rawGantryNo": "52",
       "uniqueId": null,
@@ -1384,7 +1718,7 @@
       "isPriced": true
     },
     {
-      "id": "g52",
+      "id": "gantry-53",
       "gantryNo": "53",
       "rawGantryNo": "53",
       "uniqueId": null,
@@ -1408,7 +1742,7 @@
       "isPriced": true
     },
     {
-      "id": "g53",
+      "id": "gantry-54",
       "gantryNo": "54",
       "rawGantryNo": "54",
       "uniqueId": null,
@@ -1420,10 +1754,10 @@
         103.78558407
       ],
       "line": [],
-      "isPriced": true
+      "isPriced": false
     },
     {
-      "id": "g54",
+      "id": "gantry-55",
       "gantryNo": "55",
       "rawGantryNo": "55",
       "uniqueId": null,
@@ -1435,10 +1769,10 @@
         103.76967829
       ],
       "line": [],
-      "isPriced": true
+      "isPriced": false
     },
     {
-      "id": "g55",
+      "id": "gantry-56",
       "gantryNo": "56",
       "rawGantryNo": "56",
       "uniqueId": null,
@@ -1459,10 +1793,10 @@
           103.85346255
         ]
       ],
-      "isPriced": true
+      "isPriced": false
     },
     {
-      "id": "g56",
+      "id": "gantry-57",
       "gantryNo": "57",
       "rawGantryNo": "57",
       "uniqueId": null,
@@ -1483,10 +1817,10 @@
           103.87280508
         ]
       ],
-      "isPriced": true
+      "isPriced": false
     },
     {
-      "id": "g57",
+      "id": "gantry-58",
       "gantryNo": "58",
       "rawGantryNo": "58",
       "uniqueId": null,
@@ -1499,7 +1833,7 @@
       ],
       "line": [
         [
-          1.32012501,
+          1.320125,
           103.87172082
         ],
         [
@@ -1507,10 +1841,10 @@
           103.87180445
         ]
       ],
-      "isPriced": true
+      "isPriced": false
     },
     {
-      "id": "g58",
+      "id": "gantry-59",
       "gantryNo": "59",
       "rawGantryNo": "59",
       "uniqueId": null,
@@ -1531,15 +1865,15 @@
           103.8706295
         ]
       ],
-      "isPriced": true
+      "isPriced": false
     },
     {
-      "id": "g59",
+      "id": "gantry-60",
       "gantryNo": "60",
       "rawGantryNo": "60",
       "uniqueId": null,
-      "groupId": null,
-      "label": "Eu Tong Seng Street at Central",
+      "groupId": "60",
+      "label": "Eu Tong Sen Street at Central",
       "directionDegrees": null,
       "center": [
         1.28923743,
@@ -1558,12 +1892,12 @@
       "isPriced": false
     },
     {
-      "id": "g60",
+      "id": "gantry-61",
       "gantryNo": "61",
       "rawGantryNo": "61",
       "uniqueId": null,
-      "groupId": null,
-      "label": "New Bridge Road before Upper Circular Road",
+      "groupId": "61",
+      "label": "New Bridge Road",
       "directionDegrees": null,
       "center": [
         1.28930308,
@@ -1582,12 +1916,12 @@
       "isPriced": false
     },
     {
-      "id": "g61",
+      "id": "gantry-62",
       "gantryNo": "62",
       "rawGantryNo": "62",
       "uniqueId": null,
-      "groupId": null,
-      "label": "South Bridge Road before Upper Circular Road",
+      "groupId": "62",
+      "label": "South Bridge Road",
       "directionDegrees": null,
       "center": [
         1.2883723,
@@ -1606,12 +1940,12 @@
       "isPriced": false
     },
     {
-      "id": "g62",
+      "id": "gantry-63",
       "gantryNo": "63",
       "rawGantryNo": "63",
       "uniqueId": null,
-      "groupId": null,
-      "label": "Fullerton Road eastbound at Fullerton Hotel",
+      "groupId": "63",
+      "label": "Fullerton Road northbound",
       "directionDegrees": null,
       "center": [
         1.28613926,
@@ -1630,12 +1964,12 @@
       "isPriced": false
     },
     {
-      "id": "g63",
+      "id": "gantry-64",
       "gantryNo": "64",
       "rawGantryNo": "64",
       "uniqueId": null,
-      "groupId": null,
-      "label": "Fullerton Road westbound at One Fullerton",
+      "groupId": "64",
+      "label": "Fullerton Road southbound",
       "directionDegrees": null,
       "center": [
         1.28600752,
@@ -1654,7 +1988,7 @@
       "isPriced": false
     },
     {
-      "id": "g64",
+      "id": "gantry-65",
       "gantryNo": "65",
       "rawGantryNo": "65",
       "uniqueId": null,
@@ -1678,12 +2012,12 @@
       "isPriced": true
     },
     {
-      "id": "g65",
+      "id": "gantry-66",
       "gantryNo": "66",
       "rawGantryNo": "66",
       "uniqueId": null,
-      "groupId": null,
-      "label": "Bayfront Ave towards Raffles Ave",
+      "groupId": "66",
+      "label": "Bayfront Avenue northbound",
       "directionDegrees": null,
       "center": [
         1.28548763,
@@ -1702,7 +2036,7 @@
       "isPriced": false
     },
     {
-      "id": "g66",
+      "id": "gantry-67",
       "gantryNo": "67",
       "rawGantryNo": "67",
       "uniqueId": null,
@@ -1717,7 +2051,7 @@
       "isPriced": true
     },
     {
-      "id": "g67",
+      "id": "gantry-68",
       "gantryNo": "68",
       "rawGantryNo": "68",
       "uniqueId": null,
@@ -1732,12 +2066,12 @@
       "isPriced": true
     },
     {
-      "id": "g68",
+      "id": "gantry-69",
       "gantryNo": "69",
       "rawGantryNo": "69",
       "uniqueId": null,
-      "groupId": null,
-      "label": "Bayfront Avenue towards Marina Boulevard",
+      "groupId": "69",
+      "label": "Bayfront Avenue southbound",
       "directionDegrees": null,
       "center": [
         1.28548223,
@@ -1756,7 +2090,7 @@
       "isPriced": false
     },
     {
-      "id": "g69",
+      "id": "gantry-70",
       "gantryNo": "70",
       "rawGantryNo": "70",
       "uniqueId": null,
@@ -1768,10 +2102,10 @@
         103.87074881
       ],
       "line": [],
-      "isPriced": true
+      "isPriced": false
     },
     {
-      "id": "g70",
+      "id": "gantry-71",
       "gantryNo": "71",
       "rawGantryNo": "71",
       "uniqueId": null,
@@ -1783,14 +2117,14 @@
         103.86804
       ],
       "line": [],
-      "isPriced": true
+      "isPriced": false
     },
     {
-      "id": "g71",
+      "id": "gantry-72",
       "gantryNo": "72",
       "rawGantryNo": "72",
       "uniqueId": null,
-      "groupId": null,
+      "groupId": "72",
       "label": "Sheares Avenue towards Sheares Link",
       "directionDegrees": null,
       "center": [
@@ -1801,7 +2135,7 @@
       "isPriced": false
     },
     {
-      "id": "g72",
+      "id": "gantry-73",
       "gantryNo": "73",
       "rawGantryNo": "73",
       "uniqueId": null,
@@ -1813,10 +2147,10 @@
         103.87229
       ],
       "line": [],
-      "isPriced": true
+      "isPriced": false
     },
     {
-      "id": "g73",
+      "id": "gantry-74",
       "gantryNo": "74",
       "rawGantryNo": "74",
       "uniqueId": null,
@@ -1840,7 +2174,7 @@
       "isPriced": true
     },
     {
-      "id": "g74",
+      "id": "gantry-80",
       "gantryNo": "80",
       "rawGantryNo": "80",
       "uniqueId": null,
@@ -1861,10 +2195,10 @@
           103.87540071
         ]
       ],
-      "isPriced": true
+      "isPriced": false
     },
     {
-      "id": "g75",
+      "id": "gantry-90",
       "gantryNo": "90",
       "rawGantryNo": "90",
       "uniqueId": null,
@@ -1885,10 +2219,10 @@
           103.86705345
         ]
       ],
-      "isPriced": true
+      "isPriced": false
     },
     {
-      "id": "g76",
+      "id": "gantry-91",
       "gantryNo": "91",
       "rawGantryNo": "91",
       "uniqueId": null,
@@ -1909,10 +2243,10 @@
           103.85672265
         ]
       ],
-      "isPriced": true
+      "isPriced": false
     },
     {
-      "id": "g77",
+      "id": "gantry-92",
       "gantryNo": "92",
       "rawGantryNo": "92",
       "uniqueId": null,
@@ -1936,7 +2270,7 @@
       "isPriced": true
     },
     {
-      "id": "g78",
+      "id": "gantry-93",
       "gantryNo": "93",
       "rawGantryNo": "93",
       "uniqueId": null,
@@ -1962,226 +2296,292 @@
   ],
   "baseRates": [
     {
+      "groupId": "12",
+      "start": "11:00",
+      "end": "11:05",
+      "amount": 0.5
+    },
+    {
+      "groupId": "12",
+      "start": "11:05",
+      "end": "18:55",
+      "amount": 1.0
+    },
+    {
+      "groupId": "12",
+      "start": "18:55",
+      "end": "19:00",
+      "amount": 0.5
+    },
+    {
+      "groupId": "13",
+      "start": "11:00",
+      "end": "11:05",
+      "amount": 0.5
+    },
+    {
+      "groupId": "13",
+      "start": "11:05",
+      "end": "18:55",
+      "amount": 1.0
+    },
+    {
+      "groupId": "13",
+      "start": "18:55",
+      "end": "19:00",
+      "amount": 0.5
+    },
+    {
+      "groupId": "14",
+      "start": "11:00",
+      "end": "11:05",
+      "amount": 0.5
+    },
+    {
+      "groupId": "14",
+      "start": "11:05",
+      "end": "18:55",
+      "amount": 1.0
+    },
+    {
+      "groupId": "14",
+      "start": "18:55",
+      "end": "19:00",
+      "amount": 0.5
+    },
+    {
+      "groupId": "15",
+      "start": "11:00",
+      "end": "11:05",
+      "amount": 0.5
+    },
+    {
+      "groupId": "15",
+      "start": "11:05",
+      "end": "18:55",
+      "amount": 1.0
+    },
+    {
+      "groupId": "15",
+      "start": "18:55",
+      "end": "19:00",
+      "amount": 0.5
+    },
+    {
+      "groupId": "21",
+      "start": "11:00",
+      "end": "11:05",
+      "amount": 0.5
+    },
+    {
+      "groupId": "21",
+      "start": "11:05",
+      "end": "18:55",
+      "amount": 1.0
+    },
+    {
+      "groupId": "21",
+      "start": "18:55",
+      "end": "19:00",
+      "amount": 0.5
+    },
+    {
+      "groupId": "22",
+      "start": "11:00",
+      "end": "11:05",
+      "amount": 0.5
+    },
+    {
+      "groupId": "22",
+      "start": "11:05",
+      "end": "18:55",
+      "amount": 1.0
+    },
+    {
+      "groupId": "22",
+      "start": "18:55",
+      "end": "19:00",
+      "amount": 0.5
+    },
+    {
+      "groupId": "26",
+      "start": "11:00",
+      "end": "11:05",
+      "amount": 0.5
+    },
+    {
+      "groupId": "26",
+      "start": "11:05",
+      "end": "18:55",
+      "amount": 1.0
+    },
+    {
+      "groupId": "26",
+      "start": "18:55",
+      "end": "19:00",
+      "amount": 0.5
+    },
+    {
+      "groupId": "27",
+      "start": "11:00",
+      "end": "11:05",
+      "amount": 0.5
+    },
+    {
+      "groupId": "27",
+      "start": "11:05",
+      "end": "18:55",
+      "amount": 1.0
+    },
+    {
+      "groupId": "27",
+      "start": "18:55",
+      "end": "19:00",
+      "amount": 0.5
+    },
+    {
+      "groupId": "31,33,34",
+      "start": "07:30",
+      "end": "07:35",
+      "amount": 1.0
+    },
+    {
+      "groupId": "31,33,34",
+      "start": "07:35",
+      "end": "08:00",
+      "amount": 2.0
+    },
+    {
+      "groupId": "31,33,34",
+      "start": "08:00",
+      "end": "08:05",
+      "amount": 3.0
+    },
+    {
+      "groupId": "31,33,34",
+      "start": "08:05",
+      "end": "08:30",
+      "amount": 4.0
+    },
+    {
+      "groupId": "31,33,34",
+      "start": "08:30",
+      "end": "08:35",
+      "amount": 4.5
+    },
+    {
+      "groupId": "31,33,34",
+      "start": "08:35",
+      "end": "08:55",
+      "amount": 5.0
+    },
+    {
+      "groupId": "31,33,34",
+      "start": "08:55",
+      "end": "09:00",
+      "amount": 4.5
+    },
+    {
+      "groupId": "31,33,34",
+      "start": "09:00",
+      "end": "09:25",
+      "amount": 4.0
+    },
+    {
+      "groupId": "31,33,34",
+      "start": "09:25",
+      "end": "09:30",
+      "amount": 3.5
+    },
+    {
+      "groupId": "31,33,34",
+      "start": "09:30",
+      "end": "09:55",
+      "amount": 3.0
+    },
+    {
+      "groupId": "31,33,34",
+      "start": "09:55",
+      "end": "10:00",
+      "amount": 1.5
+    },
+    {
+      "groupId": "32,45",
+      "start": "07:00",
+      "end": "07:05",
+      "amount": 0.5
+    },
+    {
+      "groupId": "32,45",
+      "start": "07:05",
+      "end": "07:30",
+      "amount": 1.0
+    },
+    {
+      "groupId": "32,45",
+      "start": "07:30",
+      "end": "07:35",
+      "amount": 1.5
+    },
+    {
+      "groupId": "32,45",
+      "start": "07:35",
+      "end": "08:30",
+      "amount": 2.0
+    },
+    {
+      "groupId": "32,45",
+      "start": "08:30",
+      "end": "08:35",
+      "amount": 3.0
+    },
+    {
+      "groupId": "32,45",
+      "start": "08:35",
+      "end": "08:55",
+      "amount": 4.0
+    },
+    {
+      "groupId": "32,45",
+      "start": "08:55",
+      "end": "09:00",
+      "amount": 3.0
+    },
+    {
+      "groupId": "32,45",
+      "start": "09:00",
+      "end": "09:25",
+      "amount": 2.0
+    },
+    {
+      "groupId": "32,45",
+      "start": "09:25",
+      "end": "09:30",
+      "amount": 1.5
+    },
+    {
+      "groupId": "32,45",
+      "start": "09:30",
+      "end": "09:55",
+      "amount": 1.0
+    },
+    {
+      "groupId": "32,45",
+      "start": "09:55",
+      "end": "10:00",
+      "amount": 0.5
+    },
+    {
       "groupId": "35",
       "start": "07:00",
       "end": "07:05",
       "amount": 1.0
     },
     {
-      "groupId": "50",
-      "start": "07:00",
-      "end": "07:05",
-      "amount": 0.5
-    },
-    {
       "groupId": "35",
       "start": "07:05",
-      "end": "07:25",
-      "amount": 2.0
-    },
-    {
-      "groupId": "50",
-      "start": "07:05",
-      "end": "07:25",
-      "amount": 1.0
-    },
-    {
-      "groupId": "35",
-      "start": "07:25",
-      "end": "07:30",
-      "amount": 2.0
-    },
-    {
-      "groupId": "50",
-      "start": "07:25",
-      "end": "07:30",
-      "amount": 1.0
-    },
-    {
-      "groupId": "52,53,74",
-      "start": "07:30",
-      "end": "07:35",
-      "amount": 2.0
-    },
-    {
-      "groupId": "31,33,34",
-      "start": "07:30",
-      "end": "07:35",
-      "amount": 1.0
-    },
-    {
-      "groupId": "68",
-      "start": "07:30",
-      "end": "07:35",
-      "amount": 1.0
-    },
-    {
-      "groupId": "35",
-      "start": "07:30",
-      "end": "07:35",
-      "amount": 2.0
-    },
-    {
-      "groupId": "50",
-      "start": "07:30",
-      "end": "07:35",
-      "amount": 2.5
-    },
-    {
-      "groupId": "32,45",
-      "start": "07:30",
-      "end": "07:35",
-      "amount": 0.5
-    },
-    {
-      "groupId": "37,38",
-      "start": "07:30",
-      "end": "07:35",
-      "amount": 1.0
-    },
-    {
-      "groupId": "42",
-      "start": "07:30",
-      "end": "07:35",
-      "amount": 1.0
-    },
-    {
-      "groupId": "65",
-      "start": "07:30",
-      "end": "07:35",
-      "amount": 0.5
-    },
-    {
-      "groupId": "52,53,74",
-      "start": "07:35",
-      "end": "07:55",
-      "amount": 4.0
-    },
-    {
-      "groupId": "31,33,34",
-      "start": "07:35",
-      "end": "07:55",
-      "amount": 2.0
-    },
-    {
-      "groupId": "68",
-      "start": "07:35",
-      "end": "07:55",
-      "amount": 2.0
-    },
-    {
-      "groupId": "35",
-      "start": "07:35",
-      "end": "07:55",
-      "amount": 2.0
-    },
-    {
-      "groupId": "50",
-      "start": "07:35",
-      "end": "07:55",
-      "amount": 4.0
-    },
-    {
-      "groupId": "32,45",
-      "start": "07:35",
-      "end": "07:55",
-      "amount": 1.0
-    },
-    {
-      "groupId": "37,38",
-      "start": "07:35",
-      "end": "07:55",
-      "amount": 2.0
-    },
-    {
-      "groupId": "42",
-      "start": "07:35",
-      "end": "07:55",
-      "amount": 2.0
-    },
-    {
-      "groupId": "65",
-      "start": "07:35",
-      "end": "07:55",
-      "amount": 1.0
-    },
-    {
-      "groupId": "52,53,74",
-      "start": "07:55",
-      "end": "08:00",
-      "amount": 3.0
-    },
-    {
-      "groupId": "31,33,34",
-      "start": "07:55",
       "end": "08:00",
       "amount": 2.0
-    },
-    {
-      "groupId": "68",
-      "start": "07:55",
-      "end": "08:00",
-      "amount": 2.0
-    },
-    {
-      "groupId": "35",
-      "start": "07:55",
-      "end": "08:00",
-      "amount": 2.0
-    },
-    {
-      "groupId": "50",
-      "start": "07:55",
-      "end": "08:00",
-      "amount": 4.0
-    },
-    {
-      "groupId": "32,45",
-      "start": "07:55",
-      "end": "08:00",
-      "amount": 1.0
-    },
-    {
-      "groupId": "37,38",
-      "start": "07:55",
-      "end": "08:00",
-      "amount": 2.0
-    },
-    {
-      "groupId": "42",
-      "start": "07:55",
-      "end": "08:00",
-      "amount": 2.0
-    },
-    {
-      "groupId": "65",
-      "start": "07:55",
-      "end": "08:00",
-      "amount": 1.0
-    },
-    {
-      "groupId": "36",
-      "start": "08:00",
-      "end": "08:05",
-      "amount": 0.5
-    },
-    {
-      "groupId": "52,53,74",
-      "start": "08:00",
-      "end": "08:05",
-      "amount": 2.0
-    },
-    {
-      "groupId": "31,33,34",
-      "start": "08:00",
-      "end": "08:05",
-      "amount": 3.0
-    },
-    {
-      "groupId": "68",
-      "start": "08:00",
-      "end": "08:05",
-      "amount": 2.5
     },
     {
       "groupId": "35",
@@ -2190,152 +2590,38 @@
       "amount": 2.5
     },
     {
-      "groupId": "50",
+      "groupId": "35",
+      "start": "08:05",
+      "end": "09:25",
+      "amount": 3.0
+    },
+    {
+      "groupId": "35",
+      "start": "09:25",
+      "end": "09:30",
+      "amount": 2.0
+    },
+    {
+      "groupId": "35",
+      "start": "09:30",
+      "end": "09:55",
+      "amount": 1.0
+    },
+    {
+      "groupId": "35",
+      "start": "09:55",
+      "end": "10:00",
+      "amount": 0.5
+    },
+    {
+      "groupId": "36",
       "start": "08:00",
       "end": "08:05",
-      "amount": 4.5
-    },
-    {
-      "groupId": "32,45",
-      "start": "08:00",
-      "end": "08:05",
-      "amount": 1.0
-    },
-    {
-      "groupId": "37,38",
-      "start": "08:00",
-      "end": "08:05",
-      "amount": 2.0
-    },
-    {
-      "groupId": "42",
-      "start": "08:00",
-      "end": "08:05",
-      "amount": 3.0
-    },
-    {
-      "groupId": "65",
-      "start": "08:00",
-      "end": "08:05",
-      "amount": 1.0
+      "amount": 0.5
     },
     {
       "groupId": "36",
       "start": "08:05",
-      "end": "08:25",
-      "amount": 1.0
-    },
-    {
-      "groupId": "52,53,74",
-      "start": "08:05",
-      "end": "08:25",
-      "amount": 2.0
-    },
-    {
-      "groupId": "31,33,34",
-      "start": "08:05",
-      "end": "08:25",
-      "amount": 4.0
-    },
-    {
-      "groupId": "68",
-      "start": "08:05",
-      "end": "08:25",
-      "amount": 3.0
-    },
-    {
-      "groupId": "35",
-      "start": "08:05",
-      "end": "08:25",
-      "amount": 3.0
-    },
-    {
-      "groupId": "50",
-      "start": "08:05",
-      "end": "08:25",
-      "amount": 5.0
-    },
-    {
-      "groupId": "32,45",
-      "start": "08:05",
-      "end": "08:25",
-      "amount": 1.0
-    },
-    {
-      "groupId": "37,38",
-      "start": "08:05",
-      "end": "08:25",
-      "amount": 2.0
-    },
-    {
-      "groupId": "42",
-      "start": "08:05",
-      "end": "08:25",
-      "amount": 4.0
-    },
-    {
-      "groupId": "65",
-      "start": "08:05",
-      "end": "08:25",
-      "amount": 1.0
-    },
-    {
-      "groupId": "36",
-      "start": "08:25",
-      "end": "08:30",
-      "amount": 1.0
-    },
-    {
-      "groupId": "52,53,74",
-      "start": "08:25",
-      "end": "08:30",
-      "amount": 2.0
-    },
-    {
-      "groupId": "31,33,34",
-      "start": "08:25",
-      "end": "08:30",
-      "amount": 4.0
-    },
-    {
-      "groupId": "68",
-      "start": "08:25",
-      "end": "08:30",
-      "amount": 3.0
-    },
-    {
-      "groupId": "35",
-      "start": "08:25",
-      "end": "08:30",
-      "amount": 3.0
-    },
-    {
-      "groupId": "50",
-      "start": "08:25",
-      "end": "08:30",
-      "amount": 5.0
-    },
-    {
-      "groupId": "32,45",
-      "start": "08:25",
-      "end": "08:30",
-      "amount": 1.0
-    },
-    {
-      "groupId": "37,38",
-      "start": "08:25",
-      "end": "08:30",
-      "amount": 1.5
-    },
-    {
-      "groupId": "42",
-      "start": "08:25",
-      "end": "08:30",
-      "amount": 4.0
-    },
-    {
-      "groupId": "65",
-      "start": "08:25",
       "end": "08:30",
       "amount": 1.0
     },
@@ -2346,115 +2632,7 @@
       "amount": 1.5
     },
     {
-      "groupId": "52,53,74",
-      "start": "08:30",
-      "end": "08:35",
-      "amount": 3.0
-    },
-    {
-      "groupId": "31,33,34",
-      "start": "08:30",
-      "end": "08:35",
-      "amount": 4.5
-    },
-    {
-      "groupId": "68",
-      "start": "08:30",
-      "end": "08:35",
-      "amount": 4.0
-    },
-    {
-      "groupId": "35",
-      "start": "08:30",
-      "end": "08:35",
-      "amount": 3.0
-    },
-    {
-      "groupId": "50",
-      "start": "08:30",
-      "end": "08:35",
-      "amount": 5.5
-    },
-    {
-      "groupId": "32,45",
-      "start": "08:30",
-      "end": "08:35",
-      "amount": 2.0
-    },
-    {
-      "groupId": "37,38",
-      "start": "08:30",
-      "end": "08:35",
-      "amount": 1.0
-    },
-    {
-      "groupId": "42",
-      "start": "08:30",
-      "end": "08:35",
-      "amount": 4.5
-    },
-    {
-      "groupId": "65",
-      "start": "08:30",
-      "end": "08:35",
-      "amount": 1.5
-    },
-    {
       "groupId": "36",
-      "start": "08:35",
-      "end": "08:55",
-      "amount": 2.0
-    },
-    {
-      "groupId": "52,53,74",
-      "start": "08:35",
-      "end": "08:55",
-      "amount": 4.0
-    },
-    {
-      "groupId": "31,33,34",
-      "start": "08:35",
-      "end": "08:55",
-      "amount": 5.0
-    },
-    {
-      "groupId": "68",
-      "start": "08:35",
-      "end": "08:55",
-      "amount": 5.0
-    },
-    {
-      "groupId": "35",
-      "start": "08:35",
-      "end": "08:55",
-      "amount": 3.0
-    },
-    {
-      "groupId": "50",
-      "start": "08:35",
-      "end": "08:55",
-      "amount": 6.0
-    },
-    {
-      "groupId": "32,45",
-      "start": "08:35",
-      "end": "08:55",
-      "amount": 3.0
-    },
-    {
-      "groupId": "37,38",
-      "start": "08:35",
-      "end": "08:55",
-      "amount": 1.0
-    },
-    {
-      "groupId": "42",
-      "start": "08:35",
-      "end": "08:55",
-      "amount": 5.0
-    },
-    {
-      "groupId": "65",
       "start": "08:35",
       "end": "08:55",
       "amount": 2.0
@@ -2466,176 +2644,8 @@
       "amount": 1.5
     },
     {
-      "groupId": "52,53,74",
-      "start": "08:55",
-      "end": "09:00",
-      "amount": 3.5
-    },
-    {
-      "groupId": "31,33,34",
-      "start": "08:55",
-      "end": "09:00",
-      "amount": 4.5
-    },
-    {
-      "groupId": "68",
-      "start": "08:55",
-      "end": "09:00",
-      "amount": 4.5
-    },
-    {
-      "groupId": "35",
-      "start": "08:55",
-      "end": "09:00",
-      "amount": 3.0
-    },
-    {
-      "groupId": "50",
-      "start": "08:55",
-      "end": "09:00",
-      "amount": 4.0
-    },
-    {
-      "groupId": "32,45",
-      "start": "08:55",
-      "end": "09:00",
-      "amount": 2.5
-    },
-    {
-      "groupId": "37,38",
-      "start": "08:55",
-      "end": "09:00",
-      "amount": 1.0
-    },
-    {
-      "groupId": "42",
-      "start": "08:55",
-      "end": "09:00",
-      "amount": 4.5
-    },
-    {
-      "groupId": "65",
-      "start": "08:55",
-      "end": "09:00",
-      "amount": 1.5
-    },
-    {
       "groupId": "36",
       "start": "09:00",
-      "end": "09:05",
-      "amount": 1.0
-    },
-    {
-      "groupId": "52,53,74",
-      "start": "09:00",
-      "end": "09:05",
-      "amount": 3.0
-    },
-    {
-      "groupId": "31,33,34",
-      "start": "09:00",
-      "end": "09:05",
-      "amount": 4.0
-    },
-    {
-      "groupId": "68",
-      "start": "09:00",
-      "end": "09:05",
-      "amount": 4.0
-    },
-    {
-      "groupId": "35",
-      "start": "09:00",
-      "end": "09:05",
-      "amount": 3.0
-    },
-    {
-      "groupId": "50",
-      "start": "09:00",
-      "end": "09:05",
-      "amount": 2.0
-    },
-    {
-      "groupId": "32,45",
-      "start": "09:00",
-      "end": "09:05",
-      "amount": 2.0
-    },
-    {
-      "groupId": "37,38",
-      "start": "09:00",
-      "end": "09:05",
-      "amount": 1.0
-    },
-    {
-      "groupId": "42",
-      "start": "09:00",
-      "end": "09:05",
-      "amount": 4.0
-    },
-    {
-      "groupId": "65",
-      "start": "09:00",
-      "end": "09:05",
-      "amount": 1.0
-    },
-    {
-      "groupId": "36",
-      "start": "09:05",
-      "end": "09:25",
-      "amount": 1.0
-    },
-    {
-      "groupId": "52,53,74",
-      "start": "09:05",
-      "end": "09:25",
-      "amount": 3.0
-    },
-    {
-      "groupId": "31,33,34",
-      "start": "09:05",
-      "end": "09:25",
-      "amount": 4.0
-    },
-    {
-      "groupId": "68",
-      "start": "09:05",
-      "end": "09:25",
-      "amount": 4.0
-    },
-    {
-      "groupId": "35",
-      "start": "09:05",
-      "end": "09:25",
-      "amount": 3.0
-    },
-    {
-      "groupId": "50",
-      "start": "09:05",
-      "end": "09:25",
-      "amount": 2.0
-    },
-    {
-      "groupId": "32,45",
-      "start": "09:05",
-      "end": "09:25",
-      "amount": 2.0
-    },
-    {
-      "groupId": "37,38",
-      "start": "09:05",
-      "end": "09:25",
-      "amount": 1.0
-    },
-    {
-      "groupId": "42",
-      "start": "09:05",
-      "end": "09:25",
-      "amount": 4.0
-    },
-    {
-      "groupId": "65",
-      "start": "09:05",
       "end": "09:25",
       "amount": 1.0
     },
@@ -2646,40 +2656,28 @@
       "amount": 0.5
     },
     {
-      "groupId": "52,53,74",
-      "start": "09:25",
-      "end": "09:30",
-      "amount": 2.5
+      "groupId": "37,38",
+      "start": "07:30",
+      "end": "07:35",
+      "amount": 1.0
     },
     {
-      "groupId": "31,33,34",
-      "start": "09:25",
-      "end": "09:30",
-      "amount": 3.5
-    },
-    {
-      "groupId": "68",
-      "start": "09:25",
-      "end": "09:30",
-      "amount": 3.5
-    },
-    {
-      "groupId": "35",
-      "start": "09:25",
-      "end": "09:30",
+      "groupId": "37,38",
+      "start": "07:35",
+      "end": "08:25",
       "amount": 2.0
     },
     {
-      "groupId": "50",
-      "start": "09:25",
-      "end": "09:30",
+      "groupId": "37,38",
+      "start": "08:25",
+      "end": "08:30",
       "amount": 1.5
     },
     {
-      "groupId": "32,45",
-      "start": "09:25",
-      "end": "09:30",
-      "amount": 1.5
+      "groupId": "37,38",
+      "start": "08:30",
+      "end": "09:25",
+      "amount": 1.0
     },
     {
       "groupId": "37,38",
@@ -2688,142 +2686,22 @@
       "amount": 0.5
     },
     {
-      "groupId": "42",
-      "start": "09:25",
-      "end": "09:30",
-      "amount": 3.5
-    },
-    {
-      "groupId": "65",
-      "start": "09:25",
-      "end": "09:30",
+      "groupId": "4",
+      "start": "11:00",
+      "end": "11:05",
       "amount": 0.5
     },
     {
-      "groupId": "52,53,74",
-      "start": "09:30",
-      "end": "09:35",
-      "amount": 2.0
-    },
-    {
-      "groupId": "31,33,34",
-      "start": "09:30",
-      "end": "09:35",
-      "amount": 3.0
-    },
-    {
-      "groupId": "68",
-      "start": "09:30",
-      "end": "09:35",
-      "amount": 3.0
-    },
-    {
-      "groupId": "35",
-      "start": "09:30",
-      "end": "09:35",
+      "groupId": "4",
+      "start": "11:05",
+      "end": "18:55",
       "amount": 1.0
     },
     {
-      "groupId": "50",
-      "start": "09:30",
-      "end": "09:35",
-      "amount": 1.0
-    },
-    {
-      "groupId": "32,45",
-      "start": "09:30",
-      "end": "09:35",
-      "amount": 1.0
-    },
-    {
-      "groupId": "42",
-      "start": "09:30",
-      "end": "09:35",
-      "amount": 3.0
-    },
-    {
-      "groupId": "52,53,74",
-      "start": "09:35",
-      "end": "09:55",
-      "amount": 2.0
-    },
-    {
-      "groupId": "31,33,34",
-      "start": "09:35",
-      "end": "09:55",
-      "amount": 3.0
-    },
-    {
-      "groupId": "68",
-      "start": "09:35",
-      "end": "09:55",
-      "amount": 3.0
-    },
-    {
-      "groupId": "35",
-      "start": "09:35",
-      "end": "09:55",
-      "amount": 1.0
-    },
-    {
-      "groupId": "50",
-      "start": "09:35",
-      "end": "09:55",
-      "amount": 1.0
-    },
-    {
-      "groupId": "32,45",
-      "start": "09:35",
-      "end": "09:55",
-      "amount": 1.0
-    },
-    {
-      "groupId": "42",
-      "start": "09:35",
-      "end": "09:55",
-      "amount": 3.0
-    },
-    {
-      "groupId": "52,53,74",
-      "start": "09:55",
-      "end": "10:00",
-      "amount": 1.0
-    },
-    {
-      "groupId": "31,33,34",
-      "start": "09:55",
-      "end": "10:00",
-      "amount": 1.5
-    },
-    {
-      "groupId": "68",
-      "start": "09:55",
-      "end": "10:00",
-      "amount": 1.5
-    },
-    {
-      "groupId": "35",
-      "start": "09:55",
-      "end": "10:00",
+      "groupId": "4",
+      "start": "18:55",
+      "end": "19:00",
       "amount": 0.5
-    },
-    {
-      "groupId": "50",
-      "start": "09:55",
-      "end": "10:00",
-      "amount": 0.5
-    },
-    {
-      "groupId": "32,45",
-      "start": "09:55",
-      "end": "10:00",
-      "amount": 0.5
-    },
-    {
-      "groupId": "42",
-      "start": "09:55",
-      "end": "10:00",
-      "amount": 1.5
     },
     {
       "groupId": "41",
@@ -2834,13 +2712,379 @@
     {
       "groupId": "41",
       "start": "17:05",
-      "end": "17:25",
+      "end": "17:30",
       "amount": 1.0
     },
     {
       "groupId": "41",
-      "start": "17:25",
-      "end": "17:30",
+      "start": "17:30",
+      "end": "17:35",
+      "amount": 2.0
+    },
+    {
+      "groupId": "41",
+      "start": "17:35",
+      "end": "17:55",
+      "amount": 3.0
+    },
+    {
+      "groupId": "41",
+      "start": "17:55",
+      "end": "18:00",
+      "amount": 2.5
+    },
+    {
+      "groupId": "41",
+      "start": "18:00",
+      "end": "18:30",
+      "amount": 2.0
+    },
+    {
+      "groupId": "41",
+      "start": "18:30",
+      "end": "18:35",
+      "amount": 2.5
+    },
+    {
+      "groupId": "41",
+      "start": "18:35",
+      "end": "18:55",
+      "amount": 3.0
+    },
+    {
+      "groupId": "41",
+      "start": "18:55",
+      "end": "19:00",
+      "amount": 2.0
+    },
+    {
+      "groupId": "41",
+      "start": "19:00",
+      "end": "19:25",
+      "amount": 1.0
+    },
+    {
+      "groupId": "41",
+      "start": "19:25",
+      "end": "19:30",
+      "amount": 0.5
+    },
+    {
+      "groupId": "42",
+      "start": "07:30",
+      "end": "07:35",
+      "amount": 1.0
+    },
+    {
+      "groupId": "42",
+      "start": "07:35",
+      "end": "08:00",
+      "amount": 2.0
+    },
+    {
+      "groupId": "42",
+      "start": "08:00",
+      "end": "08:05",
+      "amount": 3.0
+    },
+    {
+      "groupId": "42",
+      "start": "08:05",
+      "end": "08:30",
+      "amount": 4.0
+    },
+    {
+      "groupId": "42",
+      "start": "08:30",
+      "end": "08:35",
+      "amount": 4.5
+    },
+    {
+      "groupId": "42",
+      "start": "08:35",
+      "end": "08:55",
+      "amount": 5.0
+    },
+    {
+      "groupId": "42",
+      "start": "08:55",
+      "end": "09:00",
+      "amount": 4.5
+    },
+    {
+      "groupId": "42",
+      "start": "09:00",
+      "end": "09:25",
+      "amount": 4.0
+    },
+    {
+      "groupId": "42",
+      "start": "09:25",
+      "end": "09:30",
+      "amount": 3.5
+    },
+    {
+      "groupId": "42",
+      "start": "09:30",
+      "end": "09:55",
+      "amount": 3.0
+    },
+    {
+      "groupId": "42",
+      "start": "09:55",
+      "end": "10:00",
+      "amount": 1.5
+    },
+    {
+      "groupId": "46,67",
+      "start": "17:30",
+      "end": "17:35",
+      "amount": 2.0
+    },
+    {
+      "groupId": "46,67",
+      "start": "17:35",
+      "end": "18:55",
+      "amount": 4.0
+    },
+    {
+      "groupId": "46,67",
+      "start": "18:55",
+      "end": "19:00",
+      "amount": 3.5
+    },
+    {
+      "groupId": "46,67",
+      "start": "19:00",
+      "end": "19:25",
+      "amount": 3.0
+    },
+    {
+      "groupId": "46,67",
+      "start": "19:25",
+      "end": "19:30",
+      "amount": 2.0
+    },
+    {
+      "groupId": "46,67",
+      "start": "19:30",
+      "end": "19:55",
+      "amount": 1.0
+    },
+    {
+      "groupId": "46,67",
+      "start": "19:55",
+      "end": "20:00",
+      "amount": 0.5
+    },
+    {
+      "groupId": "47",
+      "start": "11:00",
+      "end": "11:05",
+      "amount": 0.5
+    },
+    {
+      "groupId": "47",
+      "start": "11:05",
+      "end": "18:55",
+      "amount": 1.0
+    },
+    {
+      "groupId": "47",
+      "start": "18:55",
+      "end": "19:00",
+      "amount": 0.5
+    },
+    {
+      "groupId": "49",
+      "start": "11:00",
+      "end": "11:05",
+      "amount": 0.5
+    },
+    {
+      "groupId": "49",
+      "start": "11:05",
+      "end": "18:55",
+      "amount": 1.0
+    },
+    {
+      "groupId": "49",
+      "start": "18:55",
+      "end": "19:00",
+      "amount": 0.5
+    },
+    {
+      "groupId": "50",
+      "start": "07:00",
+      "end": "07:05",
+      "amount": 0.5
+    },
+    {
+      "groupId": "50",
+      "start": "07:05",
+      "end": "07:30",
+      "amount": 1.0
+    },
+    {
+      "groupId": "50",
+      "start": "07:30",
+      "end": "07:35",
+      "amount": 2.5
+    },
+    {
+      "groupId": "50",
+      "start": "07:35",
+      "end": "08:00",
+      "amount": 4.0
+    },
+    {
+      "groupId": "50",
+      "start": "08:00",
+      "end": "08:05",
+      "amount": 4.5
+    },
+    {
+      "groupId": "50",
+      "start": "08:05",
+      "end": "08:30",
+      "amount": 5.0
+    },
+    {
+      "groupId": "50",
+      "start": "08:30",
+      "end": "08:35",
+      "amount": 5.5
+    },
+    {
+      "groupId": "50",
+      "start": "08:35",
+      "end": "08:55",
+      "amount": 6.0
+    },
+    {
+      "groupId": "50",
+      "start": "08:55",
+      "end": "09:00",
+      "amount": 4.0
+    },
+    {
+      "groupId": "50",
+      "start": "09:00",
+      "end": "09:25",
+      "amount": 2.0
+    },
+    {
+      "groupId": "50",
+      "start": "09:25",
+      "end": "09:30",
+      "amount": 1.5
+    },
+    {
+      "groupId": "50",
+      "start": "09:30",
+      "end": "09:55",
+      "amount": 1.0
+    },
+    {
+      "groupId": "50",
+      "start": "09:55",
+      "end": "10:00",
+      "amount": 0.5
+    },
+    {
+      "groupId": "51",
+      "start": "17:30",
+      "end": "17:35",
+      "amount": 0.5
+    },
+    {
+      "groupId": "51",
+      "start": "17:35",
+      "end": "18:55",
+      "amount": 1.0
+    },
+    {
+      "groupId": "51",
+      "start": "18:55",
+      "end": "19:00",
+      "amount": 0.5
+    },
+    {
+      "groupId": "52,53,74",
+      "start": "07:00",
+      "end": "07:05",
+      "amount": 0.5
+    },
+    {
+      "groupId": "52,53,74",
+      "start": "07:05",
+      "end": "07:30",
+      "amount": 1.0
+    },
+    {
+      "groupId": "52,53,74",
+      "start": "07:30",
+      "end": "07:35",
+      "amount": 3.0
+    },
+    {
+      "groupId": "52,53,74",
+      "start": "07:35",
+      "end": "07:55",
+      "amount": 5.0
+    },
+    {
+      "groupId": "52,53,74",
+      "start": "07:55",
+      "end": "08:00",
+      "amount": 3.5
+    },
+    {
+      "groupId": "52,53,74",
+      "start": "08:00",
+      "end": "08:30",
+      "amount": 2.0
+    },
+    {
+      "groupId": "52,53,74",
+      "start": "08:30",
+      "end": "08:35",
+      "amount": 3.0
+    },
+    {
+      "groupId": "52,53,74",
+      "start": "08:35",
+      "end": "08:55",
+      "amount": 4.0
+    },
+    {
+      "groupId": "52,53,74",
+      "start": "08:55",
+      "end": "09:00",
+      "amount": 3.5
+    },
+    {
+      "groupId": "52,53,74",
+      "start": "09:00",
+      "end": "09:25",
+      "amount": 3.0
+    },
+    {
+      "groupId": "52,53,74",
+      "start": "09:25",
+      "end": "09:30",
+      "amount": 2.5
+    },
+    {
+      "groupId": "52,53,74",
+      "start": "09:30",
+      "end": "09:55",
+      "amount": 2.0
+    },
+    {
+      "groupId": "52,53,74",
+      "start": "09:55",
+      "end": "10:00",
       "amount": 1.0
     },
     {
@@ -2850,459 +3094,155 @@
       "amount": 1.5
     },
     {
-      "groupId": "41",
-      "start": "17:30",
-      "end": "17:35",
-      "amount": 2.0
-    },
-    {
-      "groupId": "46,67",
-      "start": "17:30",
-      "end": "17:35",
-      "amount": 2.0
-    },
-    {
-      "groupId": "51",
-      "start": "17:30",
-      "end": "17:35",
-      "amount": 0.5
-    },
-    {
       "groupId": "52,53,74",
       "start": "17:35",
       "end": "17:55",
       "amount": 3.0
     },
     {
-      "groupId": "41",
-      "start": "17:35",
-      "end": "17:55",
-      "amount": 3.0
+      "groupId": "52,53,74",
+      "start": "17:55",
+      "end": "18:00",
+      "amount": 2.0
     },
     {
-      "groupId": "46,67",
-      "start": "17:35",
-      "end": "17:55",
-      "amount": 4.0
-    },
-    {
-      "groupId": "51",
-      "start": "17:35",
-      "end": "17:55",
+      "groupId": "52,53,74",
+      "start": "18:00",
+      "end": "18:25",
       "amount": 1.0
     },
     {
       "groupId": "52,53,74",
-      "start": "17:55",
-      "end": "18:00",
+      "start": "18:25",
+      "end": "18:30",
+      "amount": 0.5
+    },
+    {
+      "groupId": "65",
+      "start": "07:30",
+      "end": "07:35",
+      "amount": 0.5
+    },
+    {
+      "groupId": "65",
+      "start": "07:35",
+      "end": "08:30",
+      "amount": 1.0
+    },
+    {
+      "groupId": "65",
+      "start": "08:30",
+      "end": "08:35",
+      "amount": 1.5
+    },
+    {
+      "groupId": "65",
+      "start": "08:35",
+      "end": "08:55",
       "amount": 2.0
     },
     {
-      "groupId": "41",
-      "start": "17:55",
-      "end": "18:00",
+      "groupId": "65",
+      "start": "08:55",
+      "end": "09:00",
+      "amount": 1.5
+    },
+    {
+      "groupId": "65",
+      "start": "09:00",
+      "end": "09:25",
+      "amount": 1.0
+    },
+    {
+      "groupId": "65",
+      "start": "09:25",
+      "end": "09:30",
+      "amount": 0.5
+    },
+    {
+      "groupId": "68",
+      "start": "07:30",
+      "end": "07:35",
+      "amount": 1.0
+    },
+    {
+      "groupId": "68",
+      "start": "07:35",
+      "end": "08:00",
+      "amount": 2.0
+    },
+    {
+      "groupId": "68",
+      "start": "08:00",
+      "end": "08:05",
       "amount": 2.5
     },
     {
-      "groupId": "46,67",
-      "start": "17:55",
-      "end": "18:00",
-      "amount": 4.0
-    },
-    {
-      "groupId": "51",
-      "start": "17:55",
-      "end": "18:00",
-      "amount": 1.0
-    },
-    {
-      "groupId": "52,53,74",
-      "start": "18:00",
-      "end": "18:05",
-      "amount": 1.0
-    },
-    {
-      "groupId": "41",
-      "start": "18:00",
-      "end": "18:05",
-      "amount": 2.0
-    },
-    {
-      "groupId": "46,67",
-      "start": "18:00",
-      "end": "18:05",
-      "amount": 4.0
-    },
-    {
-      "groupId": "51",
-      "start": "18:00",
-      "end": "18:05",
-      "amount": 1.0
-    },
-    {
-      "groupId": "52,53,74",
-      "start": "18:05",
-      "end": "18:25",
-      "amount": 1.0
-    },
-    {
-      "groupId": "41",
-      "start": "18:05",
-      "end": "18:25",
-      "amount": 2.0
-    },
-    {
-      "groupId": "46,67",
-      "start": "18:05",
-      "end": "18:25",
-      "amount": 4.0
-    },
-    {
-      "groupId": "51",
-      "start": "18:05",
-      "end": "18:25",
-      "amount": 1.0
-    },
-    {
-      "groupId": "52,53,74",
-      "start": "18:25",
-      "end": "18:30",
-      "amount": 0.5
-    },
-    {
-      "groupId": "41",
-      "start": "18:25",
-      "end": "18:30",
-      "amount": 2.0
-    },
-    {
-      "groupId": "46,67",
-      "start": "18:25",
-      "end": "18:30",
-      "amount": 4.0
-    },
-    {
-      "groupId": "51",
-      "start": "18:25",
-      "end": "18:30",
-      "amount": 1.0
-    },
-    {
-      "groupId": "41",
-      "start": "18:30",
-      "end": "18:35",
-      "amount": 2.5
-    },
-    {
-      "groupId": "46,67",
-      "start": "18:30",
-      "end": "18:35",
-      "amount": 4.0
-    },
-    {
-      "groupId": "51",
-      "start": "18:30",
-      "end": "18:35",
-      "amount": 1.0
-    },
-    {
-      "groupId": "92,93",
-      "start": "18:30",
-      "end": "18:35",
-      "amount": 0.5
-    },
-    {
-      "groupId": "41",
-      "start": "18:35",
-      "end": "18:55",
+      "groupId": "68",
+      "start": "08:05",
+      "end": "08:30",
       "amount": 3.0
     },
     {
-      "groupId": "46,67",
-      "start": "18:35",
-      "end": "18:55",
+      "groupId": "68",
+      "start": "08:30",
+      "end": "08:35",
       "amount": 4.0
     },
     {
-      "groupId": "51",
-      "start": "18:35",
-      "end": "18:55",
-      "amount": 1.0
+      "groupId": "68",
+      "start": "08:35",
+      "end": "08:55",
+      "amount": 5.0
     },
     {
-      "groupId": "92,93",
-      "start": "18:35",
-      "end": "18:55",
-      "amount": 1.0
+      "groupId": "68",
+      "start": "08:55",
+      "end": "09:00",
+      "amount": 4.5
     },
     {
-      "groupId": "41",
-      "start": "18:55",
-      "end": "19:00",
-      "amount": 2.0
+      "groupId": "68",
+      "start": "09:00",
+      "end": "09:25",
+      "amount": 4.0
     },
     {
-      "groupId": "46,67",
-      "start": "18:55",
-      "end": "19:00",
+      "groupId": "68",
+      "start": "09:25",
+      "end": "09:30",
       "amount": 3.5
     },
     {
-      "groupId": "51",
-      "start": "18:55",
-      "end": "19:00",
+      "groupId": "68",
+      "start": "09:30",
+      "end": "09:55",
+      "amount": 3.0
+    },
+    {
+      "groupId": "68",
+      "start": "09:55",
+      "end": "10:00",
+      "amount": 1.5
+    },
+    {
+      "groupId": "92,93",
+      "start": "18:30",
+      "end": "18:35",
       "amount": 0.5
+    },
+    {
+      "groupId": "92,93",
+      "start": "18:35",
+      "end": "18:55",
+      "amount": 1.0
     },
     {
       "groupId": "92,93",
       "start": "18:55",
       "end": "19:00",
       "amount": 0.5
-    },
-    {
-      "groupId": "41",
-      "start": "19:00",
-      "end": "19:05",
-      "amount": 1.0
-    },
-    {
-      "groupId": "46,67",
-      "start": "19:00",
-      "end": "19:05",
-      "amount": 3.0
-    },
-    {
-      "groupId": "41",
-      "start": "19:05",
-      "end": "19:25",
-      "amount": 1.0
-    },
-    {
-      "groupId": "46,67",
-      "start": "19:05",
-      "end": "19:25",
-      "amount": 3.0
-    },
-    {
-      "groupId": "41",
-      "start": "19:25",
-      "end": "19:30",
-      "amount": 0.5
-    },
-    {
-      "groupId": "46,67",
-      "start": "19:25",
-      "end": "19:30",
-      "amount": 2.0
-    },
-    {
-      "groupId": "46,67",
-      "start": "19:30",
-      "end": "19:35",
-      "amount": 1.0
-    },
-    {
-      "groupId": "46,67",
-      "start": "19:35",
-      "end": "19:55",
-      "amount": 1.0
-    },
-    {
-      "groupId": "46,67",
-      "start": "19:55",
-      "end": "20:00",
-      "amount": 0.5
     }
   ],
-  "adjustments": [
-    {
-      "groupId": "36",
-      "start": "08:00",
-      "end": "08:30",
-      "amount": 0,
-      "fromDate": "2026-06-02",
-      "toDate": "2026-06-28",
-      "reason": "June 2026 school holiday reduction"
-    },
-    {
-      "groupId": "52,53,74",
-      "start": "09:00",
-      "end": "09:30",
-      "amount": 2,
-      "fromDate": "2026-06-02",
-      "toDate": "2026-06-28",
-      "reason": "June 2026 school holiday reduction"
-    },
-    {
-      "groupId": "52,53,74",
-      "start": "18:00",
-      "end": "18:30",
-      "amount": 0,
-      "fromDate": "2026-06-02",
-      "toDate": "2026-06-28",
-      "reason": "June 2026 school holiday reduction"
-    },
-    {
-      "groupId": "35",
-      "start": "07:00",
-      "end": "07:30",
-      "amount": 1,
-      "fromDate": "2026-06-02",
-      "toDate": "2026-06-28",
-      "reason": "June 2026 school holiday reduction"
-    },
-    {
-      "groupId": "35",
-      "start": "08:00",
-      "end": "09:00",
-      "amount": 2,
-      "fromDate": "2026-06-02",
-      "toDate": "2026-06-28",
-      "reason": "June 2026 school holiday reduction"
-    },
-    {
-      "groupId": "50",
-      "start": "07:00",
-      "end": "07:30",
-      "amount": 0,
-      "fromDate": "2026-06-02",
-      "toDate": "2026-06-28",
-      "reason": "June 2026 school holiday reduction"
-    },
-    {
-      "groupId": "50",
-      "start": "07:30",
-      "end": "08:00",
-      "amount": 3,
-      "fromDate": "2026-06-02",
-      "toDate": "2026-06-28",
-      "reason": "June 2026 school holiday reduction"
-    },
-    {
-      "groupId": "50",
-      "start": "08:00",
-      "end": "08:30",
-      "amount": 4,
-      "fromDate": "2026-06-02",
-      "toDate": "2026-06-28",
-      "reason": "June 2026 school holiday reduction"
-    },
-    {
-      "groupId": "50",
-      "start": "08:30",
-      "end": "09:00",
-      "amount": 5,
-      "fromDate": "2026-06-02",
-      "toDate": "2026-06-28",
-      "reason": "June 2026 school holiday reduction"
-    },
-    {
-      "groupId": "50",
-      "start": "09:00",
-      "end": "09:30",
-      "amount": 1,
-      "fromDate": "2026-06-02",
-      "toDate": "2026-06-28",
-      "reason": "June 2026 school holiday reduction"
-    },
-    {
-      "groupId": "50",
-      "start": "09:30",
-      "end": "10:00",
-      "amount": 0,
-      "fromDate": "2026-06-02",
-      "toDate": "2026-06-28",
-      "reason": "June 2026 school holiday reduction"
-    },
-    {
-      "groupId": "65",
-      "start": "07:30",
-      "end": "08:00",
-      "amount": 0,
-      "fromDate": "2026-06-02",
-      "toDate": "2026-06-28",
-      "reason": "June 2026 school holiday reduction"
-    },
-    {
-      "groupId": "65",
-      "start": "09:00",
-      "end": "09:30",
-      "amount": 0,
-      "fromDate": "2026-06-02",
-      "toDate": "2026-06-28",
-      "reason": "June 2026 school holiday reduction"
-    },
-    {
-      "groupId": "46,67",
-      "start": "18:00",
-      "end": "19:00",
-      "amount": 3,
-      "fromDate": "2026-06-02",
-      "toDate": "2026-06-28",
-      "reason": "June 2026 school holiday reduction"
-    },
-    {
-      "groupId": "46,67",
-      "start": "19:00",
-      "end": "19:30",
-      "amount": 2,
-      "fromDate": "2026-06-02",
-      "toDate": "2026-06-28",
-      "reason": "June 2026 school holiday reduction"
-    },
-    {
-      "groupId": "46,67",
-      "start": "19:30",
-      "end": "20:00",
-      "amount": 0,
-      "fromDate": "2026-06-02",
-      "toDate": "2026-06-28",
-      "reason": "June 2026 school holiday reduction"
-    },
-    {
-      "groupId": "52,53,74",
-      "start": "07:00",
-      "end": "07:30",
-      "amount": 1,
-      "fromDate": "2026-06-29",
-      "toDate": null,
-      "reason": "ERP increase from 29 June 2026"
-    },
-    {
-      "groupId": "52,53,74",
-      "start": "07:30",
-      "end": "08:00",
-      "amount": 5,
-      "fromDate": "2026-06-29",
-      "toDate": null,
-      "reason": "ERP increase from 29 June 2026"
-    },
-    {
-      "groupId": "32,45",
-      "start": "07:00",
-      "end": "07:30",
-      "amount": 1,
-      "fromDate": "2026-06-29",
-      "toDate": null,
-      "reason": "ERP increase from 29 June 2026"
-    },
-    {
-      "groupId": "32,45",
-      "start": "07:30",
-      "end": "08:30",
-      "amount": 2,
-      "fromDate": "2026-06-29",
-      "toDate": null,
-      "reason": "ERP increase from 29 June 2026"
-    },
-    {
-      "groupId": "32,45",
-      "start": "08:30",
-      "end": "09:00",
-      "amount": 4,
-      "fromDate": "2026-06-29",
-      "toDate": null,
-      "reason": "ERP increase from 29 June 2026"
-    }
-  ]
+  "adjustments": []
 }
